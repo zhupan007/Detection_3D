@@ -55,7 +55,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
     pcd = open3d.read_point_cloud(pcl_fn)
     points = np.asarray(pcd.points)
     points = cam2world_pcl(points)
-    points = down_sample_points(points, 0.03)
+    #points = down_sample_points(points, 0.03)
     points = cut_points_roof(points, 0.7)
 
     bboxes[:,2] += 0.1
@@ -128,11 +128,11 @@ def render_houses():
   for house_name in house_names:
     print(f'{house_name}')
     raw_house_fn = f'{SUNCG_V1_DIR}/house/{house_name}/house.json'
-    render_suncg_raw_house_walls(raw_house_fn)
+    #render_suncg_raw_house_walls(raw_house_fn)
 
     parsed_dir = f'{PARSED_DIR}/{house_name}'
 
-    render_cam_positions(parsed_dir)
+    #render_cam_positions(parsed_dir)
 
     render_parsed_house_walls(parsed_dir, True)
 

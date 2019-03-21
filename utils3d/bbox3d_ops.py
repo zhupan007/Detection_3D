@@ -695,6 +695,8 @@ class Bbox3D():
     assert up_axis == 'Z'
     from geometric_util import Rz
 
+    crop_thickness = False
+
     centroid0 = np.expand_dims( bbox0[0:3], 0 )
 
     rz = Rz(bbox0[-1])
@@ -717,18 +719,18 @@ class Bbox3D():
       if intersec_corners0[1] >= 0:
         xyz_max_new[0] = bbox0[3] # set_yaw0(intersec_corners0[1]).reshape([3])[0]
 
-
     #(3) Use points1 to crop y axis (thickness)
-    if points1.shape[0] > 0:
-      xyz_min1 = np.min(points1, 0)
-      xyz_max1 = np.max(points1, 0)
-      xyz_min_new[1] = xyz_min1[1]
-      xyz_max_new[1] = xyz_max1[1]
-    else:
-      # there is no point inside, make thickness=0
-      # and wall is close to points_aug1
-      sign = np.sign(xyz_min_new[1])
-      xyz_min_new[1] = xyz_max_new[1] = bbox0[4] * 0.5 * sign
+    if crop_thickness:
+      if points1.shape[0] > 0:
+        xyz_min1 = np.min(points1, 0)
+        xyz_max1 = np.max(points1, 0)
+        xyz_min_new[1] = xyz_min1[1]
+        xyz_max_new[1] = xyz_max1[1]
+      else:
+        # there is no point inside, make thickness=0
+        # and wall is close to points_aug1
+        sign = np.sign(xyz_min_new[1])
+        xyz_min_new[1] = xyz_max_new[1] = bbox0[4] * 0.5 * sign
 
     xyz_min_new = np.maximum(xyz_min_new, -bbox0[3:6]*0.5)
     xyz_max_new = np.minimum(xyz_max_new, bbox0[3:6]*0.5)
@@ -736,6 +738,11 @@ class Bbox3D():
     centroid_new_0 = (xyz_min_new + xyz_max_new) / 2.0
     size_new = np.maximum( xyz_max_new - xyz_min_new, 0)
     #size_new = np.minimum( size_new, bbox0[3:6] )
+
+
+    if not crop_thickness:
+      centroid_new_0[1] = 0
+      size_new[1] = bbox0[4]
 
     centroid_new = np.matmul(centroid_new_0, rz.T) + centroid0.reshape([3])
 

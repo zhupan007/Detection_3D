@@ -166,9 +166,7 @@ class IndoorData():
     bboxes = np.loadtxt(bbox_fn).reshape([-1,7])
     #if DEBUG:
     #  #show_walls_1by1(bboxes)
-    #  #bboxes = bboxes[[6,26]]
-    #  bboxes = bboxes[26:27]
-    #bboxes = cam2world_box(bboxes)
+    #  bboxes = bboxes[3:4]
 
     areas = bboxes[:,3] * bboxes[:,5]
     min_point_num = np.minimum( min_point_num_per1sm * areas, 200 )
@@ -239,11 +237,14 @@ class IndoorData():
       croped_bboxes_i = croped_bboxes_i[sizex_mask]
       bboxes_splited.append(croped_bboxes_i)
 
-      show = True
+      show = False
       if show and DEBUG and len(points_i) > 0:
         print(croped_bboxes_i[:,3])
         points = np.concatenate(points_i,0)
         points = points_splited[i]
+        points1 = points.copy()
+        points1[:,0] += 12
+        points = np.concatenate([points, points1], 0)
         bboxes_i[:,0] += 12
         bboxes_i = np.concatenate([bboxes_i, croped_bboxes_i], 0)
         Bbox3D.draw_points_bboxes(points, bboxes_i, up_axis='Z', is_yx_zb=False)
