@@ -15,7 +15,7 @@ from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxlist_3d
 
 DEBUG = True
-SHOW_POS_NEG_ANCHORS = DEBUG and False
+SHOW_POS_NEG_ANCHORS = DEBUG and True
 SHOW_PRED_GT = DEBUG and False
 SHOW_POS_ANCHOR_IOU = DEBUG and False
 

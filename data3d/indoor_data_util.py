@@ -79,7 +79,7 @@ class IndoorData():
   #_block_size0 = np.array([16,16,3])
   _block_stride_rate = np.array([0.8,0.8,0.8])
   _min_pn_inblock = 1000
-  _num_points = 200 * 1000
+  _num_points = 100 * 1000
 
   @staticmethod
   def split_scene(scene_dir, splited_path):
