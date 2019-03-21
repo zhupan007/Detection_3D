@@ -2,6 +2,7 @@
 import numpy as np
 from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import limit_period, vertical_dis_1point_lines, angle_of_2lines, vertical_dis_points_lines, ave_angles
+from render_tools import show_walls_offsetz, show_walls_1by1
 
 def preprocess_walls(wall_bboxes):
   '''
@@ -610,22 +611,6 @@ def crop_walls(wall_bboxes):
   #show_walls_1by1(wall_bboxes)
   #show_walls_offsetz(wall_bboxes)
   return wall_bboxes
-
-def show_walls_1by1(wall_bboxes):
-  n = wall_bboxes.shape[0]
-  for i in range(n):
-    tmp = wall_bboxes.copy()
-    tmp[:,2] -= 1
-    show_box = np.concatenate([tmp, wall_bboxes[i:i+1]], 0)
-    print(f'wall {i}/{n}')
-    Bbox3D.draw_bboxes(show_box, 'Z', False)
-
-def show_walls_offsetz(wall_bboxes):
-  n = wall_bboxes.shape[0]
-  wall_bboxes = wall_bboxes.copy()
-  wall_bboxes[:,2] += np.random.rand(n)*2
-  print(f'totally {n} walls')
-  Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
 
 
 def test_merge_X():

@@ -3,13 +3,30 @@ sys.path.insert(0, '..')
 import open3d, pymesh
 import numpy as np
 from utils3d.bbox3d_ops import Bbox3D
-from indoor_data_util import cam2world_pcl, cam2world_box
+from utils3d.geometric_util import cam2world_box, cam2world_pcl
 import torch
 from collections import defaultdict
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
+
+def show_walls_1by1(wall_bboxes):
+  n = wall_bboxes.shape[0]
+  for i in range(n):
+    tmp = wall_bboxes.copy()
+    tmp[:,2] -= 1
+    show_box = np.concatenate([tmp, wall_bboxes[i:i+1]], 0)
+    print(f'wall {i}/{n}')
+    Bbox3D.draw_bboxes(show_box, 'Z', False)
+
+def show_walls_offsetz(wall_bboxes):
+  n = wall_bboxes.shape[0]
+  wall_bboxes = wall_bboxes.copy()
+  wall_bboxes[:,2] += np.random.rand(n)*2
+  print(f'totally {n} walls')
+  Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
+
 
 def cut_points_roof(points, keep_rate=0.85):
   z_min = np.min(points[:,2])

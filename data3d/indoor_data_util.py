@@ -7,41 +7,22 @@ from utils3d.bbox3d_ops import Bbox3D
 from collections import defaultdict
 import pickle
 import torch
+from utils3d.geometric_util import cam2world_box, cam2world_pcl
 
 #BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 #ROOT_DIR = os.path.dirname(BASE_DIR)
 #sys.path.append(ROOT_DIR)
+from wall_preprocessing import show_walls_1by1, show_walls_offsetz
 
 DEBUG = True
 if DEBUG:
-      from second.data.data_render import DataRender
+  from second.data.data_render import DataRender
 
 DSET_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{DSET_DIR}/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 MAX_FLOAT_DRIFT = 1e-6
 DATASET = 'SUNCG'
-
-def cam2world_pcl(points):
-  R = np.eye(points.shape[-1])
-  R[1,1] = R[2,2] = 0
-  R[1,2] = 1
-  R[2,1] = -1
-  points = np.matmul(points, R)
-  return points
-
-def cam2world_box(box):
-  assert box.shape[1] == 7
-  R = np.eye(7)
-  R[1,1] = R[2,2] = 0
-  R[1,2] = 1
-  R[2,1] = -1
-  R[4,4] = R[5,5] = 0
-  R[4,5] = 1
-  R[5,4] = 1
-  R[6,6] = 1
-  box = np.matmul(box, R)
-  return box
 
 def points2pcd_open3d(points):
   assert points.shape[-1] == 3
@@ -183,6 +164,10 @@ class IndoorData():
     assert IndoorData._block_size0[-1] == -1 # do  not crop box along z
 
     bboxes = np.loadtxt(bbox_fn).reshape([-1,7])
+    #if DEBUG:
+    #  #show_walls_1by1(bboxes)
+    #  #bboxes = bboxes[[6,26]]
+    #  bboxes = bboxes[26:27]
     #bboxes = cam2world_box(bboxes)
 
     areas = bboxes[:,3] * bboxes[:,5]
@@ -207,7 +192,6 @@ class IndoorData():
       # (1) The bboxes with no points with thickness_aug will be removed firstly
       keep_box_aug_i = pn_in_box_aug_i > min_point_num
       bboxes_i = bboxes[keep_box_aug_i]
-      intersec_corners_idx_i, intersec_corners_i = Bbox3D.detect_all_intersection_corners(bboxes_i, 'Z')
 
       points_aug_i = [points_splited[i][point_masks_aug_i[:,j]] for j in range(bn)]
       points_aug_i = [points_aug_i[j] for j in range(bn) if keep_box_aug_i[j]]
@@ -218,6 +202,11 @@ class IndoorData():
       # (2) Crop all the boxes by points and intersec_corners seperately
       bn_i = bboxes_i.shape[0]
       croped_bboxes_i = []
+      keep_unseen_intersection = False
+      if keep_unseen_intersection:
+        intersec_corners_idx_i, intersec_corners_i = Bbox3D.detect_all_intersection_corners(bboxes_i, 'Z')
+      else:
+        intersec_corners_idx_i = [None]*bn_i
       for k in range(bn_i):
         croped_bboxes_i.append( Bbox3D.crop_bbox_by_points(
                         bboxes_i[k], points_i[k], points_aug_i[k], 'Z', intersec_corners_idx_i[k]) )
@@ -250,7 +239,7 @@ class IndoorData():
       croped_bboxes_i = croped_bboxes_i[sizex_mask]
       bboxes_splited.append(croped_bboxes_i)
 
-      show = False
+      show = True
       if show and DEBUG and len(points_i) > 0:
         print(croped_bboxes_i[:,3])
         points = np.concatenate(points_i,0)

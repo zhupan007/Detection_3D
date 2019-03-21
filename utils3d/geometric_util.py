@@ -186,4 +186,24 @@ def vertical_dis_1point_lines(point, lines):
   dis = np.sin(angles) * np.linalg.norm(direc_p, axis=1)
   return dis
 
+def cam2world_pcl(points):
+  R = np.eye(points.shape[-1])
+  R[1,1] = R[2,2] = 0
+  R[1,2] = 1
+  R[2,1] = -1
+  points = np.matmul(points, R)
+  return points
+
+def cam2world_box(box):
+  assert box.shape[1] == 7
+  R = np.eye(7)
+  R[1,1] = R[2,2] = 0
+  R[1,2] = 1
+  R[2,1] = -1
+  R[4,4] = R[5,5] = 0
+  R[4,5] = 1
+  R[5,4] = 1
+  R[6,6] = 1
+  box = np.matmul(box, R)
+  return box
 
