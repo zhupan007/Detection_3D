@@ -101,35 +101,33 @@ later, SpConv and SparseConvCnn should only need to install one
 ## MODEL
 ### model workflow
 1. tools/train_net_sparse3d.py:main -> :train & test
-2. modeling/detector/detectors.py:
-        ```
-        build_detection_model -> sparse_rcnn.py:SparseRCNN  
-        In SparseRCNN:  
-        features = self.backbone(points)  
-        proposals, proposal_losses = self.rpn(points, features, targets)  
-        x, result, detector_losses = self.roi_heads(features, proposals, targets)  
-        ```
+2. modeling/detector/detectors.py: 
+```
+build_detection_model -> sparse_rcnn.py:SparseRCNN  
+In SparseRCNN:  
+features = self.backbone(points)  
+proposals, proposal_losses = self.rpn(points, features, targets)  
+x, result, detector_losses = self.roi_heads(features, proposals, targets)  
+```
 3. modeling/backbone/backbone.py :
-        ```
-        build_backbone -> :build_sparse_resnet_fpn_backbone -> sparseconvnet.FPN_Net  
-        ```
+```
+build_backbone -> :build_sparse_resnet_fpn_backbone -> sparseconvnet.FPN_Net  
+```
 4. modeling/rpn_sparse3d.py: 
-        ```
-        build_rpn ->  RPNModule -> inference_3d/make_rpn_postprocessor -> loss_3d/make_rpn_loss_evaluator  
-        objectness, rpn_box_regression = self.head(features)  
-        anchors = self.anchor_generator(points_sparse, features_sparse)  
-        ```
-4.1 modeling/rpn/loss_3d.py 
-        ```
-        make_rpn_loss_evaluator -> RPNLossComputation  
-        objectness_loss = torch.nn.functional.binary_cross_entropy_with_logits(...)  
-        box_loss = smooth_l1_loss(...)  
-        ```
+```
+build_rpn ->  RPNModule -> inference_3d/make_rpn_postprocessor -> loss_3d/make_rpn_loss_evaluator  
+objectness, rpn_box_regression = self.head(features)  
+anchors = self.anchor_generator(points_sparse, features_sparse)  
+```
+4.1 modeling/rpn/loss_3d.py:
+```
+make_rpn_loss_evaluator -> RPNLossComputation  
+objectness_loss = torch.nn.functional.binary_cross_entropy_with_logits(...)  
+box_loss = smooth_l1_loss(...)  
+```
 4.2 modeling/rpn/inference_3d.py:
-        ```
-        make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_nms_3d  
-        -> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
-        ```
+make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_nms_3d  
+-> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
 
 ###  model classes
 - SparseRCNN:  maskrcnn_benchmark/modeling/detector/sparse_rcnn.py
