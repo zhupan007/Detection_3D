@@ -126,8 +126,10 @@ objectness_loss = torch.nn.functional.binary_cross_entropy_with_logits(...)
 box_loss = smooth_l1_loss(...)  
 ```
 4.2 modeling/rpn/inference_3d.py:
+```
 make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_nms_3d  
 -> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
+```
 
 ###  model classes
 - SparseRCNN:  maskrcnn_benchmark/modeling/detector/sparse_rcnn.py
