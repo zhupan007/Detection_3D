@@ -325,7 +325,7 @@ class BoxList3D(object):
     def show_together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
-      boxes = self.bbox3d.cpu().data.numpy()
+      boxes = self.bbox3d.cpu().data.numpy().copy()
       if max_num > 0 and max_num < boxes.shape[0]:
         ids = np.random.choice(boxes.shape[0], max_num, replace=False)
         boxes = boxes[ids]
@@ -343,7 +343,7 @@ class BoxList3D(object):
       else:
         if isinstance(points, torch.Tensor):
           points = points.cpu().data.numpy()
-        Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels)
+        Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
 if __name__ == "__main__":
     bbox = BoxList([[0, 0, 10, 10], [0, 0, 5, 5]], (10, 10))

@@ -47,6 +47,7 @@ class SparseRCNN(nn.Module):
             raise ValueError("In training mode, targets should be passed")
         features = self.backbone(points)
         proposals, proposal_losses = self.rpn(points, features, targets)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         if self.roi_heads:
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             x, result, detector_losses = self.roi_heads(features, proposals, targets)

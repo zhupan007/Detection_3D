@@ -1,12 +1,16 @@
 # xyz
 
 
-# up going
+# on going process
 - split_pcl_plyf cam2world_pcl
 - test: nms
 - rpn acc
 - multi scale: feature concate
 - 3d roi
+
+# Theory
+- yaw: [-pi/2, pi/2]
+
 
 # Installation
 
@@ -99,7 +103,6 @@ later, SpConv and SparseConvCnn should only need to install one
         - maskrcnn_benchmark/solver/lr_scheduler.py
 
 ## MODEL
-### model workflow
 1. tools/train_net_sparse3d.py:main -> :train & test
 2. modeling/detector/detectors.py: 
 ```
@@ -116,20 +119,39 @@ build_backbone -> :build_sparse_resnet_fpn_backbone -> sparseconvnet.FPN_Net
 4. modeling/rpn_sparse3d.py: 
 ```
 build_rpn ->  RPNModule -> inference_3d/make_rpn_postprocessor -> loss_3d/make_rpn_loss_evaluator  
+```
+4.1 RPNModule
+```
 objectness, rpn_box_regression = self.head(features)  
 anchors = self.anchor_generator(points_sparse, features_sparse)  
+-> rpn/anchor_generator_sparse3d.py/AnchorGenerator.forward()
 ```
-4.1 modeling/rpn/loss_3d.py:
+4.2 modeling/rpn/loss_3d.py:
 ```
 make_rpn_loss_evaluator -> RPNLossComputation  
 objectness_loss = torch.nn.functional.binary_cross_entropy_with_logits(...)  
 box_loss = smooth_l1_loss(...)  
 ```
-4.2 modeling/rpn/inference_3d.py:
+4.3 modeling/rpn/inference_3d.py:
 ```
 make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_nms_3d  
 -> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
 ```
+
+## Anchor
+- rpn/anchor_generator_sparse3d.py/AnchorGenerator.forward()
+* ANCHOR_SIZES_3D: [[0.5,1,3], [1,4,3]]
+* YAWS:  (0, -0.785, -1.57)
+- BG_IOU_THRESHOLD: 0.1
+- FG_IOU_THRESHOLD: 0.3
+### Positive policy
+-1:ignore, 0: negative, 1:positive  
+Positive anchor: 1. this anchor location is the closest to the target centroid. 2. the feature view field contains the target at most.
+- modeling/rpn/loss_3d.py/RPNLossComputation/match_targets_to_anchors:  
+        match_quality_matrix = boxlist_iou_3d(anchor, target)  
+        matched_idxs = self.proposal_matcher(match_quality_matrix)  
+- 
+modeling/matcher.py/Matcher/__call__
 
 ###  model classes
 ```

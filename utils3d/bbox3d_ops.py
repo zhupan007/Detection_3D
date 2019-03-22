@@ -158,14 +158,14 @@ class Bbox3D():
     return pcl
 
   @staticmethod
-  def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None):
+  def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, random_color=True):
     '''
     points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None)
     '''
     if points is not None:
       pcl = Bbox3D.draw_points_open3d(points)
 
-    bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names)
+    bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color)
 
     if lines is not None:
       lineset = [Bbox3D.draw_lines_open3d(lines)]

@@ -5,7 +5,7 @@ import torch.nn as nn
 import sparseconvnet as scn
 from .sparseConvNetTensor import SparseConvNetTensor
 
-DEBUG = False
+DEBUG = True
 
 
 class FPN_Net(torch.nn.Module):
@@ -55,28 +55,40 @@ class FPN_Net(torch.nn.Module):
                 m.add(scn.Sequential()
                      .add(scn.BatchNormLeakyReLU(a,leakiness=leakiness))
                      .add(scn.SubmanifoldConvolution(dimension, a, b, 3, False)))
+            operation = {'kernel':[1,1,1], 'stride':[1,1,1]}
+            return operation
 
         def down(m, nPlane_in, nPlane_downed, scale):
-            m.add(scn.Sequential()
+          #print(f'down, scale={scale}, feature={nPlane_in}->{nPlane_downed}, kernel={self.down_kernels[scale]},stride={self.down_strides[scale]}')
+          m.add(scn.Sequential()
                   .add(scn.BatchNormLeakyReLU(nPlane_in,leakiness=leakiness))
                   .add(scn.Convolution(dimension, nPlane_in, nPlane_downed,
                           self.down_kernels[scale], self.down_strides[scale], False)))
+          operation = {'kernel':self.down_kernels[scale], 'stride':self.down_strides[scale]}
+          return operation
 
         def up(m, nPlane_in, nPlane_uped, scale):
-           m.add( scn.BatchNormLeakyReLU(nPlane_in, leakiness=leakiness)).add(
+          #print(f'up, scale={scale}, feature={nPlane_in}->{nPlane_uped}, kernel={self.down_kernels[scale]}, stride={self.down_strides[scale]}')
+          m.add( scn.BatchNormLeakyReLU(nPlane_in, leakiness=leakiness)).add(
                       scn.Deconvolution(dimension, nPlane_in, nPlane_uped,
                       self.down_kernels[scale], self.down_strides[scale], False))
+          operation = {'kernel':self.down_kernels[scale], 'stride':self.down_strides[scale]}
+          return operation
 
 
         scales_num = len(nPlanesF)
         m_downs = nn.ModuleList()
         m_shortcuts = nn.ModuleList()
+        operations_down = []
         for k in range(scales_num):
             m = scn.Sequential()
             if k > 0:
-              down(m, nPlanesF[k-1], nPlanesF[k], k-1)
+              op = down(m, nPlanesF[k-1], nPlanesF[k], k-1)
+              operations_down.append(op)
             for _ in range(reps):
-                block(m, nPlanesF[k], nPlanesF[k])
+              op = block(m, nPlanesF[k], nPlanesF[k])
+              if k==0:
+                operations_down.append(op)
             m_downs.append(m)
 
             m = scn.SubmanifoldConvolution(dimension, nPlanesF[k], nPlaneM, 1, False)
@@ -85,10 +97,12 @@ class FPN_Net(torch.nn.Module):
         ###
         m_ups = nn.ModuleList()
         m_mergeds = nn.ModuleList()
+        operations_up = []
         for k in range(scales_num-1, 0, -1):
             m = scn.Sequential()
-            up(m, nPlaneM, nPlaneM, k-1)
+            op = up(m, nPlaneM, nPlaneM, k-1)
             m_ups.append(m)
+            operations_up.append(op)
 
             m_mergeds.append(scn.SubmanifoldConvolution(dimension, nPlaneM, nPlaneM, 3, False))
 
@@ -101,27 +115,21 @@ class FPN_Net(torch.nn.Module):
         self.m_shortcuts = m_shortcuts
         self.m_ups = m_ups
         self.m_mergeds = m_mergeds
+        self.operations_down = operations_down
+        self.operations_up = operations_up
 
     def forward(self, net0):
-      if self._show: print(f'\ninput: {net0[0].shape}')
+      if self._show: print(f'\nFPN net input: {net0[0].shape}')
       net1 = self.layers_in(net0)
       net_scales = self.forward_fpn(net1)
 
       #net_scales = [n.to_dict() for n in net_scales]
-
       return net_scales
-      #net = net_scales[-1]
-      #net = self.layers_out(net)
-      #net = self.linear(net)
-
-      #if self._show:
-      #  print(f'\nend {net.shape}\n')
-      #return net
 
     def forward_fpn(self, net):
-      #if self._show:
-      #  print('FPN_Net input:')
-      #  sparse_shape(net)
+      if self._show:
+        print('input sparse format:')
+        sparse_shape(net)
 
       scales_num = len(self.m_downs)
       downs = []
@@ -151,24 +159,47 @@ class FPN_Net(torch.nn.Module):
       fpn_maps = [ups[i] for i in fpn_scales_from_back]
 
       if self._show:
-        print('\n\ndowns:')
-        [sparse_shape(t) for t in downs]
+        print('\n\nSparse FPN\n--------------------------------------------------')
+        print('downs:')
+        for i in range(len(downs)):
+          #if i!=0:
+          #  print(f'\tKernel:{self.down_kernels[i-1]} stride:{self.down_strides[i-1]}', end='\t')
+          #else:
+          #  print('\tSubmanifoldConvolution \t\t', end='\t')
+          op = self.operations_down[i]
+          ke = op['kernel']
+          st = op['stride']
+          print(f'\tKernel:{ke}, Stride:{st}', end='\t')
+          sparse_shape(downs[i])
 
         print('\n\nups:')
-        [sparse_shape(t) for t in ups]
+        for i in range(len(ups)):
+          #if i==0:
+          #  print('\tIdentity of the last \t\t', end='\t')
+          #else:
+          #  print(f'\tKernel:{self.down_kernels[-i]} stride:{self.down_strides[-i]}', end='\t')
+          op = self.operations_up[i]
+          ke = op['kernel']
+          st = op['stride']
+          print(f'\tKernel:{ke}, Stride:{st}', end='\t')
+          sparse_shape(ups[i])
 
         print('\n\nFPN_Net out:')
-        [sparse_shape(t) for t in fpn_maps]
-        [sparse_real_size(t) for t in fpn_maps]
+        for t in fpn_maps:
+          sparse_shape(t,'\t')
+          sparse_real_size(t,'\t')
+          print('\n')
+        print('--------------------------------------------------\n\n')
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       return fpn_maps
 
 
-def sparse_shape(t):
-  print(f'{t.features.shape}, {t.spatial_size}')
+def sparse_shape(t, pre=''):
+  print(f'{pre}{t.features.shape}, {t.spatial_size}')
 
-def sparse_real_size(t):
+def sparse_real_size(t,pre=''):
   loc = t.get_spatial_locations()
   loc_min = loc.min(0)[0]
   loc_max = loc.max(0)[0]
-  print(f"\nmin: {loc_min}\nmax: {loc_max}")
+  print(f"{pre}min: {loc_min}, max: {loc_max}")
 
