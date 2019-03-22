@@ -1,5 +1,5 @@
 export CUDA_VISIBLE_DEVICES=1
-ipython tools/train_net_sparse3d.py -- --config-file "configs/sparse_faster_rcnn.yaml"  --skip-test
+ipython tools/train_net_sparse3d.py -- --config-file "configs/sparse_faster_rcnn_RPN_ONLY.yaml"  --skip-test
 
 #CUDA_LAUNCH_BLOCKING=1 ipython tools/train_net_sparse3d.py -- --config-file "configs/sparse_faster_rcnn.yaml"  --skip-test
 

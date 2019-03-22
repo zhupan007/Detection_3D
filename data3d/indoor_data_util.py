@@ -91,7 +91,7 @@ class IndoorData():
       print(f'skip {splited_path}')
       return
     print(f'spliting {scene_dir}')
-    gen_ply = True and DEBUG
+    gen_ply = False and DEBUG
 
     #house_intact, intacts = check_house_intact(scene_dir)
     #if not house_intact:
@@ -550,7 +550,7 @@ def creat_splited_pcl_box():
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   house_names = ['7411df25770eaf8d656cac2be42a9af0']
-  house_names = ['8c033357d15373f4079b1cecef0e065a']
+  house_names = ['8c033357d15373f4079b1cecef0e065a', '7411df25770eaf8d656cac2be42a9af0']
   #house_names = get_house_names_1level()
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
