@@ -17,7 +17,7 @@ from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxl
 DEBUG = True
 SHOW_POS_ANCHOR_IOU = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
-SHOW_PRED_GT = DEBUG and False
+SHOW_PRED_GT = DEBUG and True
 
 class RPNLossComputation(object):
     """
