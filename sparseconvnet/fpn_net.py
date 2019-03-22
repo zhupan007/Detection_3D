@@ -6,7 +6,7 @@ import sparseconvnet as scn
 from .sparseConvNetTensor import SparseConvNetTensor
 import numpy as np
 
-DEBUG = True
+DEBUG = False
 
 
 class FPN_Net(torch.nn.Module):
@@ -162,6 +162,7 @@ class FPN_Net(torch.nn.Module):
       if self._show:
         receptive_field(self.operations_down)
         print('\n\nSparse FPN\n--------------------------------------------------')
+        print(f'scale num: {scales_num}')
         print('downs:')
         for i in range(len(downs)):
           #if i!=0:
@@ -173,7 +174,7 @@ class FPN_Net(torch.nn.Module):
           st = op['stride']
           rf = op['rf']
           tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
-          sparse_shape(downs[i], post=tmp)
+          sparse_shape(downs[i], pre=f'\t{i} ', post=tmp)
 
         print('\n\nups:')
         for i in range(len(ups)):
@@ -188,12 +189,12 @@ class FPN_Net(torch.nn.Module):
           sparse_shape(ups[i], post=tmp)
 
         print('\n\nFPN_Net out:')
+        print(f'{fpn_scales_from_back} of ups')
         for t in fpn_maps:
           sparse_shape(t)
           sparse_real_size(t,'\t')
           print('\n')
         print('--------------------------------------------------\n\n')
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       return fpn_maps
 
 

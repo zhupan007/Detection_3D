@@ -308,7 +308,7 @@ class BoxList3D(object):
       if points is None:
         Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
       else:
-        Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
+        Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', random_color=False)
 
     def show_centroids(self, max_num=-1, points=None):
       import numpy as np

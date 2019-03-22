@@ -184,9 +184,13 @@ def intact_cfg(cfg):
   # fpn scales set from 0 to 1..., but used from large to small
   cfg.MODEL.RPN.ANCHOR_STRIDE = list(reversed([ANCHOR_STRIDE[i] for i in fpn_scalse]))
   cfg.MODEL.RPN.ANCHOR_SIZES_3D = list(reversed( cfg.MODEL.RPN.ANCHOR_SIZES_3D ))
-  tmp = cfg.MODEL.RPN.ANCHOR_SIZES_3D
-  if len(tmp)>1:
-    assert tmp[0][0] > tmp[1][0], "ANCHOR_SIZES_3D should set from small to large"
+
+  anchor_size = cfg.MODEL.RPN.ANCHOR_SIZES_3D
+  ns = len(fpn_scalse)
+  na = len(anchor_size)
+  assert ns==na, f"fpn_scalse num {ns} != anchor_size num {na}. The anchor size for each scale should be seperately"
+  if len(anchor_size)>1:
+    assert anchor_size[0][0] > anchor_size[1][0], "ANCHOR_SIZES_3D should set from small to large after reversed, to match scale order of feature map"
 
 if __name__ == "__main__":
     main()

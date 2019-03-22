@@ -552,12 +552,16 @@ def devRotateIoUEval(rbox1, rbox2, criterion=-1):
     area1 = rbox1[2] * rbox1[3]
     area2 = rbox2[2] * rbox2[3]
     area_inter = inter(rbox1, rbox2)
+    # area1 is anchor
+    # area2 is target
     if criterion == -1:
         return area_inter / (area1 + area2 - area_inter)
     elif criterion == 0:
         return area_inter / area1
     elif criterion == 1:
         return area_inter / area2
+    if criterion == 2:
+        return area_inter / (area2 + max(0,area1*0.5 - area_inter))
     else:
         return area_inter
 

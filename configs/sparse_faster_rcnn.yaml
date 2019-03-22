@@ -10,9 +10,10 @@ MODEL:
   RPN:
     USE_FPN: True
     RPN_HEAD: "SingleConvRPNHead_Sparse3D"
-    ANCHOR_SIZES_3D: [[0.5,1,3], [1,4,3]]
+    ANCHOR_SIZES_3D: [[0.2,1,3], [0.5,2,3], [1,3,3]]
     YAWS:  (0, -1.57, -0.785, 0.785)
-    FG_IOU_THRESHOLD: 0.3
+    #YAWS:  (0, -1.57)
+    FG_IOU_THRESHOLD: 0.5
     BG_IOU_THRESHOLD: 0.1
     PRE_NMS_TOP_N_TRAIN: 2000
     PRE_NMS_TOP_N_TEST: 1000
@@ -26,12 +27,12 @@ MODEL:
     POOLER_SAMPLING_RATIO: 2
     FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
     PREDICTOR: "FPNPredictor"
-  FPN_SCALES: [6,7]
+  FPN_SCALES: [5,6,7]
 SPARSE3D:
-  nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256]
-  KERNEL: [[2,2,3], [2,2,3], [1,1,3], [1,1,3], [1,1,3], [2,2,3], [2,2,1]]
-  STRIDE: [[2,2,3], [1,1,3], [2,2,3], [1,1,3], [1,1,3], [2,2,3], [2,2,1]]
-  VOXEL_FULL_SCALE: [2048, 2048, 2187]
+  nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256, 256, 256]
+  KERNEL: [[2,2,4], [2,2,4], [2,2,4], [1,1,4], [2,2,4], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
+  STRIDE: [[2,2,2], [2,2,4], [2,2,4], [1,1,4], [2,2,1], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
+  VOXEL_FULL_SCALE: [2048, 2048, 514]
   VOXEL_SCALE: 50
 DATASETS:
   TRAIN: ("suncg_train", "suncg_val")
@@ -44,8 +45,8 @@ SOLVER:
   IMS_PER_BATCH: 1
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
-  STEPS: (100,)
-  CHECKPOINT_PERIOD: 10
+  STEPS: (1000000000000,)
+  CHECKPOINT_PERIOD: 100
   WARMUP_ITERS: 2
 OUTPUT_DIR: "results"
 TEST:

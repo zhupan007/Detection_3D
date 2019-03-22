@@ -9,6 +9,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from data3d.data import locations_to_position
 
 DEBUG = False
+SHOW_ANCHOR_EACH_SCALE = DEBUG and False
 if DEBUG:
   from utils3d.bbox3d_ops import Bbox3D
 
@@ -44,7 +45,7 @@ class AnchorGenerator(nn.Module):
     def __init__(
         self,
         voxel_scale=20,
-        sizes_3d=[[0.2,1,1], [0.4,2,2], [0.8,4,4]],
+        sizes_3d=[[0.2,1,3], [0.5,2,3], [1,3,3]],
         yaws=(0, -1.57),
         anchor_strides=[[8,8,729], [16,16,729], [32,32,729]],
         straddle_thresh=0,
@@ -52,6 +53,7 @@ class AnchorGenerator(nn.Module):
         super(AnchorGenerator, self).__init__()
 
         sizes_3d = np.array(sizes_3d, dtype=np.float32)
+        assert sizes_3d[0,0] >= sizes_3d[-1,0], "should be from the last scale"
         assert sizes_3d.shape[1] == 3
         anchor_strides = np.array(anchor_strides, dtype=np.float32)
         assert anchor_strides.shape[1] == 3
@@ -121,11 +123,13 @@ class AnchorGenerator(nn.Module):
                       for a,ei in zip(anchors_over_all_feature_maps_sparse, examples_idxscope)]
         anchors = [a.convert(self.anchor_mode) for a in anchors]
 
-        if DEBUG and True:
-            for bi in range(len(anchors)):
-              min_xyz = anchors[bi].bbox3d[:,0:3].min(0)
-              mean_xyz = anchors[bi].bbox3d[:,0:3].mean(0)
-              max_xyz = anchors[bi].bbox3d[:,0:3].max(0)
+        if SHOW_ANCHOR_EACH_SCALE:
+            scale_num = len(anchors)
+            for scale_i in range(scale_num):
+              print(f'scale {scale_i} {len(anchors[scale_i])} enchors')
+              min_xyz = anchors[scale_i].bbox3d[:,0:3].min(0)
+              mean_xyz = anchors[scale_i].bbox3d[:,0:3].mean(0)
+              max_xyz = anchors[scale_i].bbox3d[:,0:3].max(0)
               print(f'anchor ctr min: {min_xyz}')
               print(f'anchor ctr mean: {mean_xyz}')
               print(f'anchor ctr max: {max_xyz}')
@@ -134,10 +138,9 @@ class AnchorGenerator(nn.Module):
               print(f'points ctr mean: {points.mean(0)}')
               print(f'points ctr max: {points.max(0)}')
 
-              anchors[bi].show(20, points, with_centroids=True)
-              #anchors[bi].show_centroids(-1, points)
+              anchors[scale_i].show(20, points, with_centroids=True)
+              #anchors[scale_i].show_centroids(-1, points)
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
-              pass
         return anchors
 
 

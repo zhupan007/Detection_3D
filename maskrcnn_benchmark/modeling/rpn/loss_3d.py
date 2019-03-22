@@ -15,7 +15,7 @@ from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxlist_3d
 
 DEBUG = True
-SHOW_POS_ANCHOR_IOU = DEBUG and True
+SHOW_POS_ANCHOR_IOU = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
 SHOW_PRED_GT = DEBUG and False
 
@@ -69,7 +69,6 @@ class RPNLossComputation(object):
               print(f'{i}th iou: {iou_j[i]}')
               anchors_pos_j[i].show_together(target[j])
             #anchor.show_together(target[j],100)
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             pass
 
         return matched_targets
@@ -213,8 +212,6 @@ class RPNLossComputation(object):
               labels_show = np.array([1]*boxes_pred.shape[0] + [0]*boxes_gt.shape[0])
               from utils3d.bbox3d_ops import Bbox3D
               Bbox3D.draw_bboxes(boxes_show, 'Z', True, labels_show)
-              import pdb;
-              pdb.set_trace()  # XXX BREAKPOINT
               pass
 
             #for bi in range(batch_size):

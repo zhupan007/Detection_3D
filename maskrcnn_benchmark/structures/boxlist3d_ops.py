@@ -76,19 +76,23 @@ def remove_small_boxes3d(boxlist, min_size):
 
 
 def boxlist_iou_3d(anchors, targets):
-    cuda_index = targets.bbox3d.device.index
-    anchors_2d = anchors.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
-    targets_2d = targets.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
-    # aug thickness. When thickness==0, iou is wrong
-    targets_2d[:,2] += 0.25
-    # criterion=1: use targets_2d as ref
-    iou = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=-1, device_id=cuda_index)
-    iou = torch.from_numpy(iou)
-    iou = iou.to(targets.bbox3d.device)
-    if DEBUG:
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      pass
-    return iou
+  '''
+  about criterion check:
+    second.core.non_max_suppression.nms_gpu/devRotateIoUEval
+  '''
+  cuda_index = targets.bbox3d.device.index
+  anchors_2d = anchors.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
+  targets_2d = targets.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
+  # aug thickness. When thickness==0, iou is wrong
+  targets_2d[:,2] += 0.25
+  # criterion=1: use targets_2d as ref
+  iou = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=2, device_id=cuda_index)
+  iou = torch.from_numpy(iou)
+  iou = iou.to(targets.bbox3d.device)
+  if DEBUG:
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
+  return iou
 
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
 # with slight modifications

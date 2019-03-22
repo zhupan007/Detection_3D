@@ -2,10 +2,9 @@
 
 
 # on going process
-- split_pcl_plyf cam2world_pcl
-- test: nms
-- rpn acc
+- crop gt box with anchor
 - multi scale: feature concate
+- rpn acc
 - 3d roi
 
 # Theory
@@ -91,6 +90,8 @@ later, SpConv and SparseConvCnn should only need to install one
  - modeling/rpn/loss_3d.py  RPNLossComputation/match_targets_to_anchors  
         SHOW_POS_ANCHOR_IOU: Show the process of finding positive anchors by iou with ground truth target  
 
+ - rpn/anchor_generator_sparse3d.py  AnchorGenerator/forward:  
+        SHOW_ANCHOR_EACH_SCALE:
 
 # Basic code structure
 - maskrcnn_benchmark/structures/bounding_box_3d.py/BoxList3D
@@ -141,17 +142,18 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 ## Anchor
 - rpn/anchor_generator_sparse3d.py/AnchorGenerator.forward()
 * ANCHOR_SIZES_3D: [[0.5,1,3], [1,4,3]]
-* YAWS:  (0, -0.785, -1.57)
+* YAWS: (0, -1.57, -0.785, 0.785)
 - BG_IOU_THRESHOLD: 0.1
 - FG_IOU_THRESHOLD: 0.3
-### Positive policy
+### Positive policy **Very Important**
 -1:ignore, 0: negative, 1:positive  
 Positive anchor: 1. this anchor location is the closest to the target centroid. 2. the feature view field contains the target at most.
 - modeling/rpn/loss_3d.py/RPNLossComputation/match_targets_to_anchors:  
         match_quality_matrix = boxlist_iou_3d(anchor, target)  
         matched_idxs = self.proposal_matcher(match_quality_matrix)  
-- 
-modeling/matcher.py/Matcher/__call__
+- second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval &  devRotateIoUEval:   
+        criterion == 2:  area_inter / (area2 + max(0,area1*0.5 - area_inter)), area2 is target  
+- modeling/matcher.py/Matcher/__call__
 
 ###  model classes
 ```
