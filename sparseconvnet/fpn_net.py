@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import sparseconvnet as scn
 from .sparseConvNetTensor import SparseConvNetTensor
+import numpy as np
 
 DEBUG = True
 
@@ -159,6 +160,7 @@ class FPN_Net(torch.nn.Module):
       fpn_maps = [ups[i] for i in fpn_scales_from_back]
 
       if self._show:
+        receptive_field(self.operations_down)
         print('\n\nSparse FPN\n--------------------------------------------------')
         print('downs:')
         for i in range(len(downs)):
@@ -169,8 +171,9 @@ class FPN_Net(torch.nn.Module):
           op = self.operations_down[i]
           ke = op['kernel']
           st = op['stride']
-          print(f'\tKernel:{ke}, Stride:{st}', end='\t')
-          sparse_shape(downs[i])
+          rf = op['rf']
+          tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
+          sparse_shape(downs[i], post=tmp)
 
         print('\n\nups:')
         for i in range(len(ups)):
@@ -181,12 +184,12 @@ class FPN_Net(torch.nn.Module):
           op = self.operations_up[i]
           ke = op['kernel']
           st = op['stride']
-          print(f'\tKernel:{ke}, Stride:{st}', end='\t')
-          sparse_shape(ups[i])
+          tmp = f' \tKernel:{ke}, Stride:{st}'
+          sparse_shape(ups[i], post=tmp)
 
         print('\n\nFPN_Net out:')
         for t in fpn_maps:
-          sparse_shape(t,'\t')
+          sparse_shape(t)
           sparse_real_size(t,'\t')
           print('\n')
         print('--------------------------------------------------\n\n')
@@ -194,8 +197,27 @@ class FPN_Net(torch.nn.Module):
       return fpn_maps
 
 
-def sparse_shape(t, pre=''):
-  print(f'{pre}{t.features.shape}, {t.spatial_size}')
+def receptive_field(operations, voxel_size_basic = None):
+  '''
+  https://medium.com/mlreview/a-guide-to-receptive-field-arithmetic-for-convolutional-neural-networks-e0f514068807
+  '''
+  n = len(operations)
+  operations[0]['rf'] = np.array([1.0,1,1])
+  jump = 1
+  for i in range(1,n):
+    op = operations[i]
+    ke = np.array(op['kernel'])
+    st = np.array(op['stride'])
+    rf = operations[i-1]['rf'] + (ke-1)*jump
+    operations[i]['rf'] = rf
+    jump *= st
+
+  if voxel_size_basic:
+    for op in operations:
+      op['rf'] *= voxel_size_basic
+
+def sparse_shape(t, pre='\t', post=''):
+  print(f'{pre}{t.features.shape}, {t.spatial_size}{post}')
 
 def sparse_real_size(t,pre=''):
   loc = t.get_spatial_locations()
