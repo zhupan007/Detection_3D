@@ -27,7 +27,7 @@ from maskrcnn_benchmark.utils.miscellaneous import mkdir
 
 from data3d.data import make_data_loader
 
-def train(cfg, local_rank, distributed, loop):
+def train(cfg, local_rank, distributed, loop, only_test):
     model = build_detection_model(cfg)
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
@@ -51,6 +51,8 @@ def train(cfg, local_rank, distributed, loop):
     checkpointer = DetectronCheckpointer(
         cfg, model, optimizer, scheduler, output_dir, save_to_disk
     )
+    if only_test:
+      return model
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
 
@@ -125,6 +127,12 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--only-test",
+        dest="only_test",
+        help="test the final model",
+        action="store_true",
+    )
+    parser.add_argument(
         "opts",
         help="Modify config options using the command-line",
         default=None,
@@ -165,7 +173,7 @@ def main():
     logger.info("Running with config:\n{}".format(cfg))
 
     for loop in range(cfg.SOLVER.EPOCHS // cfg.SOLVER.EPOCHS_BETWEEN_TEST):
-      model = train(cfg, args.local_rank, args.distributed, loop)
+      model = train(cfg, args.local_rank, args.distributed, loop, args.only_test)
 
       if not args.skip_test:
           test(cfg, model, args.distributed)
