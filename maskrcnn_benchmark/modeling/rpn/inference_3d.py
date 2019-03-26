@@ -143,7 +143,13 @@ class RPNPostProcessor(torch.nn.Module):
     def forward(self, anchors, objectness, box_regression, targets=None):
         """
         Arguments:
-            anchors: list[list[BoxList]]
+            anchors: BoxList
+            objectness: list[tensor]
+            box_regression: list[tensor]
+            batch_size = anchors.batch_size()
+            scale_num = num_levels = len(objectness) == len(box_regression)
+
+            anchors: list[list[BoxList]
             objectness: list[tensor]
             box_regression: list[tensor]
 
@@ -151,6 +157,8 @@ class RPNPostProcessor(torch.nn.Module):
             boxlists (list[BoxList]): the post-processed anchors, after
                 applying box decoding and NMS
         """
+        print(anchors.batch_size())
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         sampled_boxes = []
         num_levels = len(objectness)
         for a, o, b in zip(anchors, objectness, box_regression):

@@ -83,12 +83,15 @@ class AnchorGenerator(nn.Module):
         ):
             anchor_centroids = (location[:,0:3].float()+0) / self.voxel_scale * stride.view(1,3)
             anchor_centroids = torch.cat([anchor_centroids, torch.zeros(anchor_centroids.shape[0],4)], 1)
-            anchor_centroids = anchor_centroids.view(-1,1,7)
-            base_anchors = base_anchors.view(1,-1,7)
+            anchor_centroids = anchor_centroids.view(1,-1,7)
+            base_anchors = base_anchors.view(-1,1,7)
 
             device = base_anchors.device
             # got standard anchors
-            anchors.append( (anchor_centroids.to(device) + base_anchors).reshape(-1,7) )
+            #flatten order [yaws_num, sparse_feature_num, 7]
+            anchors_scale = anchor_centroids.to(device) + base_anchors
+            anchors_scale = anchors_scale.reshape(-1,7)
+            anchors.append( anchors_scale )
 
         if DEBUG and False:
           Bbox3D.draw_bboxes(anchors[0].cpu().numpy(), 'Z', False)

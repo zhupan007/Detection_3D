@@ -2,6 +2,8 @@
 
 
 # on going process
+- rethink how to improve acc for long wall
+- add window
 - crop gt box with anchor
 - multi scale: feature concate
 - rpn acc
@@ -113,7 +115,7 @@ features = self.backbone(points)
 proposals, proposal_losses = self.rpn(points, features, targets)  
 x, result, detector_losses = self.roi_heads(features, proposals, targets)  
 ```
-3. modeling/backbone/backbone.py :
+3. modeling/backbone/backbone.py:
 ```
 build_backbone -> :build_sparse_resnet_fpn_backbone -> sparseconvnet.FPN_Net  
 ```
@@ -145,6 +147,16 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 * YAWS: (0, -1.57, -0.785, 0.785)
 - BG_IOU_THRESHOLD: 0.1
 - FG_IOU_THRESHOLD: 0.3
+
+- flatten order
+```
+1. AnchorGenerator.grid_anchors: flatten order [yaws_num, sparse_feature_num, 7]
+2. bounding_box_3d.py/ cat_scales_anchor: final flatten order: [batch_size, scale_num, yaws_num, sparse_feature_num]
+3. RPNLossComputation.prepare_targets labels same as anchors
+4. cat_scales_obj_reg: objectness and rpn_box_regression  
+        flatten order: [batch_size, scale_num, yaws_num, sparse_feature_num]
+```
+
 ### Positive policy **Very Important**
 -1:ignore, 0: negative, 1:positive  
 Positive anchor: 1. this anchor location is the closest to the target centroid. 2. the feature view field contains the target at most.
@@ -179,3 +191,8 @@ Positive anchor: 1. this anchor location is the closest to the target centroid. 
 ```
 
 
+# Ideas for the future
+- 3D object detection by keypoint
+- 3D object detection with deformable convolution
+- BIM detection aided by constrain of connection relationship
+- Indoor navigation with 3d mapping of BIM 

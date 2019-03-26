@@ -74,6 +74,9 @@ class RPNLossComputation(object):
         return matched_targets
 
     def prepare_targets(self, anchors, targets):
+        '''
+        labels: batch_size * []
+        '''
         labels = []
         regression_targets = []
         batch_size = anchors.batch_size()
@@ -152,29 +155,32 @@ class RPNLossComputation(object):
 
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
-        objectness_flattened = []
-        box_regression_flattened = []
+        '''
+        #objectness_flattened = []
+        #box_regression_flattened = []
         # for each feature level, permute the outputs to make them be in the
         # same format as the labels. Note that the labels are computed for
         # all feature levels concatenated, so we keep the same representation
         # for the objectness and the box_regression
-        for objectness_per_level, box_regression_per_level in zip(
-            objectness, box_regression
-        ):
-            N, A, H, W = objectness_per_level.shape
-            objectness_per_level = objectness_per_level.permute(0, 2, 3, 1).reshape(
-                N, -1
-            )
-            box_regression_per_level = box_regression_per_level.view(N, -1, 7, H, W)
-            box_regression_per_level = box_regression_per_level.permute(0, 3, 4, 1, 2)
-            box_regression_per_level = box_regression_per_level.reshape(N, -1, 7)
-            objectness_flattened.append(objectness_per_level)
-            box_regression_flattened.append(box_regression_per_level)
-        # concatenate on the first dimension (representing the feature levels), to
-        # take into account the way the labels were generated (with all feature maps
-        # being concatenated as well)
-        objectness = cat(objectness_flattened, dim=1).reshape(-1)
-        box_regression = cat(box_regression_flattened, dim=1).reshape(-1, 7)
+
+        #for objectness_per_level, box_regression_per_level in zip(
+        #    objectness, box_regression
+        #):
+        #    N, A, H, W = objectness_per_level.shape
+        #    objectness_per_level = objectness_per_level.permute(0, 2, 3, 1).reshape(
+        #        N, -1
+        #    )
+        #    box_regression_per_level = box_regression_per_level.view(N, -1, 7, H, W)
+        #    box_regression_per_level = box_regression_per_level.permute(0, 3, 4, 1, 2)
+        #    box_regression_per_level = box_regression_per_level.reshape(N, -1, 7)
+        #    objectness_flattened.append(objectness_per_level)
+        #    box_regression_flattened.append(box_regression_per_level)
+        ## concatenate on the first dimension (representing the feature levels), to
+        ## take into account the way the labels were generated (with all feature maps
+        ## being concatenated as well)
+        #objectness = cat(objectness_flattened, dim=1).reshape(-1)
+        #box_regression = cat(box_regression_flattened, dim=1).reshape(-1, 7)
+        '''
 
         labels = torch.cat(labels, dim=0)
         regression_targets = torch.cat(regression_targets, dim=0)

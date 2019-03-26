@@ -29,4 +29,4 @@ dist/
 /datasets
 /models
 *.ropeproject
-results
+results*

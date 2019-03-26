@@ -5,6 +5,92 @@ import torch
 FLIP_LEFT_RIGHT = 0
 FLIP_TOP_BOTTOM = 1
 
+# TODO redundant, remove
+def _cat(tensors, dim=0):
+    """
+    Efficient version of torch.cat that avoids a copy if there is only a single element in a list
+    """
+    assert isinstance(tensors, (list, tuple))
+    if len(tensors) == 1:
+        return tensors[0]
+    return torch.cat(tensors, dim)
+
+def cat_boxlist_3d(bboxes, per_example=False):
+    """
+    Concatenates a list of BoxList (having the same image size) into a
+    single BoxList
+
+    Arguments:
+        bboxes (list[BoxList])
+        per_example: if True, each element in bboxes is an example, combine to a batch
+    """
+    assert isinstance(bboxes, (list, tuple))
+    assert all(isinstance(bbox, BoxList3D) for bbox in bboxes)
+
+    if not per_example:
+      size3d = bboxes[0].size3d
+      for bbox3d in bboxes:
+        #is_size_close =  torch.abs(bbox3d.size3d - size3d).max() < 0.01
+        #if not is_size_close:
+        if not torch.isclose( bbox3d.size3d, size3d ).all():
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
+    else:
+      size3d = torch.cat([b.size3d for b in bboxes])
+
+    mode = bboxes[0].mode
+    assert all(bbox.mode == mode for bbox in bboxes)
+
+    fields = set(bboxes[0].fields())
+    assert all(set(bbox.fields()) == fields for bbox in bboxes)
+
+    batch_size0 = bboxes[0].batch_size()
+    for bbox in bboxes:
+      assert bbox.batch_size() == batch_size0
+
+    bbox3d_cat = _cat([bbox3d.bbox3d for bbox3d in bboxes], dim=0)
+    if not per_example:
+      examples_idxscope = torch.tensor([[0, bbox3d_cat.shape[0]]], dtype=torch.int32)
+      batch_size = batch_size0
+      assert batch_size0 == 1, "check if >1 if need to"
+    else:
+      assert batch_size0 == 1, "check if >1 if need to"
+      batch_size = len(bboxes)
+      examples_idxscope = torch.cat([b.examples_idxscope for b in bboxes])
+      for b in range(1,batch_size):
+        examples_idxscope[b,:] += examples_idxscope[b-1,1]
+    cat_boxes = BoxList3D(bbox3d_cat, size3d, mode, examples_idxscope)
+
+    for field in fields:
+        data = _cat([bbox.get_field(field) for bbox in bboxes], dim=0)
+        cat_boxes.add_field(field, data)
+
+    return cat_boxes
+
+
+def cat_scales_anchor(anchors):
+    '''
+     combine anchors of scales
+     anchors: list(BoxList)
+
+     anchors_new: BoxList
+     final flatten order: [batch_size, scale_num, yaws_num, sparse_feature_num]
+    '''
+    scale_num = len(anchors)
+    batch_size = anchors[0].batch_size()
+    anchors_scales = []
+    for s in range(scale_num):
+      anchors_scales.append( anchors[s].seperate_examples() )
+
+    num_examples = [[len(an) for an in ans] for ans in anchors_scales] # [batch_size, scale_num]
+
+
+    examples = []
+    for b in range(batch_size):
+      examples.append( cat_boxlist_3d([a[b] for a in anchors_scales] ) )
+    anchors_all_scales = cat_boxlist_3d(examples, per_example=True)
+    return anchors_all_scales
+
 
 class BoxList3D(object):
     """

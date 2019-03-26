@@ -8,27 +8,64 @@ from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 from .loss_3d import make_rpn_loss_evaluator
 from .anchor_generator_sparse3d import make_anchor_generator
 from .inference_3d import make_rpn_postprocessor
-from maskrcnn_benchmark.structures.boxlist3d_ops import cat_boxlist_3d
+from maskrcnn_benchmark.structures.bounding_box_3d import cat_scales_anchor
 
 DEBUG = False
 SHOW_TARGETS_ANCHORS = DEBUG and False
 
-def combine_anchor_scales(anchors):
-    '''
-     combine anchors of scales
-     anchors: list(BoxList)
-     anchors_new: BoxList
-    '''
-    scale_num = len(anchors)
-    batch_size = anchors[0].batch_size()
-    anchors_scales = []
-    for s in range(scale_num):
-      anchors_scales.append( anchors[s].seperate_examples() )
-    examples = []
+def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
+  '''
+     len(objectness) = len(rpn_box_regression) = scale num
+     objectness[i].shape: [1,yaws_num,sparse_feature_num,1]
+     rpn_box_regression[i].shape: [1,yaws_num*7,sparse_feature_num,1]
+     anchors.batch_size() = batch size
+
+     flatten order: [batch_size, scale_num, yaws_num, sparse_feature_num]
+
+     rpn_box_regression_new: [yaws_num*sparse_feature_num of all scales,7]
+     objectness_new: [yaws_num*sparse_feature_num of all scales]
+  '''
+  scale_num = len(objectness)
+  batch_size = anchors[0].batch_size()
+  objectness_new = []
+  rpn_box_regression_new = []
+  for b in range(batch_size):
+    objectness_new.append([])
+    rpn_box_regression_new.append([])
+
+  for s in range(scale_num):
+    assert objectness[s].shape[0] == objectness[s].shape[-1] == 1
+    assert rpn_box_regression[s].shape[0] == rpn_box_regression[s].shape[-1] == 1
+
+    yaws_num = objectness[s].shape[1]
+    examples_idxscope = anchors[s].examples_idxscope / yaws_num
+    regression_flag = 'boxreg_first'
     for b in range(batch_size):
-      examples.append( cat_boxlist_3d([a[b] for a in anchors_scales] ) )
-    anchors_all_scales = cat_boxlist_3d(examples, per_example=True)
-    return anchors_all_scales
+      begin,end = examples_idxscope[b]
+      objectness_new[b].append( objectness[s][0,:,begin:end,0].reshape(-1) )
+      reg = rpn_box_regression[s][0,:,begin:end,0] # [yaws_num*7, sparse_feature_num]
+
+      if regression_flag == 'yaws_num_first':
+        reg = reg.view(yaws_num, 7, -1)
+        reg = reg.permute(0,2,1)
+      elif regression_flag == 'boxreg_first':
+        reg = reg.view(7, yaws_num, -1)
+        reg = reg.permute(1,2,0)
+      else:
+        raise NotImplementedError
+      reg = reg.reshape(-1,7)
+
+      rpn_box_regression_new[b].append( reg )
+
+  for b in range(batch_size):
+    objectness_new[b] = torch.cat(objectness_new[b], 0)
+    rpn_box_regression_new[b] = torch.cat(rpn_box_regression_new[b], 0)
+
+  objectness_new = torch.cat(objectness_new, 0)
+  rpn_box_regression_new = torch.cat(rpn_box_regression_new, 0)
+
+  return objectness_new, rpn_box_regression_new
+
 
 @registry.RPN_HEADS.register("SingleConvRPNHead_Sparse3D")
 class RPNHead(nn.Module):
@@ -120,7 +157,8 @@ class RPNModule(torch.nn.Module):
         #[print(f.shape) for f in features]
         objectness, rpn_box_regression = self.head(features)
         anchors = self.anchor_generator(points_sparse, features_sparse)
-        anchors = combine_anchor_scales(anchors)
+        objectness, rpn_box_regression = cat_scales_obj_reg(objectness, rpn_box_regression, anchors)
+        anchors = cat_scales_anchor(anchors)
 
         if SHOW_TARGETS_ANCHORS:
             import numpy as np
