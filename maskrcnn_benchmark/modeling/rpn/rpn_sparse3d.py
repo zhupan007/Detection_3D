@@ -26,6 +26,7 @@ def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
      objectness_new: [yaws_num*sparse_feature_num of all scales]
   '''
   scale_num = len(objectness)
+  assert scale_num == len(rpn_box_regression) == len(anchors)
   batch_size = anchors[0].batch_size()
   objectness_new = []
   rpn_box_regression_new = []
@@ -39,10 +40,12 @@ def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
 
     yaws_num = objectness[s].shape[1]
     examples_idxscope = anchors[s].examples_idxscope / yaws_num
-    regression_flag = 'boxreg_first'
+    regression_flag = 'yaws_num_first'
     for b in range(batch_size):
       begin,end = examples_idxscope[b]
-      objectness_new[b].append( objectness[s][0,:,begin:end,0].reshape(-1) )
+      obj = objectness[s][0,:,begin:end,0] # [yaws_num, sparse_feature_num]
+      obj = obj.reshape(-1)
+      objectness_new[b].append( obj )
       reg = rpn_box_regression[s][0,:,begin:end,0] # [yaws_num*7, sparse_feature_num]
 
       if regression_flag == 'yaws_num_first':
@@ -97,8 +100,8 @@ class RPNHead(nn.Module):
         logits = []
         bbox_reg = []
         for feature in x:
-            t = F.relu(self.conv(feature))
-            logits.append(self.cls_logits(t))
+            t = F.relu(self.conv(feature))    # [1,feature, sparse_locations, 1]
+            logits.append(self.cls_logits(t)) # [1,yaws_num, sparse_locations, 1]
             bbox_reg.append(self.bbox_pred(t))
         return logits, bbox_reg
 
