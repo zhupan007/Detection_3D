@@ -150,7 +150,7 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 
 - flatten order
 ```
-1. AnchorGenerator.grid_anchors:   
+1. anchor_generator_sparse3d.py/AnchorGenerator.grid_anchors:   
         flatten order: [sparse_location_num, yaws_num, 7]     
 2. rpn_sparse3d.py/RPNModule/forward ->  bounding_box_3d.py/ cat_scales_anchor:   
         final flatten order: [batch_size, scale_num, sparse_location_num, yaws_num]
@@ -158,6 +158,7 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
         labels same as anchors   
 4. objectness and rpn_box_regression  
         rpn_sparse3d.py/RPNHead.forward: [sparse_location_num, yaws_num]
+                reg_shape_method = 'box_toghter' or 'yaws_toghter'  
         rpn_sparse3d.py/cat_scales_obj_reg:         
                 flatten order same as anchor
 ```
@@ -194,7 +195,6 @@ Positive anchor: 1. this anchor location is the closest to the target centroid. 
 - modeling/backbone/backbone.py/build_sparse_resnet_fpn_backbone:
         fpn = scn.FPN_Net(full_scale, dimension, raw_elements, block_reps, nPlanesF,...)
 ```
-
 
 # Ideas for the future
 - 3D object detection by keypoint
