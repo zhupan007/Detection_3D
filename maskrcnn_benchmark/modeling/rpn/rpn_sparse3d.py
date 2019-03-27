@@ -103,7 +103,7 @@ class RPNHead(nn.Module):
         logits = []
         bbox_reg = []
         reg_shape_method = 'box_toghter'
-        reg_shape_method = 'yaws_toghter'
+        #reg_shape_method = 'yaws_toghter'
         for feature in x:
             t = F.relu(self.conv(feature))    # [1,feature, sparse_locations, 1]
             logit = self.cls_logits(t) # [1,yaws_num, sparse_location_num, 1]
