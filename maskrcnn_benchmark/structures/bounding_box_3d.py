@@ -15,7 +15,7 @@ def _cat(tensors, dim=0):
         return tensors[0]
     return torch.cat(tensors, dim)
 
-def cat_boxlist_3d(bboxes, per_example=False):
+def cat_boxlist_3d(bboxes, per_example):
     """
     Concatenates a list of BoxList (having the same image size) into a
     single BoxList
@@ -48,6 +48,7 @@ def cat_boxlist_3d(bboxes, per_example=False):
     for bbox in bboxes:
       assert bbox.batch_size() == batch_size0
 
+    # flatten order: [scale_num, sparse_location_num * yaws_num]
     bbox3d_cat = _cat([bbox3d.bbox3d for bbox3d in bboxes], dim=0)
     if not per_example:
       examples_idxscope = torch.tensor([[0, bbox3d_cat.shape[0]]], dtype=torch.int32)
@@ -74,7 +75,7 @@ def cat_scales_anchor(anchors):
      anchors: list(BoxList)
 
      anchors_new: BoxList
-     final flatten order: [batch_size, scale_num, yaws_num, sparse_feature_num]
+     final flatten order:  [batch_size, scale_num, sparse_location_num, yaws_num]
     '''
     scale_num = len(anchors)
     batch_size = anchors[0].batch_size()
@@ -82,12 +83,11 @@ def cat_scales_anchor(anchors):
     for s in range(scale_num):
       anchors_scales.append( anchors[s].seperate_examples() )
 
-    num_examples = [[len(an) for an in ans] for ans in anchors_scales] # [batch_size, scale_num]
-
+    #num_examples = [[len(an) for an in ans] for ans in anchors_scales] # [batch_size, scale_num]
 
     examples = []
     for b in range(batch_size):
-      examples.append( cat_boxlist_3d([a[b] for a in anchors_scales] ) )
+      examples.append( cat_boxlist_3d([ans[b] for ans in anchors_scales], per_example=False ) )
     anchors_all_scales = cat_boxlist_3d(examples, per_example=True)
     return anchors_all_scales
 

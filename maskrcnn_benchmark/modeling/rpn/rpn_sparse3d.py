@@ -36,27 +36,30 @@ def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
 
   for s in range(scale_num):
     assert objectness[s].shape[0] == objectness[s].shape[-1] == 1
-    assert rpn_box_regression[s].shape[0] == rpn_box_regression[s].shape[-1] == 1
+    assert rpn_box_regression[s].shape[0] == 1
+    assert rpn_box_regression[s].shape[-1] == 7
 
-    yaws_num = objectness[s].shape[1]
-    examples_idxscope = anchors[s].examples_idxscope / yaws_num
+    yaws_num = objectness[s].shape[2]
+    examples_idxscope = anchors[s].examples_idxscope
+
+    objectness_s = objectness[s].reshape(-1)
+    rpn_box_regression_s = rpn_box_regression[s].reshape(-1,7)
     regression_flag = 'yaws_num_first'
     for b in range(batch_size):
       begin,end = examples_idxscope[b]
-      obj = objectness[s][0,:,begin:end,0] # [yaws_num, sparse_feature_num]
-      obj = obj.reshape(-1)
+      obj = objectness_s[begin:end] # [yaws_num, sparse_feature_num]
       objectness_new[b].append( obj )
-      reg = rpn_box_regression[s][0,:,begin:end,0] # [yaws_num*7, sparse_feature_num]
+      reg = rpn_box_regression_s[begin:end] # [yaws_num*7, sparse_feature_num]
 
-      if regression_flag == 'yaws_num_first':
-        reg = reg.view(yaws_num, 7, -1)
-        reg = reg.permute(0,2,1)
-      elif regression_flag == 'boxreg_first':
-        reg = reg.view(7, yaws_num, -1)
-        reg = reg.permute(1,2,0)
-      else:
-        raise NotImplementedError
-      reg = reg.reshape(-1,7)
+      #if regression_flag == 'yaws_num_first':
+      #  reg = reg.view(yaws_num, 7, -1)
+      #  reg = reg.permute(0,2,1)
+      #elif regression_flag == 'boxreg_first':
+      #  reg = reg.view(7, yaws_num, -1)
+      #  reg = reg.permute(1,2,0)
+      #else:
+      #  raise NotImplementedError
+      #reg = reg.reshape(-1,7)
 
       rpn_box_regression_new[b].append( reg )
 
@@ -101,8 +104,13 @@ class RPNHead(nn.Module):
         bbox_reg = []
         for feature in x:
             t = F.relu(self.conv(feature))    # [1,feature, sparse_locations, 1]
-            logits.append(self.cls_logits(t)) # [1,yaws_num, sparse_locations, 1]
-            bbox_reg.append(self.bbox_pred(t))
+            logit = self.cls_logits(t) # [1,yaws_num, sparse_location_num, 1]
+            logit = logit.permute(0,2,1,3) # [1,sparse_location_num, yaws_num,1]
+            logits.append(logit)
+            reg = self.bbox_pred(t) # [1,7*yaws_num, sparse_location_num]
+            reg = reg.permute(0,2,1,3) # [1,sparse_location_num, yaws_num*7,1]
+            reg = reg.reshape(1,reg.shape[1],4,7) # [1,sparse_location_num, yaws_num,7]
+            bbox_reg.append(reg)
         return logits, bbox_reg
 
 

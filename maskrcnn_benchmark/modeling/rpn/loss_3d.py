@@ -108,6 +108,7 @@ class RPNLossComputation(object):
             labels.append(labels_per_image)
             regression_targets.append(regression_targets_per_image)
 
+
         return labels, regression_targets
 
     def __call__(self, anchors, objectness, box_regression, targets):
@@ -123,9 +124,12 @@ class RPNLossComputation(object):
             box_loss (Tensor
         """
         labels, regression_targets = self.prepare_targets(anchors, targets)
-        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
-        sampled_pos_inds = torch.nonzero(torch.cat(sampled_pos_inds, dim=0)).squeeze(1)
-        sampled_neg_inds = torch.nonzero(torch.cat(sampled_neg_inds, dim=0)).squeeze(1)
+        sampled_pos_inds0, sampled_neg_inds0 = self.fg_bg_sampler(labels)
+        sampled_pos_inds = torch.nonzero(torch.cat(sampled_pos_inds0, dim=0)).squeeze(1)
+        sampled_neg_inds = torch.nonzero(torch.cat(sampled_neg_inds0, dim=0)).squeeze(1)
+
+        labels = torch.cat(labels, dim=0)
+        regression_targets = torch.cat(regression_targets, dim=0)
 
         batch_size = anchors.batch_size()
 
@@ -182,8 +186,6 @@ class RPNLossComputation(object):
         #box_regression = cat(box_regression_flattened, dim=1).reshape(-1, 7)
         '''
 
-        labels = torch.cat(labels, dim=0)
-        regression_targets = torch.cat(regression_targets, dim=0)
 
         box_loss = smooth_l1_loss(
             box_regression[sampled_pos_inds],

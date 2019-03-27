@@ -151,14 +151,15 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 - flatten order
 ```
 1. AnchorGenerator.grid_anchors:   
-        flatten order [yaws_num, sparse_feature_num, 7]  
-2. bounding_box_3d.py/ cat_scales_anchor:   
-        final flatten order: [batch_size, scale_num, yaws_num, sparse_feature_num] 
-3. RPNLossComputation.prepare_targets:  
+        flatten order: [sparse_location_num, yaws_num, 7]     
+2. rpn_sparse3d.py/RPNModule/forward ->  bounding_box_3d.py/ cat_scales_anchor:   
+        final flatten order: [batch_size, scale_num, sparse_location_num, yaws_num]
+3. loss_3d.py/RPNLossComputation.prepare_targets:  
         labels same as anchors   
-4. rpn_sparse3d.py/cat_scales_obj_reg:         
-        objectness and rpn_box_regression  
-        flatten order: [batch_size, scale_num, yaws_num, sparse_feature_num]
+4. objectness and rpn_box_regression  
+        rpn_sparse3d.py/RPNHead.forward: [sparse_location_num, yaws_num]
+        rpn_sparse3d.py/cat_scales_obj_reg:         
+                flatten order same as anchor
 ```
 
 ### Positive policy **Very Important**
