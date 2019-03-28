@@ -8,7 +8,7 @@ from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 from .loss_3d import make_rpn_loss_evaluator
 from .anchor_generator_sparse3d import make_anchor_generator
 from .inference_3d import make_rpn_postprocessor
-from maskrcnn_benchmark.structures.bounding_box_3d import cat_scales_anchor
+from maskrcnn_benchmark.structures.bounding_box_3d import cat_scales_anchor, cat_boxlist_3d
 
 DEBUG = False
 SHOW_TARGETS_ANCHORS = DEBUG and False
@@ -178,6 +178,7 @@ class RPNModule(torch.nn.Module):
         anchors = self.anchor_generator(points_sparse, features_sparse)
         objectness, rpn_box_regression = cat_scales_obj_reg(objectness, rpn_box_regression, anchors)
         anchors = cat_scales_anchor(anchors)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
         if SHOW_TARGETS_ANCHORS:
             import numpy as np
@@ -231,10 +232,12 @@ class RPNModule(torch.nn.Module):
             # and don't bother to sort them in decreasing score order. For RPN-only
             # models, the proposals are the final output and we return them in
             # high-to-low confidence order.
+            boxes = boxes.seperate_examples()
             inds = [
                 box.get_field("objectness").sort(descending=True)[1] for box in boxes
             ]
             boxes = [box[ind] for box, ind in zip(boxes, inds)]
+            #boxes = cat_boxlist_3d(boxes, per_example=True)
         return boxes, {}
 
 

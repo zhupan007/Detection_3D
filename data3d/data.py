@@ -34,7 +34,7 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
   scale = cfg.SPARSE3D.VOXEL_SCALE
   full_scale=cfg.SPARSE3D.VOXEL_FULL_SCALE
   val_reps = cfg.SPARSE3D.VAL_REPS
-  batch_size = cfg.SOLVER.IMS_PER_BATCH
+  batch_size = cfg.SOLVER.IMS_PER_BATCH if is_train else cfg.TEST.IMS_PER_BATCH
   objects_to_detect = cfg.INPUT.OBJECTS
   dimension=3
 
@@ -70,16 +70,20 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
     get_files = get_files_Suncg
 
   train,val = [],[]
-  for x in torch.utils.data.DataLoader(
-        get_files('train'),
-          collate_fn=lambda x: torch.load(x[0]), num_workers=mp.cpu_count()):
-      train.append(x)
-  for x in torch.utils.data.DataLoader(
-        get_files('val'),
-          collate_fn=lambda x: torch.load(x[0]), num_workers=mp.cpu_count()):
-      val.append(x)
-  print('Training examples:', len(train))
-  print('Validation examples:', len(val))
+  if is_train:
+    for x in torch.utils.data.DataLoader(
+          get_files('train'),
+            collate_fn=lambda x: torch.load(x[0]), num_workers=mp.cpu_count()):
+        train.append(x)
+    print('Training examples:', len(train))
+    dataset_ = train
+  else:
+    for x in torch.utils.data.DataLoader(
+          get_files('val'),
+            collate_fn=lambda x: torch.load(x[0]), num_workers=mp.cpu_count()):
+        val.append(x)
+    dataset_ = val
+    print('Validation examples:', len(val))
 
   #Elastic distortion
   blur0=np.ones((3,1,1)).astype('float32')/3
@@ -102,18 +106,18 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
 
   def trainMerge(tbl):
       zoom_rate = 0.1*0
-      flip_x = False
-      random_rotate = False
-      distortion = False
-      origin_offset = False
+      flip_x = False and is_train
+      random_rotate = False and is_train
+      distortion = False and is_train
+      origin_offset = False and is_train
       feature_with_xyz = True
-      norm_noise = 0.01
+      norm_noise = 0.01 * int(is_train)
 
       locs=[]
       feats=[]
       labels=[]
       for idx,i in enumerate(tbl):
-          pcl_i, bboxes_dic_i_0 = train[i]
+          pcl_i, bboxes_dic_i_0 = dataset_[i]
           a = pcl_i[:,0:3].copy()
           b = pcl_i
           bboxes_dic_i = {}
@@ -173,7 +177,7 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
           #---------------------------------------------------------------------
           up_check = np.all(a < full_scale[np.newaxis,:], 1)
           idxs = (a.min(1)>=0)*(up_check)
-          assert np.all(idxs), "some points are missed in train"
+          assert np.all(idxs), f"some points are missed in is_train={is_train}"
           a=a[idxs]
           b=b[idxs]
           #c=c[idxs]
@@ -190,7 +194,7 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
       #batch_scopes(locs, scale)
       return {'x': [locs,feats], 'y': labels, 'id': tbl}
   train_data_loader = torch.utils.data.DataLoader(
-      list(range(len(train))),batch_size=batch_size, collate_fn=trainMerge, num_workers=20*(1-DEBUG), shuffle=True)
+      list(range(len(dataset_))),batch_size=batch_size, collate_fn=trainMerge, num_workers=20*(1-DEBUG), shuffle=is_train)
 
 
   return train_data_loader

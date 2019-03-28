@@ -316,7 +316,7 @@ class BoxList3D(object):
         examples_idxscope = torch.tensor([[0, se[1]-se[0]]], dtype=torch.int32)
         bbox3d = BoxList3D( self.bbox3d[se[0]:se[1],:], self.size3d[idx:idx+1], self.mode, examples_idxscope)
         for k, v in self.extra_fields.items():
-            bbox3d.add_field(k, v[item][se[0]:se[1]])
+            bbox3d.add_field(k, v[se[0]:se[1]])
         return bbox3d
 
     def __getitem__(self, item):

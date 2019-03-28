@@ -2,13 +2,15 @@
 import torch
 
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
-from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
-from maskrcnn_benchmark.structures.boxlist3d_ops import cat_boxlist_3d
+from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D, cat_scales_anchor, cat_boxlist_3d
 from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_nms_3d
 from maskrcnn_benchmark.structures.boxlist3d_ops import remove_small_boxes3d
 
 from ..utils import cat
 
+
+DEBUG = True
+SHOW_RPNPOST = True and DEBUG
 
 class RPNPostProcessor(torch.nn.Module):
     """
@@ -53,9 +55,10 @@ class RPNPostProcessor(torch.nn.Module):
     def add_gt_proposals(self, proposals, targets):
         """
         Arguments:
-            proposals: list[BoxList]
-            targets: list[BoxList]
+            proposals: BoxList
+            targets: BoxList
         """
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         # Get the device we're operating on
         device = proposals[0].bbox3d.device
 
@@ -73,102 +76,94 @@ class RPNPostProcessor(torch.nn.Module):
 
         return proposals
 
-    def forward_for_single_feature_map(self, anchors, objectness, box_regression):
+    def forward_for_single_feature_map(self, anchors, objectness, box_regression, targets=None):
         """
         Arguments:
             anchors: BoxList -> all examples within same batch are concated together
-            objectness: tensor of size N, A, H, W
-            box_regression: tensor of size N, A * 7, H, W
-            N==1, W==1, A is anchor num per loc
-            H is sum of anchors of all examples in the same batch
+            objectness: tensor of size N
+            box_regression: tensor of size N, 7
         """
         device = objectness.device
-        assert objectness.shape[0] == 1 == objectness.shape[3]
+        assert objectness.shape[0] == box_regression.shape[0] == len(anchors)
 
         examples_idxscope = anchors.examples_idxscope
         batch_size = anchors.batch_size()
-        anchors_per_loc = objectness.shape[1]
         result = []
         for bi in range(batch_size):
           # split examples in the batch
-          s,e = examples_idxscope[bi]/ anchors_per_loc
-          objectness_i = objectness[:,:,s:e,:]
-          box_regression_i = box_regression[:,:,s:e,:]
-
-          N, A, H, W = objectness_i.shape
+          s,e = examples_idxscope[bi]
+          objectness_i = objectness[s:e]
+          box_regression_i = box_regression[s:e]
 
           # put in the same format as anchors
-          objectness_i = objectness_i.permute(0, 2, 3, 1).reshape(N, -1)
           objectness_i = objectness_i.sigmoid()
-          box_regression_i = box_regression_i.view(N, -1, 7, H, W).permute(0, 3, 4, 1, 2)
-          box_regression_i = box_regression_i.reshape(N, -1, 7)
 
           # only choose top 2000 proposals for nms
-          num_anchors = A * H * W
+          num_anchors = e-s
           pre_nms_top_n = min(self.pre_nms_top_n, num_anchors)
-          objectness_i, topk_idx = objectness_i.topk(pre_nms_top_n, dim=1, sorted=True)
+          objectness_i, topk_idx = objectness_i.topk(pre_nms_top_n, dim=0, sorted=True)
 
-          batch_idx = torch.arange(N, device=device)[:, None]
-          box_regression_i = box_regression_i[batch_idx, topk_idx]
+          #batch_idx = torch.arange(N, device=device)[:, None]
+          box_regression_i = box_regression_i[topk_idx]
 
           pcl_size3d = anchors.size3d[bi:bi+1]
-          s,e = examples_idxscope[bi]
           concat_anchors_i = anchors.bbox3d[s:e,:]
-          concat_anchors_i = concat_anchors_i.reshape(N, -1, 7)[batch_idx, topk_idx]
+          concat_anchors_i = concat_anchors_i[topk_idx]
 
           # decode box_regression to get proposals
           proposals_i = self.box_coder.decode(
-              box_regression_i.view(-1, 7), concat_anchors_i.view(-1, 7)
-          )
-          #proposals_i = proposals_i.view(N, -1, 7)
-
+              box_regression_i, concat_anchors_i )
 
           #*********************************************************************
           # apply nms
           examples_idxscope_new = torch.tensor([[0, proposals_i.shape[0]]])
           boxlist = BoxList3D(proposals_i, pcl_size3d, mode="yx_zb",
                               examples_idxscope= examples_idxscope_new)
-          boxlist.add_field("objectness", objectness_i.squeeze(0))
+          boxlist.add_field("objectness", objectness_i)
           #boxlist = boxlist.clip_to_pcl(remove_empty=False)
           #boxlist = remove_small_boxes3d(boxlist, self.min_size)
-          boxlist = boxlist_nms_3d(
+          boxlist_new = boxlist_nms_3d(
               boxlist,
               self.nms_thresh,
               max_proposals=self.post_nms_top_n,
               score_field="objectness",
           )
-          result.append(boxlist)
+          result.append(boxlist_new)
+
+          if SHOW_RPNPOST:
+            if targets:
+              boxlist_new.show_together(targets[bi])
+            else:
+              boxlist_new.show()
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
+        result = cat_boxlist_3d(result, per_example=True)
         return result
 
     def forward(self, anchors, objectness, box_regression, targets=None):
         """
         Arguments:
             anchors: BoxList
-            objectness: list[tensor]
-            box_regression: list[tensor]
+            objectness: tensor
+            box_regression: tensor
             batch_size = anchors.batch_size()
-            scale_num = num_levels = len(objectness) == len(box_regression)
-
-            anchors: list[list[BoxList]
-            objectness: list[tensor]
-            box_regression: list[tensor]
 
         Returns:
             boxlists (list[BoxList]): the post-processed anchors, after
                 applying box decoding and NMS
         """
         print(anchors.batch_size())
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        sampled_boxes = []
-        num_levels = len(objectness)
-        for a, o, b in zip(anchors, objectness, box_regression):
-            sampled_boxes.append(self.forward_for_single_feature_map(a, o, b))
+        boxlists = self.forward_for_single_feature_map(anchors, objectness, box_regression, targets)
+        #sampled_boxes = []
+        #num_levels = len(objectness)
+        #for a, o, b in zip(anchors, objectness, box_regression):
+        #    sampled_boxes.append(self.forward_for_single_feature_map(a, o, b))
 
-        boxlists = list(zip(*sampled_boxes))
-        boxlists = [cat_boxlist_3d(boxlist) for boxlist in boxlists]
+        #boxlists = list(zip(*sampled_boxes))
+        #boxlists = [cat_boxlist_3d(boxlist) for boxlist in boxlists]
 
-        if num_levels > 1:
-            boxlists = self.select_over_all_levels(boxlists)
+        #if num_levels > 1:
+        #    boxlists = self.select_over_all_levels(boxlists)
 
         # append ground-truth bboxes to proposals
         if self.training and targets is not None:

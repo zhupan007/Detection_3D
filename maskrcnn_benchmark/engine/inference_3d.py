@@ -103,7 +103,6 @@ def inference_3d(
         expected_results_sigma_tol=expected_results_sigma_tol,
     )
 
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     return evaluate(dataset=dataset,
                     predictions=predictions,
                     output_folder=output_folder,

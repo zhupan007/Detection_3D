@@ -141,6 +141,12 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 -> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
 ```
 
+## Data feeding
+1. data.py/make_data_loader/
+
+## Evaluation
+- maskrcnn_benchmark/data/datasets/evaluation/suncg/suncg_eval.py/do_suncg_evaluation
+
 ## Anchor
 - rpn/anchor_generator_sparse3d.py/AnchorGenerator.forward()
 * ANCHOR_SIZES_3D: [[0.5,1,3], [1,4,3]]

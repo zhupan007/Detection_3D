@@ -20,6 +20,7 @@ def do_suncg_evaluation(
     expected_results_sigma_tol,
 ):
     logger = logging.getLogger("maskrcnn_benchmark.inference")
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
     if box_only:
         logger.info("Evaluating bbox proposals")

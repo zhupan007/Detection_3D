@@ -202,13 +202,17 @@ class RPNLossComputation(object):
             examples_idxscope = anchors.examples_idxscope
             for bi in range(batch_size):
               import numpy as np
+              # only check the prediction of positive anchors
               idxs_i = examples_idxscope[bi].to(sampled_pos_inds.device).to(torch.int64)
               mask_i = (sampled_pos_inds >= idxs_i[0]) * (sampled_pos_inds < idxs_i[1])
               sampled_pos_inds_i = sampled_pos_inds[mask_i] - idxs_i[0]
               box_regression_pos = box_regression[sampled_pos_inds_i]
               regression_targets_pos = regression_targets[sampled_pos_inds_i + idxs_i[0]]
               anchors_i = anchors.example(bi)
+
+              objectness_bi = objectness[sampled_pos_inds_i]
               print(sampled_pos_inds_i)
+              print(f'objectness:{objectness_bi}')
               anchors_pos_i = anchors_i[sampled_pos_inds_i]
               #anchors_pos_i.show()
 
