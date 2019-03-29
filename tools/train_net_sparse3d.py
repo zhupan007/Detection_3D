@@ -51,10 +51,11 @@ def train(cfg, local_rank, distributed, loop, only_test):
     checkpointer = DetectronCheckpointer(
         cfg, model, optimizer, scheduler, output_dir, save_to_disk
     )
-    if only_test:
-      return model
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
+
+    if only_test:
+      return model
 
     data_loader = make_data_loader(cfg, is_train=True, is_distributed=distributed,
                   start_iter=arguments["iteration"])

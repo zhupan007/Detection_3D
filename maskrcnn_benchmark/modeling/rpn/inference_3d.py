@@ -92,16 +92,16 @@ class RPNPostProcessor(torch.nn.Module):
         for bi in range(batch_size):
           # split examples in the batch
           s,e = examples_idxscope[bi]
-          objectness_i = objectness[s:e]
+          objectness_i0 = objectness[s:e]
           box_regression_i = box_regression[s:e]
 
           # put in the same format as anchors
-          objectness_i = objectness_i.sigmoid()
+          objectness_i1 = objectness_i0.sigmoid()
 
           # only choose top 2000 proposals for nms
           num_anchors = e-s
           pre_nms_top_n = min(self.pre_nms_top_n, num_anchors)
-          objectness_i, topk_idx = objectness_i.topk(pre_nms_top_n, dim=0, sorted=True)
+          objectness_i, topk_idx = objectness_i1.topk(pre_nms_top_n, dim=0, sorted=True)
 
           #batch_idx = torch.arange(N, device=device)[:, None]
           box_regression_i = box_regression_i[topk_idx]
@@ -131,10 +131,9 @@ class RPNPostProcessor(torch.nn.Module):
           result.append(boxlist_new)
 
           if SHOW_RPNPOST:
-            if targets:
-              boxlist_new.show_together(targets[bi])
-            else:
-              boxlist_new.show()
+            objectness_i_new = boxlist_new.get_field('objectness')
+            print(f"objectness: {objectness_i_new[0:10]}")
+            boxlist_new.show_by_objectness(0.98, targets[bi])
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             pass
         result = cat_boxlist_3d(result, per_example=True)
@@ -152,7 +151,7 @@ class RPNPostProcessor(torch.nn.Module):
             boxlists (list[BoxList]): the post-processed anchors, after
                 applying box decoding and NMS
         """
-        print(anchors.batch_size())
+        #print(anchors.batch_size())
         boxlists = self.forward_for_single_feature_map(anchors, objectness, box_regression, targets)
         #sampled_boxes = []
         #num_levels = len(objectness)

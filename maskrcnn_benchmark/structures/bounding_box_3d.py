@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, BoxList3DInc. and its affiliates. All Rights Reserved.
 import torch
+import numpy as np
 
 # transpose
 FLIP_LEFT_RIGHT = 0
@@ -322,12 +323,12 @@ class BoxList3D(object):
     def __getitem__(self, item):
         assert self.batch_size() == 1
         if isinstance(item, torch.Tensor):
-          assert len(item.shape) == 1
+          pass
         else:
           if isinstance(item, int):
             item = [item]
-          assert isinstance(item, list)
           item = torch.tensor(item, dtype=torch.int64)
+        assert len(item.shape) == 1, "use [1,2,3], instead of [1:4]"
         examples_idxscope = torch.tensor([[0,item.shape[0]]], dtype=torch.int32)
         bbox3d = BoxList3D(self.bbox3d[item], self.size3d, self.mode, examples_idxscope)
         for k, v in self.extra_fields.items():
@@ -379,7 +380,7 @@ class BoxList3D(object):
         return s
 
 
-    def show(self, max_num=-1, points=None, with_centroids=False):
+    def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy()
@@ -391,10 +392,18 @@ class BoxList3D(object):
         boxes = boxes[ids]
       if with_centroids:
         boxes = np.concatenate([boxes, centroids], 0)
-      if points is None:
-        Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
+      if boxes_show_together:
+        boxes_show_together = boxes_show_together.bbox3d.cpu().data.numpy()
+        labels = np.array( [0]*boxes.shape[0] + [1]*boxes_show_together.shape[0])
+        boxes = np.concatenate([boxes, boxes_show_together], 0)
       else:
-        Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', random_color=False)
+        labels = None
+      if points is None:
+        Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', \
+        labels = labels, random_color=False)
+      else:
+        Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb',\
+        labels = labels,  random_color=False)
 
     def show_centroids(self, max_num=-1, points=None):
       import numpy as np
@@ -409,7 +418,6 @@ class BoxList3D(object):
         Bbox3D.draw_points_centroids(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
 
     def show_together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None):
-      import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy().copy()
       if max_num > 0 and max_num < boxes.shape[0]:
@@ -425,11 +433,21 @@ class BoxList3D(object):
       boxes = np.concatenate([boxes, boxes_1], 0)
 
       if points is None:
-        Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels)
+        Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
       else:
         if isinstance(points, torch.Tensor):
           points = points.cpu().data.numpy()
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
+
+    def show_by_objectness(self, objectness_threshold, targets=None):
+      objectness = self.get_field('objectness')
+      objectness = objectness.cpu().data.numpy()
+      mask = objectness > objectness_threshold
+      ids = np.where(mask)[0]
+      pos = self[ids]
+      pos.show(boxes_show_together=targets)
+
+
 
 if __name__ == "__main__":
     bbox = BoxList([[0, 0, 10, 10], [0, 0, 5, 5]], (10, 10))

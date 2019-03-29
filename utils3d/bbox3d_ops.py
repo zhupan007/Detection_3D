@@ -185,8 +185,8 @@ class Bbox3D():
     open3d.draw_geometries(mesh)
 
   @staticmethod
-  def draw_bboxes(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None):
-    bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names)
+  def draw_bboxes(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True):
+    bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color=random_color)
     open3d.draw_geometries(bboxes_lineset_ls)
 
   @staticmethod
