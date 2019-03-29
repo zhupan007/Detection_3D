@@ -373,6 +373,9 @@ class BoxList3D(object):
             bbox3d.add_field(field, self.get_field(field))
         return bbox3d
 
+    def copy(self):
+      return self.copy_with_fields(self.fields())
+
     def __repr__(self):
         s = self.__class__.__name__ + "("
         s += "num_boxes={}, ".format(len(self))

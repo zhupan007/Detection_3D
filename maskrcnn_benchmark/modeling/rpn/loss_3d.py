@@ -17,7 +17,6 @@ from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxl
 DEBUG = True
 SHOW_POS_ANCHOR_IOU = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
-SHOW_PRED_GT = DEBUG and False
 
 class RPNLossComputation(object):
     """
@@ -159,33 +158,6 @@ class RPNLossComputation(object):
 
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
-        '''
-        #objectness_flattened = []
-        #box_regression_flattened = []
-        # for each feature level, permute the outputs to make them be in the
-        # same format as the labels. Note that the labels are computed for
-        # all feature levels concatenated, so we keep the same representation
-        # for the objectness and the box_regression
-
-        #for objectness_per_level, box_regression_per_level in zip(
-        #    objectness, box_regression
-        #):
-        #    N, A, H, W = objectness_per_level.shape
-        #    objectness_per_level = objectness_per_level.permute(0, 2, 3, 1).reshape(
-        #        N, -1
-        #    )
-        #    box_regression_per_level = box_regression_per_level.view(N, -1, 7, H, W)
-        #    box_regression_per_level = box_regression_per_level.permute(0, 3, 4, 1, 2)
-        #    box_regression_per_level = box_regression_per_level.reshape(N, -1, 7)
-        #    objectness_flattened.append(objectness_per_level)
-        #    box_regression_flattened.append(box_regression_per_level)
-        ## concatenate on the first dimension (representing the feature levels), to
-        ## take into account the way the labels were generated (with all feature maps
-        ## being concatenated as well)
-        #objectness = cat(objectness_flattened, dim=1).reshape(-1)
-        #box_regression = cat(box_regression_flattened, dim=1).reshape(-1, 7)
-        '''
-
 
         box_loss = smooth_l1_loss(
             box_regression[sampled_pos_inds],
@@ -198,43 +170,6 @@ class RPNLossComputation(object):
             objectness[sampled_inds], labels[sampled_inds]
         )
 
-        if SHOW_PRED_GT:
-            examples_idxscope = anchors.examples_idxscope
-            for bi in range(batch_size):
-              import numpy as np
-              # only check the prediction of positive anchors
-              idxs_i = examples_idxscope[bi].to(sampled_pos_inds.device).to(torch.int64)
-              mask_i = (sampled_pos_inds >= idxs_i[0]) * (sampled_pos_inds < idxs_i[1])
-              sampled_pos_inds_i = sampled_pos_inds[mask_i] - idxs_i[0]
-              box_regression_pos = box_regression[sampled_pos_inds_i]
-              regression_targets_pos = regression_targets[sampled_pos_inds_i + idxs_i[0]]
-              anchors_i = anchors.example(bi)
-
-              objectness_bi = objectness[sampled_pos_inds_i]
-              print(sampled_pos_inds_i)
-              print(f'objectness:{objectness_bi}')
-              anchors_pos_i = anchors_i[sampled_pos_inds_i]
-              #anchors_pos_i.show()
-
-              boxes_pred = self.box_coder.decode(box_regression_pos, anchors_pos_i.bbox3d)
-              boxes_pred = boxes_pred.cpu().data.numpy()
-              boxes_gt = self.box_coder.decode(regression_targets_pos, anchors_pos_i.bbox3d)
-              boxes_gt = boxes_gt.cpu().data.numpy()
-              boxes_show = np.concatenate([boxes_pred, boxes_gt], 0)
-              labels_show = np.array([1]*boxes_pred.shape[0] + [0]*boxes_gt.shape[0])
-              from utils3d.bbox3d_ops import Bbox3D
-              Bbox3D.draw_bboxes(boxes_show, 'Z', True, labels_show)
-              import pdb; pdb.set_trace()  # XXX BREAKPOINT
-              pass
-
-            #for bi in range(batch_size):
-            #    anchors_per_image = [a.example(bi) for a in anchors]
-            #    anchors_per_image = cat_boxlist_3d(anchors_per_image)
-            #    targets_per_image = targets[bi]
-
-        #if torch.isnan(box_loss) or torch.isinf(box_loss) or torch.isnan(objectness_loss) or torch.isinf(objectness_loss):
-        #  pass
-        #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return objectness_loss, box_loss
 
 
