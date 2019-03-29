@@ -442,11 +442,17 @@ class BoxList3D(object):
           points = points.cpu().data.numpy()
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
-    def show_by_objectness(self, objectness_threshold, targets=None):
-      objectness = self.get_field('objectness')
-      objectness = objectness.cpu().data.numpy()
-      mask = objectness > objectness_threshold
+    def show_by_field(self, field, threshold, targets=None):
+      values = self.get_field(field)
+      values = values.cpu().data.numpy()
+      mask = values > threshold
       ids = np.where(mask)[0]
+      values_top = values[ids]
+      print(f"{field} over {threshold}:\n {values_top}")
+      if field !=  'objectness' and 'objectness' in self.fields():
+        objectness = self.get_field('objectness')
+        objectness_top = objectness[ids]
+        print(f"responding objectness: \n{objectness_top}")
       pos = self[ids]
       pos.show(boxes_show_together=targets)
 

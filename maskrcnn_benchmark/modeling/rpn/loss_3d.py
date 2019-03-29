@@ -17,6 +17,7 @@ from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxl
 DEBUG = True
 SHOW_POS_ANCHOR_IOU = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
+SHOW_PRED_POS_ANCHORS = DEBUG and True
 
 class RPNLossComputation(object):
     """
@@ -132,30 +133,13 @@ class RPNLossComputation(object):
 
         batch_size = anchors.batch_size()
 
-        if SHOW_POS_NEG_ANCHORS:
-            assert batch_size == 1
-            #anchors_per_image = cat_boxlist_3d(anchors)
-            anchors_per_image = anchors
-            anchor_num = anchors_per_image.bbox3d.shape[0]
-            targets_per_image = targets[0]
+        if SHOW_PRED_POS_ANCHORS:
+            sampled_inds = sampled_pos_inds
+            thres = 0.98
+            self.show_pos_anchors_pred(thres, box_regression, anchors, objectness, targets, sampled_inds)
 
-            anchors_pos = anchors_per_image[sampled_pos_inds]
-            pos_num = sampled_pos_inds.shape[0]
-            print(f'totally {pos_num}/{anchor_num} positive anchors')
-            anchors_pos.show_together(targets[0])
 
-            show_1_by_1 = False
-            if show_1_by_1:
-              for ai in range(pos_num):
-                anchors_pos_ai = anchors_per_image[sampled_pos_inds[ai:ai+1]]
-                anchors_pos_ai.show_together(targets[0])
-
-            anchors_neg = anchors_per_image[sampled_neg_inds]
-            print(f'totally {sampled_neg_inds.shape[0]}/{anchor_num} negative anchors')
-            anchors_neg.show_together(targets[0])
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            pass
-
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
 
@@ -172,6 +156,22 @@ class RPNLossComputation(object):
 
         return objectness_loss, box_loss
 
+    def show_pos_anchors_pred(self, thres, rpn_box_regression, anchors, objectness, targets, sampled_inds):
+        pred_boxes_3d = self.box_coder.decode(rpn_box_regression, anchors.bbox3d)
+        objectness_normed = objectness.sigmoid()
+        pred_boxes = anchors.copy()
+        pred_boxes.bbox3d = pred_boxes_3d
+        pred_boxes.add_field('objectness', objectness_normed)
+
+        anchor_flags = torch.zeros([len(anchors)])
+        anchor_flags[sampled_inds] = 1
+        pred_boxes.add_field('anchor_flags', anchor_flags)
+
+        for bi,pdb in enumerate(pred_boxes.seperate_examples()):
+          pdb.show_by_field('objectness',0.97, targets[bi])
+          pdb.show_by_field('anchor_flags',0.5, targets[bi])
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
 
 def make_rpn_loss_evaluator(cfg, box_coder):
     matcher = Matcher(

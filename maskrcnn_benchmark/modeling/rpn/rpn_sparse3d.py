@@ -12,7 +12,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import cat_scales_anchor, cat
 
 DEBUG = True
 SHOW_TARGETS_ANCHORS = DEBUG and False
-SHOW_PRED_GT = DEBUG and True
+SHOW_PRED_GT = DEBUG and False
 
 def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
   '''
@@ -199,7 +199,7 @@ class RPNModule(torch.nn.Module):
               pass
 
         if SHOW_PRED_GT:
-          self.show_pred_gt(rpn_box_regression, anchors, objectness, targets, 0.99)
+          self.show_pred_gt(0.95, rpn_box_regression, anchors, objectness, targets)
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
 
@@ -208,14 +208,14 @@ class RPNModule(torch.nn.Module):
         else:
             return self._forward_test(anchors, objectness, rpn_box_regression, targets)
 
-    def show_pred_gt(self, rpn_box_regression, anchors, objectness, targets, thres):
+    def show_pred_gt(self, thres, rpn_box_regression, anchors, objectness, targets):
         pred_boxes_3d = self.box_coder.decode(rpn_box_regression, anchors.bbox3d)
         objectness_normed = objectness.sigmoid()
         pred_boxes = anchors.copy()
         pred_boxes.bbox3d = pred_boxes_3d
         pred_boxes.add_field('objectness', objectness_normed)
         for bi,pdb in enumerate(pred_boxes.seperate_examples()):
-          pdb.show_by_objectness(0.97, targets[bi])
+          pdb.show_by_field('objectness',0.97, targets[bi])
 
     def _forward_train(self, anchors, objectness, rpn_box_regression, targets):
         if self.cfg.MODEL.RPN_ONLY:
