@@ -2,7 +2,7 @@
 
 
 # on going process
-- rethink how to improve acc for long wall
+- rethink how to improve acc for long wall: add yaw loss
 - add window
 - crop gt box with anchor
 - multi scale: feature concate

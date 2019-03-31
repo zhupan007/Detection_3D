@@ -137,6 +137,10 @@ class BoxList3D(object):
         self.examples_idxscope = examples_idxscope
         self.extra_fields = {}
 
+        # constants
+        self.num_anchors_per_location = None
+        self.scale_num = None
+
     def check_mode(self, mode):
         if mode not in ("standard", "yx_zb"):
             raise ValueError("mode should be 'standard' or 'yx_zb'")
@@ -151,6 +155,7 @@ class BoxList3D(object):
       return examples
 
     def add_field(self, field, field_data):
+        assert field_data.shape[0] == self.bbox3d.shape[0]
         self.extra_fields[field] = field_data
 
     def get_field(self, field):
@@ -320,19 +325,45 @@ class BoxList3D(object):
             bbox3d.add_field(k, v[se[0]:se[1]])
         return bbox3d
 
-    def __getitem__(self, item):
-        assert self.batch_size() == 1
-        if isinstance(item, torch.Tensor):
+    def get_example_idx(self,items):
+      examples_idxscope = self.examples_idxscope.long()
+      example_idx = items*0
+      batch_size = self.batch_size()
+      for bi in range(batch_size):
+        for j in range(items.shape[0]):
+          if items[j] >= examples_idxscope[bi,0] and items[j] < examples_idxscope[bi,1]:
+            example_idx[j] = bi
+      return example_idx
+
+    def __getitem__(self, items):
+        '''
+        items: 2, [52,35,231], np.array([52,4,46]), torch.Tensor([101,23,45])
+        '''
+        if isinstance(items, torch.Tensor):
           pass
         else:
-          if isinstance(item, int):
-            item = [item]
-          item = torch.tensor(item, dtype=torch.int64)
-        assert len(item.shape) == 1, "use [1,2,3], instead of [1:4]"
-        examples_idxscope = torch.tensor([[0,item.shape[0]]], dtype=torch.int32)
-        bbox3d = BoxList3D(self.bbox3d[item], self.size3d, self.mode, examples_idxscope)
-        for k, v in self.extra_fields.items():
-            bbox3d.add_field(k, v[item])
+          if isinstance(items, int):
+            items = [items]
+          items = torch.tensor(items, dtype=torch.int64)
+        assert len(items.shape) == 1, "use [1,2,3], instead of [1:4]"
+
+
+        batch_size = self.batch_size()
+        if batch_size > 1:
+          example_idx = self.get_example_idx(items)
+          assert example_idx.min() == example_idx.max(), f"all the itemss have to belong to the same example: {example_idx}"
+          examples = self.seperate_examples()
+          eidx = example_idx.min()
+          example = examples[eidx]
+          items = items - self.examples_idxscope[eidx,0]
+        else:
+          example = self
+        assert example.batch_size() == 1
+
+        examples_idxscope = torch.tensor([[0,items.shape[0]]], dtype=torch.int32)
+        bbox3d = BoxList3D(example.bbox3d[items], example.size3d, example.mode, examples_idxscope)
+        for k, v in example.extra_fields.items():
+            bbox3d.add_field(k, v[items])
         return bbox3d
 
     def __len__(self):
@@ -456,6 +487,14 @@ class BoxList3D(object):
       pos = self[ids]
       pos.show(boxes_show_together=targets)
 
+    def show_anchors_per_loc(self):
+      num_anchors_per_location = self.num_anchors_per_location
+      num_anchors = len(self)
+      ids = np.random.randint(0, num_anchors, 5)
+      for i in ids:
+        j = int(i//num_anchors_per_location) * num_anchors_per_location
+        anchors_i = self[range(j,j+4)]
+        anchors_i.show()
 
 
 if __name__ == "__main__":

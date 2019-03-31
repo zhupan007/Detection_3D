@@ -17,7 +17,7 @@ from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxl
 DEBUG = True
 SHOW_POS_ANCHOR_IOU = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
-SHOW_PRED_POS_ANCHORS = DEBUG and True
+SHOW_PRED_POS_ANCHORS = DEBUG and False
 
 class RPNLossComputation(object):
     """
@@ -133,15 +133,15 @@ class RPNLossComputation(object):
 
         batch_size = anchors.batch_size()
 
+        if SHOW_POS_NEG_ANCHORS:
+          self.show_pos_neg_anchors(anchors, sampled_pos_inds, sampled_neg_inds)
+
         if SHOW_PRED_POS_ANCHORS:
             sampled_inds = sampled_pos_inds
             thres = 0.98
             self.show_pos_anchors_pred(thres, box_regression, anchors, objectness, targets, sampled_inds)
 
-
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
-
 
         box_loss = smooth_l1_loss(
             box_regression[sampled_pos_inds],
@@ -156,6 +156,10 @@ class RPNLossComputation(object):
 
         return objectness_loss, box_loss
 
+    def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds):
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
+
     def show_pos_anchors_pred(self, thres, rpn_box_regression, anchors, objectness, targets, sampled_inds):
         pred_boxes_3d = self.box_coder.decode(rpn_box_regression, anchors.bbox3d)
         objectness_normed = objectness.sigmoid()
@@ -168,7 +172,9 @@ class RPNLossComputation(object):
         pred_boxes.add_field('anchor_flags', anchor_flags)
 
         for bi,pdb in enumerate(pred_boxes.seperate_examples()):
+          print('the top predicted objectness')
           pdb.show_by_field('objectness',0.97, targets[bi])
+          print('all the predictions of positive anchors')
           pdb.show_by_field('anchor_flags',0.5, targets[bi])
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass

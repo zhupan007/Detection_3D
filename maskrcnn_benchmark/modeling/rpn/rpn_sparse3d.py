@@ -13,6 +13,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import cat_scales_anchor, cat
 DEBUG = True
 SHOW_TARGETS_ANCHORS = DEBUG and False
 SHOW_PRED_GT = DEBUG and False
+SHOW_ANCHORS_PER_LOC = DEBUG and True
 
 def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
   '''
@@ -80,20 +81,21 @@ class RPNHead(nn.Module):
     Adds a simple RPN Head with classification and regression heads
     """
 
-    def __init__(self, cfg, in_channels, num_anchors):
+    def __init__(self, cfg, in_channels, num_anchors_per_location):
         """
         Arguments:
             cfg              : config
             in_channels (int): number of channels of the input feature
-            num_anchors (int): number of anchors to be predicted
+            num_anchors_per_location (int): number of anchors to be predicted
         """
         super(RPNHead, self).__init__()
+        self.num_anchors_per_location = num_anchors_per_location
         self.conv = nn.Conv2d(
                 in_channels, in_channels, kernel_size=1, stride=1, padding=0  )
                 #in_channels, in_channels, kernel_size=3, stride=1, padding=1  )
-        self.cls_logits = nn.Conv2d(in_channels, num_anchors, kernel_size=1, stride=1)
+        self.cls_logits = nn.Conv2d(in_channels, num_anchors_per_location, kernel_size=1, stride=1)
         self.bbox_pred = nn.Conv2d(
-            in_channels, num_anchors * 7, kernel_size=1, stride=1
+            in_channels, num_anchors_per_location * 7, kernel_size=1, stride=1
         )
 
         for l in [self.conv, self.cls_logits, self.bbox_pred]:
@@ -179,8 +181,15 @@ class RPNModule(torch.nn.Module):
         objectness, rpn_box_regression = self.head(features)
         anchors = self.anchor_generator(points_sparse, features_sparse)
         objectness, rpn_box_regression = cat_scales_obj_reg(objectness, rpn_box_regression, anchors)
+        scale_num = len(anchors)
         anchors = cat_scales_anchor(anchors)
+        anchors.scale_num = scale_num
+        anchors.num_anchors_per_location = self.head.num_anchors_per_location
 
+        if SHOW_ANCHORS_PER_LOC:
+          anchors.show_anchors_per_loc()
+
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         if SHOW_TARGETS_ANCHORS:
             import numpy as np
             batch_size = len(targets)
