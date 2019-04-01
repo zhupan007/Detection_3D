@@ -15,7 +15,7 @@ from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxlist_3d
 
 DEBUG = True
-SHOW_POS_ANCHOR_IOU = DEBUG and False
+SHOW_POS_ANCHOR_IOU = DEBUG and True
 SHOW_POS_NEG_ANCHORS = DEBUG and False
 SHOW_PRED_POS_ANCHORS = DEBUG and False
 
@@ -58,17 +58,27 @@ class RPNLossComputation(object):
           num_gt = target.bbox3d.shape[0]
           for j in range(num_gt):
             sampled_pos_inds = torch.nonzero(matched_idxs==j).squeeze(1)
-            #sampled_pos_inds = torch.nonzero(match_quality_matrix[j] > 0.3).squeeze(1)
+            inds_same_loc = anchor.same_loc_anchors(sampled_pos_inds)
+            matched_idxs_same_loc = matched_idxs[inds_same_loc]
 
+            # all the ious for gt box j
             iou_j = match_quality_matrix[j][sampled_pos_inds]
             anchors_pos_j = anchor[sampled_pos_inds]
-            print(f'{iou_j.shape[0]} anchor matched as positive. All anchor centroids are shown.')
+            print(f'\n{iou_j.shape[0]} anchor matched as positive. All anchor centroids are shown.')
+            print(f'ious:{iou_j}')
             anchors_pos_j.show_together(target[j], points=anchor.bbox3d[:,0:3])
 
             for i in range(iou_j.shape[0]):
-              print(f'{i}th iou: {iou_j[i]}')
-              anchors_pos_j[i].show_together(target[j])
-            #anchor.show_together(target[j],100)
+              print(f'\n{i}th pos anchor for gt box j\n iou: {iou_j[i]}')
+              #anchors_pos_j[i].show_together(target[j])
+
+              ious_same_loc = match_quality_matrix[j][inds_same_loc[i]]
+              print(f'\nall same loc anchors \nious:{ious_same_loc}\nmatched_idxs:{matched_idxs_same_loc}')
+              print(f'-1:low, -2:between')
+              anchors_same_loc_i = anchor[inds_same_loc[i]]
+              anchors_same_loc_i.show_together(target[j])
+              pass
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
             pass
 
         return matched_targets
@@ -134,7 +144,7 @@ class RPNLossComputation(object):
         batch_size = anchors.batch_size()
 
         if SHOW_POS_NEG_ANCHORS:
-          self.show_pos_neg_anchors(anchors, sampled_pos_inds, sampled_neg_inds)
+          self.show_pos_neg_anchors(anchors, sampled_pos_inds, sampled_neg_inds, targets)
 
         if SHOW_PRED_POS_ANCHORS:
             sampled_inds = sampled_pos_inds
@@ -156,7 +166,14 @@ class RPNLossComputation(object):
 
         return objectness_loss, box_loss
 
-    def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds):
+    def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds, targets):
+      pos_inds_examples = anchors.seperate_items_to_examples(sampled_pos_inds)
+      neg_inds_examples = anchors.seperate_items_to_examples(sampled_neg_inds)
+      bs = anchors.batch_size()
+      for bi in range(bs):
+        anchors_bi = anchors.example(bi)
+        pos_anchors_bi = anchors_bi[pos_inds_examples[bi]]
+        pos_anchors_bi.show_together(targets[bi])
       import pdb; pdb.set_trace()  # XXX BREAKPOINT
       pass
 

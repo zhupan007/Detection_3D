@@ -178,6 +178,7 @@ Positive anchor: 1. this anchor location is the closest to the target centroid. 
 - second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval &  devRotateIoUEval:   
         criterion == 2:  area_inter / (area2 + max(0,area1*0.5 - area_inter)), area2 is target  
 - modeling/matcher.py/Matcher/__call__
+- modeling/balanced_positive_negative_sampler.py
 
 ###  model classes
 ```

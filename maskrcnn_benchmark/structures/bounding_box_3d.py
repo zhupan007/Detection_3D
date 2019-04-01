@@ -321,9 +321,21 @@ class BoxList3D(object):
         se = self.examples_idxscope[idx]
         examples_idxscope = torch.tensor([[0, se[1]-se[0]]], dtype=torch.int32)
         bbox3d = BoxList3D( self.bbox3d[se[0]:se[1],:], self.size3d[idx:idx+1], self.mode, examples_idxscope)
+        bbox3d.num_anchors_per_location = self.num_anchors_per_location
+        bbox3d.scale_num = self.scale_num
         for k, v in self.extra_fields.items():
             bbox3d.add_field(k, v[se[0]:se[1]])
         return bbox3d
+
+    def seperate_items_to_examples(self, items):
+      example_idx = self.get_example_idx(items)
+      bs = self.batch_size()
+      items_examples = []
+      for bi in range(bs):
+        mask = example_idx == bi
+        items_bi = items[mask] - self.examples_idxscope[bi,0]
+        items_examples.append( items_bi )
+      return items_examples
 
     def get_example_idx(self,items):
       examples_idxscope = self.examples_idxscope.long()
@@ -331,7 +343,7 @@ class BoxList3D(object):
       batch_size = self.batch_size()
       for bi in range(batch_size):
         for j in range(items.shape[0]):
-          if items[j] >= examples_idxscope[bi,0] and items[j] < examples_idxscope[bi,1]:
+          if items[j].cpu() >= examples_idxscope[bi,0].cpu() and items[j].cpu() < examples_idxscope[bi,1].cpu():
             example_idx[j] = bi
       return example_idx
 
@@ -487,8 +499,24 @@ class BoxList3D(object):
       pos = self[ids]
       pos.show(boxes_show_together=targets)
 
+
+    def same_loc_anchors(self,items):
+      '''
+      items: [n]
+      '''
+      npa = self.num_anchors_per_location
+      assert npa is not None
+      items_same_loc = []
+      for item in items:
+        start = int(item//npa) * npa
+        tmp = torch.arange(start, start+npa, dtype=torch.int64)
+        items_same_loc.append(tmp.view(1,npa))
+      items_same_loc = torch.cat( items_same_loc, dim=0)
+      return items_same_loc
+
     def show_anchors_per_loc(self):
       num_anchors_per_location = self.num_anchors_per_location
+      assert num_anchors_per_location is not None
       num_anchors = len(self)
       ids = np.random.randint(0, num_anchors, 5)
       for i in ids:

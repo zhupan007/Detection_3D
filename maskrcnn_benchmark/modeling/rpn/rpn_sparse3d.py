@@ -13,7 +13,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import cat_scales_anchor, cat
 DEBUG = True
 SHOW_TARGETS_ANCHORS = DEBUG and False
 SHOW_PRED_GT = DEBUG and False
-SHOW_ANCHORS_PER_LOC = DEBUG and True
+SHOW_ANCHORS_PER_LOC = DEBUG and False
 
 def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
   '''
@@ -189,7 +189,6 @@ class RPNModule(torch.nn.Module):
         if SHOW_ANCHORS_PER_LOC:
           anchors.show_anchors_per_loc()
 
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         if SHOW_TARGETS_ANCHORS:
             import numpy as np
             batch_size = len(targets)
