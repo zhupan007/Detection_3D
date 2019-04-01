@@ -2,6 +2,7 @@
 
 
 # on going process
+- add yaw loss
 - rethink how to improve acc for long wall: add yaw loss
 - add window
 - crop gt box with anchor

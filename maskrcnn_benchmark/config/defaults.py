@@ -135,6 +135,8 @@ _C.MODEL.RPN.FG_IOU_THRESHOLD = 0.3 #  0.7
 # (anchor, gt box) pair to be a negative examples (IoU < BG_IOU_THRESHOLD
 # ==> negative RPN example)
 _C.MODEL.RPN.BG_IOU_THRESHOLD = 0.1 # 0.3
+# Maximum yaw dif for positive anchor
+_C.MODEL.RPN.YAW_THRESHOLD = 0.78
 # Total number of RPN examples per image
 _C.MODEL.RPN.BATCH_SIZE_PER_IMAGE = 256
 # Target fraction of foreground (positive) examples per RPN minibatch

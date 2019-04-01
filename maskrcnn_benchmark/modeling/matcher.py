@@ -20,7 +20,7 @@ class Matcher(object):
     BELOW_LOW_THRESHOLD = -1
     BETWEEN_THRESHOLDS = -2
 
-    def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
+    def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False, yaw_threshold=3.1416*0.4):
         """
         Args:
             high_threshold (float): quality values greater than or equal to
@@ -35,11 +35,18 @@ class Matcher(object):
                 set_low_quality_matches_ for more details.
         """
         assert low_threshold <= high_threshold
+        assert yaw_threshold < 1.57
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
+        self.yaw_threshold = yaw_threshold
 
-    def __call__(self, match_quality_matrix):
+    def yaw_diff_constrain(self, match_quality_matrix, yaw_diff):
+        mask = yaw_diff < self.yaw_threshold
+        match_quality_matrix_new = match_quality_matrix * mask.float()
+        return match_quality_matrix_new
+
+    def __call__(self, match_quality_matrix, yaw_diff):
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -60,6 +67,9 @@ class Matcher(object):
                 raise ValueError(
                     "No proposal boxes available for one of the images "
                     "during training")
+
+
+        match_quality_matrix = self.yaw_diff_constrain(match_quality_matrix, yaw_diff)
 
         # match_quality_matrix is M (gt) x N (predicted)
         # Max over gt elements (dim 0) to find best gt candidate for each prediction
@@ -110,3 +120,6 @@ class Matcher(object):
 
         pred_inds_to_update = gt_pred_pairs_of_highest_quality[:, 1]
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
+
+
+
