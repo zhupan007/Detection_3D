@@ -11,6 +11,9 @@
 
 # Theory
 - yaw: [-pi/2, pi/2]
+- 3d box modes: 'standard', 'yx_zb'  
+  data preparation: standard  
+  feed into network: yx_zb (to use second lib)  
 
 
 # Installation

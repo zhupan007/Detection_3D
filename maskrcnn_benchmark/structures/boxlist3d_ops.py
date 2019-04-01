@@ -83,6 +83,10 @@ def boxlist_iou_3d(anchors, targets):
   cuda_index = targets.bbox3d.device.index
   anchors_2d = anchors.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
   targets_2d = targets.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
+
+  print(f"targets yaw : {targets_2d[:,-1].min()} , {targets_2d[:,-1].max()}")
+  print(f"anchors yaw : {anchors_2d[:,-1].min()} , {anchors_2d[:,-1].max()}")
+
   # aug thickness. When thickness==0, iou is wrong
   targets_2d[:,2] += 0.25
   # criterion=1: use targets_2d as ref
@@ -90,6 +94,12 @@ def boxlist_iou_3d(anchors, targets):
   iou = torch.from_numpy(iou)
   iou = iou.to(targets.bbox3d.device)
   if DEBUG:
+    mask = iou == iou.max()
+    t_i, a_i = torch.nonzero(mask)[0]
+    t = targets[t_i]
+    a = anchors[a_i]
+    print(f"iou: {iou.max()}")
+    a.show_together(t)
     import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
   return iou

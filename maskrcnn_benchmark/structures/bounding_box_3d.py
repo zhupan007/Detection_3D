@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, BoxList3DInc. and its affiliates. All Rights Reserved.
-import torch
-import numpy as np
+import torch, math
+
+from utils3d.geometric_torch import limit_period
 
 # transpose
 FLIP_LEFT_RIGHT = 0
@@ -131,6 +132,7 @@ class BoxList3D(object):
             )
         self.check_mode(mode)
 
+        bbox3d[:,-1] =  limit_period( bbox3d[:,-1], 0.5, math.pi) # [-pi/2, pi/2]
         self.bbox3d = bbox3d
         self.size3d = size3d
         self.mode = mode
@@ -155,6 +157,10 @@ class BoxList3D(object):
       return examples
 
     def add_field(self, field, field_data):
+        if not isinstance(field_data, torch.Tensor):
+          field_data = torch.Tensor(field_data)
+        if len(field_data.shape) == 0:
+          field_data = field_data.view(1)
         assert field_data.shape[0] == self.bbox3d.shape[0]
         self.extra_fields[field] = field_data
 
@@ -352,7 +358,8 @@ class BoxList3D(object):
         items: 2, [52,35,231], np.array([52,4,46]), torch.Tensor([101,23,45])
         '''
         if isinstance(items, torch.Tensor):
-          pass
+          if len(items.shape) == 0:
+            items = items.view(-1)
         else:
           if isinstance(items, int):
             items = [items]
@@ -464,6 +471,7 @@ class BoxList3D(object):
         Bbox3D.draw_points_centroids(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
 
     def show_together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None):
+      import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy().copy()
       if max_num > 0 and max_num < boxes.shape[0]:
@@ -486,6 +494,7 @@ class BoxList3D(object):
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
     def show_by_field(self, field, threshold, targets=None):
+      import numpy as np
       values = self.get_field(field)
       values = values.cpu().data.numpy()
       mask = values > threshold
@@ -515,6 +524,7 @@ class BoxList3D(object):
       return items_same_loc
 
     def show_anchors_per_loc(self):
+      import numpy as np
       num_anchors_per_location = self.num_anchors_per_location
       assert num_anchors_per_location is not None
       num_anchors = len(self)

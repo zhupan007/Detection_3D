@@ -37,11 +37,14 @@ class RPNLossComputation(object):
         self.box_coder = box_coder
 
     def match_targets_to_anchors(self, anchor, target):
+        from utils3d.geometric_torch import angle_dif
         if target.bbox3d.shape[0] == 0:
           matched_idxs = torch.ones([anchor.bbox3d.shape[0]], dtype=torch.int64, device=anchor.bbox3d.device) * (-1)
           matched_targets = anchor
         else:
           match_quality_matrix = boxlist_iou_3d(anchor, target)
+          #yaw_diff = angle_dif(anchor.bbox3d[:,-1].view(1,-1),  target.bbox3d[:,-1].view(-1,1), 0)
+          #yaw_diff = torch.abs(yaw_diff)
           matched_idxs = self.proposal_matcher(match_quality_matrix)
           #anchor.show_together(target, 200)
           # RPN doesn't need any fields from target
@@ -69,6 +72,7 @@ class RPNLossComputation(object):
             anchors_pos_j.show_together(target[j], points=anchor.bbox3d[:,0:3])
 
             for i in range(iou_j.shape[0]):
+
               print(f'\n{i}th pos anchor for gt box j\n iou: {iou_j[i]}')
               #anchors_pos_j[i].show_together(target[j])
 

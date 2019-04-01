@@ -126,7 +126,7 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
           for obj in bboxes_dic_i_0:
             if ('all' in objects_to_detect) or (obj in objects_to_detect):
               bboxes_dic_i[obj] = Bbox3D.convert_to_yx_zb_boxes(bboxes_dic_i_0[obj])
-          if DEBUG:
+          if DEBUG and False:
             show_pcl_boxdic(pcl_i, bboxes_dic_i)
 
           #---------------------------------------------------------------------
@@ -188,6 +188,11 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
           #---------------------------------------------------------------------
           bboxlist3d = bbox_dic_to_BoxList3D(bboxes_dic_i, size3d)
           labels.append(bboxlist3d)
+          if DEBUG and False:
+            show_pcl_boxdic(pcl_i, bboxes_dic_i)
+            bboxlist3d.show()
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
       locs=torch.cat(locs,0)
       feats=torch.cat(feats,0)
 
@@ -275,6 +280,11 @@ def batch_scopes(location, voxel_scale):
   return scopes
 
 
+def show_pcl_boxes(pcl, boxes):
+  from utils3d.bbox3d_ops import Bbox3D
+  Bbox3D.draw_points_bboxes(pcl[:,0:3], boxes, 'Z', is_yx_zb=True)
+  pass
+
 def show_pcl_boxdic(pcl, bboxes_dic):
   from utils3d.bbox3d_ops import Bbox3D
   boxes = []
@@ -282,5 +292,4 @@ def show_pcl_boxdic(pcl, bboxes_dic):
     boxes.append(bboxes_dic[obj])
   boxes = np.concatenate(boxes, 0)
   Bbox3D.draw_points_bboxes(pcl[:,0:3], boxes, 'Z', is_yx_zb=True)
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
