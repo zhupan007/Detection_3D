@@ -64,8 +64,6 @@ class AnchorGenerator(nn.Module):
         cell_anchors = [ generate_anchors_3d(size, yaws).float()
                         for size in sizes_3d]
         [OBJ_DEF.check_bboxes(ca, yx_zb=True) for ca in cell_anchors]
-        for anchors in cell_anchors:
-          anchors[:,2] += anchors[:,5]*0.5
         self.yaws = yaws
         self.anchor_num_per_loc = len(yaws) # only one size per loc
         self.voxel_scale = voxel_scale
@@ -124,9 +122,8 @@ class AnchorGenerator(nn.Module):
         examples_idxscope = [examples_bidx_2_sizes(f.get_spatial_locations()[:,-1]) * self.anchor_num_per_loc
                               for f in feature_maps_sparse]
         size3d = sparse_points_scope(points_sparse)
-        anchors = [BoxList3D(a, size3d, "yx_zb", ei) \
+        anchors = [BoxList3D(a, size3d, self.anchor_mode, ei) \
                       for a,ei in zip(anchors_over_all_feature_maps_sparse, examples_idxscope)]
-        anchors = [a.convert(self.anchor_mode) for a in anchors]
 
         if SHOW_ANCHOR_EACH_SCALE:
             scale_num = len(anchors)
@@ -254,6 +251,10 @@ def make_anchor_generator(config):
 
 
 def generate_anchors_3d( size, yaws, centroids=np.array([[0,0,0]])):
+    '''
+      yx_zb: [xc, yc, z_bot, y_size, x_size, z_size, yaw]
+      note: centroids=[0,0,0] is already xy centeroid and z bottom
+    '''
     anchors = []
     for j in range(yaws.shape[0]):
         for k in range(centroids.shape[0]):

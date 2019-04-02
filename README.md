@@ -33,6 +33,12 @@ yaw_s-0.5pi:   [-pi/2, pi/2]
   data preparation: standard  
   feed into network: yx_zb (to use second lib)  
 
+## data preparation
+- pcl input normaliztion   
+```
+data3d/data.py trainMerge
+pcl xyz: [0:max]
+```
 
 # Installation
 
@@ -193,12 +199,17 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 ### Positive policy **Very Important**
 -1:ignore, 0: negative, 1:positive  
 Positive anchor: 1. this anchor location is the closest to the target centroid. 2. the feature view field contains the target at most.
+```
+cfg.MODEL.RPN.FG_IOU_THRESHOLD
+cfg.MODEL.RPN.BG_IOU_THRESHOLD
+cfg.MODEL.RPN.YAW_THRESHOLD
+```
 - modeling/rpn/loss_3d.py/RPNLossComputation/match_targets_to_anchors:  
         match_quality_matrix = boxlist_iou_3d(anchor, target)  
         matched_idxs = self.proposal_matcher(match_quality_matrix)  
 - second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval &  devRotateIoUEval:   
         criterion == 2:  area_inter / (area2 + max(0,area1*0.5 - area_inter)), area2 is target  
-- modeling/matcher.py/Matcher/__call__
+- modeling/matcher.py/Matcher/__call__ & yaw_diff_constrain
 - modeling/balanced_positive_negative_sampler.py
 
 ###  model classes

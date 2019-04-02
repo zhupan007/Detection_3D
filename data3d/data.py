@@ -10,7 +10,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from .suncg_meta import SUNCG_META
 from utils3d.bbox3d_ops import Bbox3D
 
-DEBUG = True
+DEBUG = False
 
 
 def bbox_dic_to_BoxList3D(bbox_dic, size3d):
@@ -188,7 +188,7 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
           #---------------------------------------------------------------------
           bboxlist3d = bbox_dic_to_BoxList3D(bboxes_dic_i, size3d)
           labels.append(bboxlist3d)
-          if DEBUG and False:
+          if DEBUG and True:
             show_pcl_boxdic(pcl_i, bboxes_dic_i)
             bboxlist3d.show()
             import pdb; pdb.set_trace()  # XXX BREAKPOINT

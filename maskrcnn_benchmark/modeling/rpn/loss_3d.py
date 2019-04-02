@@ -45,7 +45,7 @@ class RPNLossComputation(object):
           match_quality_matrix = boxlist_iou_3d(anchor, target)
           yaw_diff = angle_dif(anchor.bbox3d[:,-1].view(1,-1),  target.bbox3d[:,-1].view(-1,1), 0)
           yaw_diff = torch.abs(yaw_diff)
-          matched_idxs = self.proposal_matcher(match_quality_matrix)
+          matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff)
           #anchor.show_together(target, 200)
           # RPN doesn't need any fields from target
           # for creating the labels, so clear them all
@@ -68,7 +68,7 @@ class RPNLossComputation(object):
             iou_j = match_quality_matrix[j][sampled_pos_inds]
             anchors_pos_j = anchor[sampled_pos_inds]
             print(f'\n{iou_j.shape[0]} anchor matched as positive. All anchor centroids are shown.')
-            print(f'ious:{iou_j}')
+            print(f'ious:{iou_j}\n')
             anchors_pos_j.show_together(target[j], points=anchor.bbox3d[:,0:3])
 
             for i in range(iou_j.shape[0]):
@@ -78,7 +78,7 @@ class RPNLossComputation(object):
 
               ious_same_loc = match_quality_matrix[j][inds_same_loc[i]]
               yaw_diff_same_loc = yaw_diff[j,inds_same_loc[i]]
-              print(f'\nall same loc anchors \nious:{ious_same_loc}\nmatched_idxs:{matched_idxs_same_loc}\nyaw_diff:{yaw_diff_same_loc}')
+              print(f'\nall same loc anchors \nious:{ious_same_loc}\nmatched_idxs:{matched_idxs_same_loc[i]}\nyaw_diff:{yaw_diff_same_loc}')
               print(f'-1:low, -2:between')
               anchors_same_loc_i = anchor[inds_same_loc[i]]
               anchors_same_loc_i.show_together(target[j])
@@ -206,6 +206,7 @@ def make_rpn_loss_evaluator(cfg, box_coder):
         cfg.MODEL.RPN.FG_IOU_THRESHOLD,
         cfg.MODEL.RPN.BG_IOU_THRESHOLD,
         allow_low_quality_matches=True,
+        yaw_threshold = cfg.MODEL.RPN.YAW_THRESHOLD
     )
 
     fg_bg_sampler = BalancedPositiveNegativeSampler(
