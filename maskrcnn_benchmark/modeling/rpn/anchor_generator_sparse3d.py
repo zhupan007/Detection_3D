@@ -121,11 +121,10 @@ class AnchorGenerator(nn.Module):
         #grid_sizes = [feature_map.spatial_size for feature_map in feature_maps_sparse]
         locations = [feature_map.get_spatial_locations() for feature_map in feature_maps_sparse]
         anchors_over_all_feature_maps_sparse = self.grid_anchors(locations)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         examples_idxscope = [examples_bidx_2_sizes(f.get_spatial_locations()[:,-1]) * self.anchor_num_per_loc
                               for f in feature_maps_sparse]
         size3d = sparse_points_scope(points_sparse)
-        anchors = [BoxList3D(a, size3d, "standard", ei) \
+        anchors = [BoxList3D(a, size3d, "yx_zb", ei) \
                       for a,ei in zip(anchors_over_all_feature_maps_sparse, examples_idxscope)]
         anchors = [a.convert(self.anchor_mode) for a in anchors]
 

@@ -113,6 +113,7 @@ class BoxList3D(object):
         mode: "standard", "yx_zb"
         extra_fields: "label" "objectness"
         '''
+        assert mode == 'yx_zb' or mode == 'standard'
         assert bbox3d.shape[1] == 7, bbox3d.shape
         assert examples_idxscope[-1,-1] == bbox3d.shape[0]
         if size3d is not None:
@@ -134,6 +135,8 @@ class BoxList3D(object):
 
         bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb=True) # [-pi/2, pi/2]
         OBJ_DEF.check_bboxes(bbox3d, yx_zb=True)
+
+        assert mode == 'yx_zb', "Both anchor, gt_boxes, prediction in the network is yx_zb"
 
         self.bbox3d = bbox3d
         self.size3d = size3d
