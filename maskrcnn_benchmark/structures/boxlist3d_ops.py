@@ -84,8 +84,8 @@ def boxlist_iou_3d(anchors, targets):
   anchors_2d = anchors.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
   targets_2d = targets.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
 
-  print(f"targets yaw : {targets_2d[:,-1].min()} , {targets_2d[:,-1].max()}")
-  print(f"anchors yaw : {anchors_2d[:,-1].min()} , {anchors_2d[:,-1].max()}")
+  #print(f"targets yaw : {targets_2d[:,-1].min()} , {targets_2d[:,-1].max()}")
+  #print(f"anchors yaw : {anchors_2d[:,-1].min()} , {anchors_2d[:,-1].max()}")
 
   # aug thickness. When thickness==0, iou is wrong
   targets_2d[:,2] += 0.25
