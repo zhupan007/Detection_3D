@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, BoxList3DInc. and its affiliates. All Rights Reserved.
 import torch, math
 
-from utils3d.geometric_torch import limit_period
+from utils3d.geometric_torch import limit_period, OBJ_DEF
 
 # transpose
 FLIP_LEFT_RIGHT = 0
@@ -132,7 +132,9 @@ class BoxList3D(object):
             )
         self.check_mode(mode)
 
-        bbox3d[:,-1] =  limit_period( bbox3d[:,-1], 0.5, math.pi) # [-pi/2, pi/2]
+        bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb=True) # [-pi/2, pi/2]
+        OBJ_DEF.check_bboxes(bbox3d, yx_zb=True)
+
         self.bbox3d = bbox3d
         self.size3d = size3d
         self.mode = mode

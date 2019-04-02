@@ -7,6 +7,7 @@ from torch import nn
 
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from data3d.data import locations_to_position
+from utils3d.geometric_torch import OBJ_DEF
 
 DEBUG = False
 SHOW_ANCHOR_EACH_SCALE = DEBUG and False
@@ -62,6 +63,7 @@ class AnchorGenerator(nn.Module):
 
         cell_anchors = [ generate_anchors_3d(size, yaws).float()
                         for size in sizes_3d]
+        [OBJ_DEF.check_bboxes(ca, yx_zb=True) for ca in cell_anchors]
         for anchors in cell_anchors:
           anchors[:,2] += anchors[:,5]*0.5
         self.yaws = yaws
@@ -119,6 +121,7 @@ class AnchorGenerator(nn.Module):
         #grid_sizes = [feature_map.spatial_size for feature_map in feature_maps_sparse]
         locations = [feature_map.get_spatial_locations() for feature_map in feature_maps_sparse]
         anchors_over_all_feature_maps_sparse = self.grid_anchors(locations)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         examples_idxscope = [examples_bidx_2_sizes(f.get_spatial_locations()[:,-1]) * self.anchor_num_per_loc
                               for f in feature_maps_sparse]
         size3d = sparse_points_scope(points_sparse)

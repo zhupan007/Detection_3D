@@ -65,26 +65,6 @@ def point_rotation_randomly( points, rxyz_max=np.pi*np.array([0.1,0.1,0.1]) ):
         points[b,:,:] = np.matmul( points[b,:,:], np.transpose(R) )
     return points
 
-
-#def angle_with_x(direc):
-#  '''
-#    direc: [n,2], use zero as ref
-#    angle scope: [-90, 90]
-#    out angle: [n]
-#  '''
-#  assert direc.ndim == 2
-#  assert direc.shape[1] == 2
-#  # make direc[:,0] >= 0
-#  direc = direc.copy()
-#  direc *= np.sign(direc[:, 0:1])
-#  norm = np.linalg.norm(direc, axis=1, keepdims=True)
-#  assert norm.min() > 1e-3
-#  direc /= norm
-#  axis_x = np.array([[1.0, 0]])
-#  angle = np.arccos( np.sum(direc * axis_x, axis=1) )
-#  angle *= np.sign(direc[:,1])
-#  return angle
-
 def angle_with_x(direc, scope_id=0):
   if direc.ndim == 2:
     x = np.array([[1.0,0]])
@@ -127,7 +107,7 @@ def limit_period(val, offset, period):
   '''
     [-pi/2, pi/2]: offset=0.5, period=pi
     [-pi, 0]: offset=1, period=pi
-    [0, pi]: offset=-1, period=pi
+    [0, pi]: offset=0, period=pi
   '''
   return val - np.floor(val / period + offset) * period
 
@@ -207,3 +187,32 @@ def cam2world_box(box):
   box = np.matmul(box, R)
   return box
 
+
+class OBJ_DEF():
+  @staticmethod
+  def limit_yaw(yaws, yx_zb):
+    '''
+    standard: [0, pi]
+    yx_zb: [-pi/2, pi/2]
+    '''
+    if yx_zb:
+      yaws = limit_period(yaws, 0.5, np.pi)
+    else:
+      yaws = limit_period(yaws, 0, np.pi)
+    return yaws
+
+  @staticmethod
+  def check_bboxes(bboxes, yx_zb):
+    '''
+    x_size > y_size
+    '''
+    ofs = 1e-6
+    if bboxes.shape[0]==0:
+      return
+    if yx_zb:
+      assert np.all(bboxes[:,3] <= bboxes[:,4])
+      assert np.max(np.abs(bboxes[:,-1])) <= np.pi*0.5+ofs
+    else:
+      assert np.all(bboxes[:,3] >= bboxes[:,4])
+      assert np.max(bboxes[:,-1]) <= np.pi + ofs
+      assert np.min(bboxes[:,-1]) >= 0 - ofs

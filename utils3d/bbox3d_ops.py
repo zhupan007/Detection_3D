@@ -9,7 +9,7 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 sys.path.append(BASE_DIR)
 sys.path.append(ROOT_DIR)
 
-from geometric_util import Rz as geo_Rz, angle_of_2lines, limit_period as limit_period_
+from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 
 DEBUG = True
 
@@ -65,10 +65,15 @@ def corners4_to_mesh2(corners, color=[255,0,0]):
   mesh.paint_uniform_color(color)
   return mesh
 
+
 class Bbox3D():
   '''
       bbox standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
-      All the approaches here are designed for standard boxes, up_axis='Y'/'Z'
+      bbox yx_zb  : [xc, yc, z_bot, y_size, x_size, z_size, yaw-0.5pi]
+
+      All the approaches here (In data generation) are designed for standard boxes, up_axis='Z'.
+      The original up_axis from SUNCG is 'Y' (cam frame), but is already converted to 'Z' here.
+      The boxes feed into networ is yx_zb, up_axis='Z'.
   '''
   _corners_tmp = np.array([ [0,0,0],[1,0,0],[0,1,0],[1,1,0],
                             [0,0,1],[1,0,1],[0,1,1],[1,1,1]], dtype=np.float)
@@ -124,28 +129,25 @@ class Bbox3D():
     boxes[:,4] = tmp
     boxes[:,-1] += np.pi*0.5
     # limit in [-pi/2, pi/2]
-    boxes[:,_yaw] = Bbox3D.limit_period(boxes[:,_yaw], offset=0.5, period=np.pi)
+    boxes[:,_yaw] = OBJ_DEF.limit_yaw(boxes[:,_yaw], False)
+    OBJ_DEF.check_bboxes(boxes, False)
     return boxes
 
   @staticmethod
   def convert_to_yx_zb_boxes(boxes):
     '''
     Input
-      bbox standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
+      bbox standard
     Output
-      bbox yx_zb  : [xc, yc, z_bot, y_size, x_size, z_size, yaw-0.5pi]
+      bbox yx_zb
     '''
     assert boxes.copy().shape[1] == 7
     boxes = boxes[:,[0,1,2,4,3,5,6]]
     boxes[:,2] = boxes[:,2] - boxes[:,5]*0.5
     boxes[:,-1] -= np.pi*0.5
-    # limit in [-pi, 0]
-    boxes[:,_yaw] = Bbox3D.limit_period(boxes[:,_yaw], offset=1, period=np.pi)
+    boxes[:,_yaw] = OBJ_DEF.limit_yaw(boxes[:,_yaw], True)
+    OBJ_DEF.check_bboxes(boxes, True)
     return boxes
-
-  @staticmethod
-  def limit_period(val, offset, period):
-    return limit_period_(val, offset, period)
 
   @staticmethod
   def draw_points_open3d(points, color=[0,1,1], show=False):
@@ -489,7 +491,7 @@ class Bbox3D():
 
 
   @staticmethod
-  def define_walls_direction(boxes, up_axis):
+  def define_walls_direction(boxes, up_axis, yx_zb):
     show = False
     if show:
       box_ls0 = np.concatenate([bx.reshape([-1,7]) for bx in boxes], 0)
@@ -498,8 +500,8 @@ class Bbox3D():
 
     bn = len(boxes)
     for i in range(bn):
-      boxes[i] = Bbox3D.define_wall_direction(boxes[i], up_axis)
-      boxes[i][-1] = Bbox3D.limit_period(boxes[i][-1], offset=0.5, period=np.pi)
+      boxes[i] = Bbox3D.define_wall_direction(boxes[i], up_axis, yx_zb)
+      boxes[i][-1] = OBJ_DEF.limit_yaw(boxes[i][-1], yx_zb)
 
     if show:
       box_ls1 = np.concatenate([bx.reshape([-1,7]) for bx in boxes], 0)
@@ -512,7 +514,7 @@ class Bbox3D():
     return boxes
 
   @staticmethod
-  def define_wall_direction(box, up_axis):
+  def define_wall_direction(box, up_axis, yx_zb):
     '''
       bbox standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
 
@@ -527,6 +529,8 @@ class Bbox3D():
       yaw (-pi/2, pi/2]
     '''
     assert box.shape == (7,)
+    assert up_axis == 'Z'
+    assert yx_zb == False, "the rule for yx_zb is different"
     if up_axis == 'Y':
       _up = 2+3 # z is thickness dim
     if up_axis == 'Z':

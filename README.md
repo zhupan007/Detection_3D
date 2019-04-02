@@ -10,9 +10,26 @@
 - rpn acc
 - 3d roi
 
-# Theory
-- yaw: [-pi/2, pi/2]
-- 3d box modes: 'standard', 'yx_zb'  
+# Geometric
+
+## Box definition
+```
+geometric_util.py/OBJ_DEF
+geometric_torch.py/OBJ_DEF/limit_yaw, check_bboxes
+```
+- standard 3d box:   
+```
+'standard': [xc, yc, zc, x_size, y_size, z_size, yaw_s]
+up_axis='Z', make always  x_size > y_size, y_size is thickness
+yaw_s: [0, pi] 
+bbox3d_ops.py/limit_yaw
+```
+- yx_zb 3d box:
+```
+'yx_zb':    [xc, yc, z_bot, y_size, x_size, z_size, yaw_s-0.5pi]
+up_axis='Z', make always  x_size > y_size, y_size is thickness
+yaw_s-0.5pi:   [-pi/2, pi/2]  
+```
   data preparation: standard  
   feed into network: yx_zb (to use second lib)  
 

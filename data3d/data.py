@@ -10,7 +10,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from .suncg_meta import SUNCG_META
 from utils3d.bbox3d_ops import Bbox3D
 
-DEBUG = False
+DEBUG = True
 
 
 def bbox_dic_to_BoxList3D(bbox_dic, size3d):

@@ -1044,8 +1044,8 @@ def parse_house():
   suncg.parse_houses()
 
 if __name__ == '__main__':
-  gen_train_eval_split()
-  #parse_house()
+  #gen_train_eval_split()
+  parse_house()
   #gen_house_names_1level()
   #check_house_status()
 

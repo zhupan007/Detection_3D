@@ -46,7 +46,7 @@ class Matcher(object):
         match_quality_matrix_new = match_quality_matrix * mask.float()
         return match_quality_matrix_new
 
-    def __call__(self, match_quality_matrix, yaw_diff):
+    def __call__(self, match_quality_matrix, yaw_diff=None):
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -68,8 +68,8 @@ class Matcher(object):
                     "No proposal boxes available for one of the images "
                     "during training")
 
-
-        match_quality_matrix = self.yaw_diff_constrain(match_quality_matrix, yaw_diff)
+        if yaw_diff is not None:
+          match_quality_matrix = self.yaw_diff_constrain(match_quality_matrix, yaw_diff)
 
         # match_quality_matrix is M (gt) x N (predicted)
         # Max over gt elements (dim 0) to find best gt candidate for each prediction

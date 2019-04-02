@@ -45,7 +45,7 @@ class RPNLossComputation(object):
           match_quality_matrix = boxlist_iou_3d(anchor, target)
           yaw_diff = angle_dif(anchor.bbox3d[:,-1].view(1,-1),  target.bbox3d[:,-1].view(-1,1), 0)
           yaw_diff = torch.abs(yaw_diff)
-          matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff)
+          matched_idxs = self.proposal_matcher(match_quality_matrix)
           #anchor.show_together(target, 200)
           # RPN doesn't need any fields from target
           # for creating the labels, so clear them all

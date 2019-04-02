@@ -33,7 +33,7 @@ def preprocess_walls(wall_bboxes):
   wall_bboxes = find_close_walls(wall_bboxes)
   print('clean_close_walls')
 
-  show_walls_offsetz(wall_bboxes)
+  #show_walls_offsetz(wall_bboxes)
   #show_walls_1by1(wall_bboxes)
   #show_walls_offsetz(wall_bboxes[[26,31]])
   #Bbox3D.draw_bboxes(wall_bboxes[[31,26]], 'Z', False)
