@@ -152,9 +152,8 @@ class RPNLossComputation(object):
           self.show_pos_neg_anchors(anchors, sampled_pos_inds, sampled_neg_inds, targets)
 
         if SHOW_PRED_POS_ANCHORS:
-            sampled_inds = sampled_pos_inds
             thres = 0.98
-            self.show_pos_anchors_pred(thres, box_regression, anchors, objectness, targets, sampled_inds)
+            self.show_pos_anchors_pred(thres, box_regression, anchors, objectness, targets, sampled_pos_inds, sampled_neg_inds)
 
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
@@ -182,24 +181,20 @@ class RPNLossComputation(object):
       import pdb; pdb.set_trace()  # XXX BREAKPOINT
       pass
 
-    def show_pos_anchors_pred(self, thres, rpn_box_regression, anchors, objectness, targets, sampled_inds):
+    def show_pos_anchors_pred(self, thres, rpn_box_regression, anchors, objectness, targets, sampled_pos_inds, sampled_neg_inds):
         pred_boxes_3d = self.box_coder.decode(rpn_box_regression, anchors.bbox3d)
         objectness_normed = objectness.sigmoid()
         pred_boxes = anchors.copy()
         pred_boxes.bbox3d = pred_boxes_3d
         pred_boxes.add_field('objectness', objectness_normed)
 
-        anchor_flags = torch.zeros([len(anchors)])
-        anchor_flags[sampled_inds] = 1
-        pred_boxes.add_field('anchor_flags', anchor_flags)
-
         pred_boxes.constants['type'] = 'prediction'
 
         for bi,pdb in enumerate(pred_boxes.seperate_examples()):
           print('the top predicted objectness')
-          pdb.show_by_field('objectness',0.97, targets[bi])
+          pdb.show_by_objectness(0.8, targets[bi])
           print('all the predictions of positive anchors')
-          pdb.show_by_field('anchor_flags',0.5, targets[bi])
+          pdb.show_by_pos_anchor(sampled_pos_inds, sampled_neg_inds, targets[bi])
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
 

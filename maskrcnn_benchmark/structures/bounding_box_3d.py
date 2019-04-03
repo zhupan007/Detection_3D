@@ -503,30 +503,77 @@ class BoxList3D(object):
           points = points.cpu().data.numpy()
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
-    def show_by_field(self, field, threshold, targets=None):
+
+    def show_by_pos_anchor(self, sampled_pos_inds, sampled_neg_inds, targets=None):
+      import numpy as np
+      sampled_pos_inds = sampled_pos_inds.cpu().data.numpy()
+      sampled_neg_inds = sampled_neg_inds.cpu().data.numpy()
+
+      objectness = self.get_field('objectness').cpu().data.numpy()
+
+      #  objectness of pos anchors
+      posa_objectness = objectness[sampled_pos_inds]
+      min_posa_objectness = posa_objectness.min() if posa_objectness.shape[0]>0 else 1
+      print(f"\n objectness of positive anchors:\n {posa_objectness} \nmin is {min_posa_objectness}")
+      posa_preds = self[sampled_pos_inds]
+      posa_preds.show(boxes_show_together=targets)
+
+      # show the min objectness of pos anchors
+      if len(sampled_pos_inds)>0:
+        print(f'\nmin objectness of pos anchors: {min_posa_objectness}')
+        min_top_mask = objectness == min_posa_objectness
+        min_top_ids = np.where(min_top_mask)[0]
+        min_top_preds = self[min_top_ids]
+        min_top_preds.show(boxes_show_together=targets)
+
+      #************************
+      # the max remaining objectness: non positive
+      not_pos_inds = [i for i in range(len(self)) if i not in sampled_pos_inds ]
+      objectness_notpos = objectness[not_pos_inds]
+      max_notpos_obj = objectness_notpos.max()
+      print(f"\nmax objectness of not-pos: {max_notpos_obj}")
+      max_bot_mask = objectness == max_notpos_obj
+      max_bot_ids = np.where(max_bot_mask)[0]
+      max_bot_preds = self[max_bot_ids]
+      max_bot_preds.show(boxes_show_together=targets)
+
+      gap = min_posa_objectness - max_notpos_obj
+      print(f'\nobjectness quality by pos anchors: {gap}\n')
+
+    def show_by_objectness(self, threshold, targets=None):
       import numpy as np
       objectness = self.get_field('objectness').cpu().data.numpy()
-      if field=='objectness':
-        values = objectness
-      else:
-        values = self.get_field(field)
-        values = values.cpu().data.numpy()
-      mask = values > threshold
+
+      # the top objectness
+      mask = objectness > threshold
       ids = np.where(mask)[0]
-      values_top = values[ids]
-      print(f"{field} over {threshold}:\n {values_top}")
-      if field !=  'objectness' and 'objectness' in self.fields():
-        objectness_top = objectness[ids]
-        print(f"responding objectness: \n{objectness_top}")
-      pos = self[ids]
-      pos.show(boxes_show_together=targets)
+      top_objectness = objectness[ids]
+      min_top_objectness = top_objectness.min() if top_objectness.shape[0]>0 else 1
+      print(f"\n objectness over {threshold}:\n {top_objectness} \nmin is {min_top_objectness}")
+      top_preds = self[ids]
+      top_preds.show(boxes_show_together=targets)
 
-      mask1 = values <= threshold
-      objectness1 = objectness[mask1]
-      max_remaining_objectness = objectness1.max()
-      print(f"max remaining objectness: {max_remaining_objectness}")
-      print('\n\n')
+      # show the min objectness of tops
+      if len(ids)>0:
+        print(f'\nmin objectness of top: {min_top_objectness}')
+        min_top_mask = top_objectness == min_top_objectness
+        min_top_ids = np.where(min_top_mask)[0]
+        min_top_preds = top_preds[min_top_ids]
+        min_top_preds.show(boxes_show_together=targets)
 
+      #************************
+      # the max remaining objectness of (top objectness)
+      mask_bottom = objectness <= threshold
+      objectness_bottom = objectness[mask_bottom]
+      max_bottom_objectness = objectness_bottom.max()
+      print(f"\nmax objectness of bottom: {max_bottom_objectness}")
+      max_bot_mask = objectness == max_bottom_objectness
+      max_bot_ids = np.where(max_bot_mask)[0]
+      max_bot_preds = self[max_bot_ids]
+      max_bot_preds.show(boxes_show_together=targets)
+
+      gap = min_top_objectness - max_bottom_objectness
+      print(f'\nobjectness quality by objectness: {gap}\n')
 
     def same_loc_anchors(self,items):
       '''
