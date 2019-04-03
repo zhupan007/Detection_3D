@@ -17,7 +17,7 @@ from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxl
 DEBUG = True
 SHOW_POS_ANCHOR_IOU = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
-SHOW_PRED_POS_ANCHORS = DEBUG and False
+SHOW_PRED_POS_ANCHORS = DEBUG and True
 
 class RPNLossComputation(object):
     """
@@ -192,6 +192,8 @@ class RPNLossComputation(object):
         anchor_flags = torch.zeros([len(anchors)])
         anchor_flags[sampled_inds] = 1
         pred_boxes.add_field('anchor_flags', anchor_flags)
+
+        pred_boxes.constants['type'] = 'prediction'
 
         for bi,pdb in enumerate(pred_boxes.seperate_examples()):
           print('the top predicted objectness')

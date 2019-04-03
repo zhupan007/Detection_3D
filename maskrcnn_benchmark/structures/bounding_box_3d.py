@@ -104,7 +104,7 @@ class BoxList3D(object):
     labels.
     """
 
-    def __init__(self, bbox3d, size3d, mode, examples_idxscope):
+    def __init__(self, bbox3d, size3d, mode, examples_idxscope, constants={}):
         '''
         All examples in same batch are concatenated together.
         examples_idxscope: [batch_size,2] record the index scope per example
@@ -133,8 +133,16 @@ class BoxList3D(object):
             )
         self.check_mode(mode)
 
-        bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb=True) # [-pi/2, pi/2]
-        OBJ_DEF.check_bboxes(bbox3d, yx_zb=True)
+        # constants: scale_num, num_anchors_per_location,
+        # type='prediction'/'ground_truth'/'anchor'
+        self.constants = constants
+
+        if not self.is_prediction():
+          bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb=True) # [-pi/2, pi/2]
+          OBJ_DEF.check_bboxes(bbox3d, yx_zb=True)
+        else:
+          pass
+          #print('prediction')
 
         assert mode == 'yx_zb', "Both anchor, gt_boxes, prediction in the network is yx_zb"
 
@@ -144,10 +152,9 @@ class BoxList3D(object):
         self.examples_idxscope = examples_idxscope
         self.extra_fields = {}
 
-        # constants
-        self.num_anchors_per_location = None
-        self.scale_num = None
 
+    def is_prediction(self):
+      return 'type' in self.constants and self.constants['type']=='prediction'
     def check_mode(self, mode):
         if mode not in ("standard", "yx_zb"):
             raise ValueError("mode should be 'standard' or 'yx_zb'")
@@ -331,9 +338,7 @@ class BoxList3D(object):
         assert idx < self.batch_size()
         se = self.examples_idxscope[idx]
         examples_idxscope = torch.tensor([[0, se[1]-se[0]]], dtype=torch.int32)
-        bbox3d = BoxList3D( self.bbox3d[se[0]:se[1],:], self.size3d[idx:idx+1], self.mode, examples_idxscope)
-        bbox3d.num_anchors_per_location = self.num_anchors_per_location
-        bbox3d.scale_num = self.scale_num
+        bbox3d = BoxList3D( self.bbox3d[se[0]:se[1],:], self.size3d[idx:idx+1], self.mode, examples_idxscope, self.constants)
         for k, v in self.extra_fields.items():
             bbox3d.add_field(k, v[se[0]:se[1]])
         return bbox3d
@@ -500,25 +505,34 @@ class BoxList3D(object):
 
     def show_by_field(self, field, threshold, targets=None):
       import numpy as np
-      values = self.get_field(field)
-      values = values.cpu().data.numpy()
+      objectness = self.get_field('objectness').cpu().data.numpy()
+      if field=='objectness':
+        values = objectness
+      else:
+        values = self.get_field(field)
+        values = values.cpu().data.numpy()
       mask = values > threshold
       ids = np.where(mask)[0]
       values_top = values[ids]
       print(f"{field} over {threshold}:\n {values_top}")
       if field !=  'objectness' and 'objectness' in self.fields():
-        objectness = self.get_field('objectness')
         objectness_top = objectness[ids]
         print(f"responding objectness: \n{objectness_top}")
       pos = self[ids]
       pos.show(boxes_show_together=targets)
+
+      mask1 = values <= threshold
+      objectness1 = objectness[mask1]
+      max_remaining_objectness = objectness1.max()
+      print(f"max remaining objectness: {max_remaining_objectness}")
+      print('\n\n')
 
 
     def same_loc_anchors(self,items):
       '''
       items: [n]
       '''
-      npa = self.num_anchors_per_location
+      npa = self.constants['num_anchors_per_location']
       assert npa is not None
       items_same_loc = []
       for item in items:
@@ -530,7 +544,7 @@ class BoxList3D(object):
 
     def show_anchors_per_loc(self):
       import numpy as np
-      num_anchors_per_location = self.num_anchors_per_location
+      num_anchors_per_location = self.constants['num_anchors_per_location']
       assert num_anchors_per_location is not None
       num_anchors = len(self)
       ids = np.random.randint(0, num_anchors, 5)
