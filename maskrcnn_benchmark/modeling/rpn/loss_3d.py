@@ -17,7 +17,7 @@ from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxl
 DEBUG = True
 SHOW_POS_ANCHOR_IOU = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
-SHOW_PRED_POS_ANCHORS = DEBUG and True
+SHOW_PRED_POS_ANCHORS = DEBUG and False
 
 class RPNLossComputation(object):
     """
@@ -160,6 +160,7 @@ class RPNLossComputation(object):
         box_loss = smooth_l1_loss(
             box_regression[sampled_pos_inds],
             regression_targets[sampled_pos_inds],
+            anchors[sampled_pos_inds],
             beta=1.0 / 9,
             size_average=False,
         ) / (sampled_inds.numel())

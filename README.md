@@ -33,6 +33,26 @@ yaw_s-0.5pi:   [-pi/2, pi/2]
   data preparation: standard  
   feed into network: yx_zb (to use second lib)  
 
+## box encoding
+- modeling/box_coder_3d.py/encode & decode  
+- second.pytorch.core.box_torch_ops/second_box_encode & second_box_decode  
+- box_torch_ops.py/second_box_encode
+smooth_dim = True  
+```
+lt = lg / la - 1
+wt = wg / wa - 1
+ht = hg / ha - 1
+rt = rg - ra
+```
+
+## Yaw loss
+- layers/smooth_l1_loss.py/get_yaw_loss
+1. Dif: abs(yaw_t - yaw_p)
+2. Dif_sin: abs(sin(yaw_t - yaw_p))
+3. Min_dif_sin: min(1,2)
+Dif cannot understand -pi/2==pi/2.   
+Dif_sin does not limit in [-pi/2, pi/2].
+
 ## data preparation
 - pcl input normaliztion   
 ```
