@@ -10,7 +10,7 @@ def get_yaw_loss(yaw_loss_mode, input, target, anchor):
     assert yaw_loss_mode == 'Diff' or yaw_loss_mode == 'SinDiff'
     dif_loss = torch.abs(input[:,-1]-target[:,-1])
     if yaw_loss_mode == 'Diff':
-      return diff_loss
+      return dif_loss
     sin_loss = torch.sin(dif_loss)
 
     pred_yaw = input[:,-1] + anchor.bbox3d[:,-1]
