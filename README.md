@@ -129,10 +129,13 @@ later, SpConv and SparseConvCnn should only need to install one
 
 # Debug
 
- - modeling/rpn/rpn_sparse3d.py RPNModule/forward  
-        The targets and anchors for training  
+ - modeling/rpn/rpn_sparse3d.py 
+        SHOW_TARGETS_ANCHORS  
+        SHOW_PRED_GT  
+        SHOW_ANCHORS_PER_LOC    
 
  - modeling/rpn/loss_3d.py  RPNLossComputation/\__call\__  
+        SHOW_POS_ANCHOR_IOU_SAME_LOC: the positive anchor policy
         SHOW_POS_NEG_ANCHORS: Positive and negative anchors  
         SHOW_PRED_GT: show prediction and ground truth  
 

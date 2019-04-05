@@ -15,16 +15,16 @@ from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxlist_3d
 
 DEBUG = True
-SHOW_POS_ANCHOR_IOU = DEBUG and False
+SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
-SHOW_PRED_POS_ANCHORS = DEBUG and True
+SHOW_PRED_POS_ANCHORS = DEBUG and False
 
 class RPNLossComputation(object):
     """
     This class computes the RPN loss.
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -35,6 +35,7 @@ class RPNLossComputation(object):
         self.proposal_matcher = proposal_matcher
         self.fg_bg_sampler = fg_bg_sampler
         self.box_coder = box_coder
+        self.yaw_loss_mode = yaw_loss_mode
 
     def match_targets_to_anchors(self, anchor, target):
         from utils3d.geometric_torch import angle_dif
@@ -57,7 +58,7 @@ class RPNLossComputation(object):
           matched_targets = target[matched_idxs.clamp(min=0)]
         matched_targets.add_field("matched_idxs", matched_idxs)
 
-        if SHOW_POS_ANCHOR_IOU:
+        if SHOW_POS_ANCHOR_IOU_SAME_LOC:
           num_gt = target.bbox3d.shape[0]
           for j in range(num_gt):
             sampled_pos_inds = torch.nonzero(matched_idxs==j).squeeze(1)
@@ -162,6 +163,7 @@ class RPNLossComputation(object):
             anchors[sampled_pos_inds],
             beta=1.0 / 9,
             size_average=False,
+            yaw_loss_mode = self.yaw_loss_mode,
         ) / (sampled_inds.numel())
 
         objectness_loss = F.binary_cross_entropy_with_logits(
@@ -213,6 +215,6 @@ def make_rpn_loss_evaluator(cfg, box_coder):
         cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE, cfg.MODEL.RPN.POSITIVE_FRACTION
     )
 
-    loss_evaluator = RPNLossComputation(matcher, fg_bg_sampler, box_coder)
+    loss_evaluator = RPNLossComputation(matcher, fg_bg_sampler, box_coder, cfg.MODEL.LOSS.YAW_MODE)
     return loss_evaluator
 

@@ -3,11 +3,14 @@ import torch, math
 from utils3d.geometric_torch import limit_period
 
 
-def get_yaw_loss(input, target, anchor):
+def get_yaw_loss(yaw_loss_mode, input, target, anchor):
     """
     Note: target[:,-1] is the offset truth, not the yaw truth
     """
+    assert yaw_loss_mode == 'Diff' or yaw_loss_mode == 'SinDiff'
     dif_loss = torch.abs(input[:,-1]-target[:,-1])
+    if yaw_loss_mode == 'Diff':
+      return diff_loss
     sin_loss = torch.sin(dif_loss)
 
     pred_yaw = input[:,-1] + anchor.bbox3d[:,-1]
@@ -15,14 +18,14 @@ def get_yaw_loss(input, target, anchor):
     yaw_loss = torch.where(yaw_scope_mask, sin_loss, dif_loss)
     return yaw_loss
 
-def smooth_l1_loss(input, target, anchor, beta=1. / 9, size_average=True):
+def smooth_l1_loss(input, target, anchor, beta=1. / 9, size_average=True, yaw_loss_mode = 'Diff'):
     """
     very similar to the smooth_l1_loss from pytorch, but with
     the extra beta parameter
     """
     dif = torch.abs(input - target)
 
-    dif[:,-1] = get_yaw_loss(input, target, anchor)
+    dif[:,-1] = get_yaw_loss(yaw_loss_mode, input, target, anchor)
 
     cond = dif < beta
     loss = torch.where(cond, 0.5 * dif ** 2 / beta, dif - 0.5 * beta)

@@ -31,7 +31,7 @@ MODEL:
     PREDICTOR: "FPNPredictor"
   FPN_SCALES: [5,6,7]
   LOSS:
-    YAW_MODE: 'SinDiff'
+    YAW_MODE: 'Diff'
 SPARSE3D:
   nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256, 256, 256]
   KERNEL: [[2,2,4], [2,2,4], [2,2,4], [1,1,4], [2,2,4], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
@@ -52,6 +52,6 @@ SOLVER:
   STEPS: (100000000,)
   CHECKPOINT_PERIOD: 540
   WARMUP_ITERS: 80
-OUTPUT_DIR: "results_nms1"
+OUTPUT_DIR: "results_nms1_difyl"
 TEST:
   IMS_PER_BATCH: 2

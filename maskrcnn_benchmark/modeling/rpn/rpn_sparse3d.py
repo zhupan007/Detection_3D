@@ -183,8 +183,8 @@ class RPNModule(torch.nn.Module):
         objectness, rpn_box_regression = cat_scales_obj_reg(objectness, rpn_box_regression, anchors)
         scale_num = len(anchors)
         anchors = cat_scales_anchor(anchors)
-        anchors.scale_num = scale_num
-        anchors.num_anchors_per_location = self.head.num_anchors_per_location
+        anchors.constants['scale_num'] = scale_num
+        anchors.constants['num_anchors_per_location'] = self.head.num_anchors_per_location
 
         if SHOW_ANCHORS_PER_LOC:
           anchors.show_anchors_per_loc()
