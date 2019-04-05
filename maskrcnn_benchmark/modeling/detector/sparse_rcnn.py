@@ -48,8 +48,11 @@ class SparseRCNN(nn.Module):
         features = self.backbone(points)
         proposals, proposal_losses = self.rpn(points, features, targets)
         if self.roi_heads:
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            x, result, detector_losses = self.roi_heads(features, proposals, targets)
+            #x, result, detector_losses = self.roi_heads(features, proposals, targets)
+
+            x = features
+            result = proposals
+            detector_losses = {}
         else:
             # RPN-only models don't have roi_heads
             x = features

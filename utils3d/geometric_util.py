@@ -210,9 +210,9 @@ class OBJ_DEF():
     if bboxes.shape[0]==0:
       return
     if yx_zb:
-      assert np.all(bboxes[:,3] <= bboxes[:,4])
+      #assert np.all(bboxes[:,3] <= bboxes[:,4]) # prediction may not mathch
       assert np.max(np.abs(bboxes[:,-1])) <= np.pi*0.5+ofs
     else:
-      assert np.all(bboxes[:,3] >= bboxes[:,4])
+      #assert np.all(bboxes[:,3] >= bboxes[:,4])
       assert np.max(bboxes[:,-1]) <= np.pi + ofs
       assert np.min(bboxes[:,-1]) >= 0 - ofs

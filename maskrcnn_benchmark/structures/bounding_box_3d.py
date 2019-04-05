@@ -17,55 +17,55 @@ def _cat(tensors, dim=0):
         return tensors[0]
     return torch.cat(tensors, dim)
 
-def cat_boxlist_3d(bboxes, per_example):
+def cat_boxlist_3d(bboxes_ls, per_example):
     """
     Concatenates a list of BoxList (having the same image size) into a
     single BoxList
 
     Arguments:
-        bboxes (list[BoxList])
-        per_example: if True, each element in bboxes is an example, combine to a batch
+        bboxes_ls (list[BoxList])
+        per_example: if True, each element in bboxes_ls is an example, combine to a batch
     """
-    assert isinstance(bboxes, (list, tuple))
-    assert all(isinstance(bbox, BoxList3D) for bbox in bboxes)
+    assert isinstance(bboxes_ls, (list, tuple))
+    assert all(isinstance(bbox, BoxList3D) for bbox in bboxes_ls)
 
     if not per_example:
-      size3d = bboxes[0].size3d
-      for bbox3d in bboxes:
+      size3d = bboxes_ls[0].size3d
+      for bbox3d in bboxes_ls:
         #is_size_close =  torch.abs(bbox3d.size3d - size3d).max() < 0.01
         #if not is_size_close:
         if not torch.isclose( bbox3d.size3d, size3d ).all():
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
     else:
-      size3d = torch.cat([b.size3d for b in bboxes])
+      size3d = torch.cat([b.size3d for b in bboxes_ls])
 
-    mode = bboxes[0].mode
-    assert all(bbox.mode == mode for bbox in bboxes)
+    mode = bboxes_ls[0].mode
+    assert all(bbox.mode == mode for bbox in bboxes_ls)
 
-    fields = set(bboxes[0].fields())
-    assert all(set(bbox.fields()) == fields for bbox in bboxes)
+    fields = set(bboxes_ls[0].fields())
+    assert all(set(bbox.fields()) == fields for bbox in bboxes_ls)
 
-    batch_size0 = bboxes[0].batch_size()
-    for bbox in bboxes:
+    batch_size0 = bboxes_ls[0].batch_size()
+    for bbox in bboxes_ls:
       assert bbox.batch_size() == batch_size0
 
     # flatten order: [scale_num, sparse_location_num * yaws_num]
-    bbox3d_cat = _cat([bbox3d.bbox3d for bbox3d in bboxes], dim=0)
+    bbox3d_cat = _cat([bbox3d.bbox3d for bbox3d in bboxes_ls], dim=0)
     if not per_example:
       examples_idxscope = torch.tensor([[0, bbox3d_cat.shape[0]]], dtype=torch.int32)
       batch_size = batch_size0
       assert batch_size0 == 1, "check if >1 if need to"
     else:
       assert batch_size0 == 1, "check if >1 if need to"
-      batch_size = len(bboxes)
-      examples_idxscope = torch.cat([b.examples_idxscope for b in bboxes])
+      batch_size = len(bboxes_ls)
+      examples_idxscope = torch.cat([b.examples_idxscope for b in bboxes_ls])
       for b in range(1,batch_size):
         examples_idxscope[b,:] += examples_idxscope[b-1,1]
     cat_boxes = BoxList3D(bbox3d_cat, size3d, mode, examples_idxscope)
 
     for field in fields:
-        data = _cat([bbox.get_field(field) for bbox in bboxes], dim=0)
+        data = _cat([bbox.get_field(field) for bbox in bboxes_ls], dim=0)
         cat_boxes.add_field(field, data)
 
     return cat_boxes
@@ -137,8 +137,8 @@ class BoxList3D(object):
         # type='prediction'/'ground_truth'/'anchor'
         self.constants = constants
 
+        bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb=True) # [-pi/2, pi/2]
         if not self.is_prediction():
-          bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb=True) # [-pi/2, pi/2]
           OBJ_DEF.check_bboxes(bbox3d, yx_zb=True)
         else:
           pass
@@ -154,7 +154,7 @@ class BoxList3D(object):
 
 
     def is_prediction(self):
-      return 'type' in self.constants and self.constants['type']=='prediction'
+      return 'prediction' in self.constants and self.constants['prediction']
     def check_mode(self, mode):
         if mode not in ("standard", "yx_zb"):
             raise ValueError("mode should be 'standard' or 'yx_zb'")
@@ -363,37 +363,34 @@ class BoxList3D(object):
             example_idx[j] = bi
       return example_idx
 
+
     def __getitem__(self, items):
-        '''
-        items: 2, [52,35,231], np.array([52,4,46]), torch.Tensor([101,23,45])
-        '''
-        if isinstance(items, torch.Tensor):
-          if len(items.shape) == 0:
-            items = items.view(-1)
-        else:
-          if isinstance(items, int):
-            items = [items]
-          items = torch.tensor(items, dtype=torch.int64)
-        assert len(items.shape) == 1, "use [1,2,3], instead of [1:4]"
+      '''
+      items: [n] torch.Tensor or list or numpy
+          like: 2, [52,35,231], np.array([52,4,46]), torch.Tensor([101,23,45])
 
+      No matter if items contain all the examples or not, always keep the batch_size same.
+      '''
+      if not isinstance(items, torch.Tensor):
+        items = torch.tensor(items, dtype=torch.int64)
+      assert len(items.shape) <= 1
+      items = items.view(-1)
 
-        batch_size = self.batch_size()
-        if batch_size > 1:
-          example_idx = self.get_example_idx(items)
-          assert example_idx.min() == example_idx.max(), f"all the itemss have to belong to the same example: {example_idx}"
-          examples = self.seperate_examples()
-          eidx = example_idx.min()
-          example = examples[eidx]
-          items = items - self.examples_idxscope[eidx,0]
-        else:
-          example = self
-        assert example.batch_size() == 1
+      example_idxs = self.get_example_idx(items)
+      batch_size = self.batch_size()
+      examples_idxscope = torch.zeros((batch_size,2), dtype=torch.int64)
+      for bi in range(batch_size):
+        num_bi = torch.sum(example_idxs == bi)
+        examples_idxscope[bi,1] += num_bi
+        if bi != batch_size-1:
+          examples_idxscope[bi+1:] += num_bi
 
-        examples_idxscope = torch.tensor([[0,items.shape[0]]], dtype=torch.int32)
-        bbox3d = BoxList3D(example.bbox3d[items], example.size3d, example.mode, examples_idxscope)
-        for k, v in example.extra_fields.items():
-            bbox3d.add_field(k, v[items])
-        return bbox3d
+      boxlist = BoxList3D(self.bbox3d[items], self.size3d, self.mode, examples_idxscope)
+      boxlist.constants = self.constants
+      for k, v in self.extra_fields.items():
+          boxlist.add_field(k, v[items])
+      return boxlist
+
 
     def __len__(self):
         return self.bbox3d.shape[0]

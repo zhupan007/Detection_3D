@@ -10,7 +10,8 @@ from ..utils import cat
 
 
 DEBUG = True
-SHOW_RPNPOST = True and DEBUG
+SHOW_RPN_INPUT = DEBUG and False
+SHOW_RPNPOST = DEBUG and False
 
 class RPNPostProcessor(torch.nn.Module):
     """
@@ -58,21 +59,22 @@ class RPNPostProcessor(torch.nn.Module):
             proposals: BoxList
             targets: BoxList
         """
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         # Get the device we're operating on
-        device = proposals[0].bbox3d.device
+        device = proposals.bbox3d.device
 
         gt_boxes = [target.copy_with_fields([]) for target in targets]
-
         # later cat of bbox requires all fields to be present for all bbox
         # so we need to add a dummy for objectness that's missing
         for gt_box in gt_boxes:
             gt_box.add_field("objectness", torch.ones(len(gt_box), device=device))
 
+        batch_size = proposals.batch_size()
+        proposals = proposals.seperate_examples()
         proposals = [
-            cat_boxlist_3d((proposal, gt_box))
-            for proposal, gt_box in zip(proposals, gt_boxes)
-        ]
+              cat_boxlist_3d((proposal, gt_box), per_example=False)
+              for proposal, gt_box in zip(proposals, gt_boxes)
+          ]
+        proposals = cat_boxlist_3d(proposals, per_example=True)
 
         return proposals
 
@@ -118,8 +120,13 @@ class RPNPostProcessor(torch.nn.Module):
           # apply nms
           examples_idxscope_new = torch.tensor([[0, proposals_i.shape[0]]])
           boxlist = BoxList3D(proposals_i, pcl_size3d, mode="yx_zb",
-                              examples_idxscope= examples_idxscope_new)
+                              examples_idxscope= examples_idxscope_new,
+                              constants={'prediction':True})
           boxlist.add_field("objectness", objectness_i)
+          if SHOW_RPN_INPUT:
+            boxlist.show_together(targets[bi])
+            boxlist.show_by_objectness(0.8, targets[bi])
+
           #boxlist = boxlist.clip_to_pcl(remove_empty=False)
           #boxlist = remove_small_boxes3d(boxlist, self.min_size)
           boxlist_new = boxlist_nms_3d(
@@ -131,9 +138,10 @@ class RPNPostProcessor(torch.nn.Module):
           result.append(boxlist_new)
 
           if SHOW_RPNPOST:
+            print('inference_3d.py SHOW_RPNPOST')
             objectness_i_new = boxlist_new.get_field('objectness')
             print(f"objectness: {objectness_i_new[0:10]}")
-            boxlist_new.show_by_objectness(0.98, targets[bi])
+            boxlist_new.show_by_objectness(0.8, targets[bi])
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             pass
         result = cat_boxlist_3d(result, per_example=True)
