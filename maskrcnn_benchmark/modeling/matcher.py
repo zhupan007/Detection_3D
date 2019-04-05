@@ -42,7 +42,7 @@ class Matcher(object):
         self.yaw_threshold = yaw_threshold
 
     def yaw_diff_constrain(self, match_quality_matrix, yaw_diff):
-        mask = yaw_diff < self.yaw_threshold
+        mask = torch.abs(yaw_diff) < self.yaw_threshold
         match_quality_matrix_new = match_quality_matrix * mask.float()
         return match_quality_matrix_new
 

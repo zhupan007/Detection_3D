@@ -16,6 +16,7 @@ from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxl
 
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
+SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
 SHOW_PRED_POS_ANCHORS = DEBUG and False
 
@@ -58,6 +59,11 @@ class RPNLossComputation(object):
           matched_targets = target[matched_idxs.clamp(min=0)]
         matched_targets.add_field("matched_idxs", matched_idxs)
 
+        if SHOW_IGNORED_ANCHOR:
+          sampled_ign_inds = torch.nonzero(matched_idxs==-2).squeeze(1)
+          anchors_ign = anchor[sampled_ign_inds]
+          anchors_ign.show_together(target)
+
         if SHOW_POS_ANCHOR_IOU_SAME_LOC:
           num_gt = target.bbox3d.shape[0]
           for j in range(num_gt):
@@ -83,8 +89,8 @@ class RPNLossComputation(object):
               print(f'-1:low, -2:between')
               anchors_same_loc_i = anchor[inds_same_loc[i]]
               anchors_same_loc_i.show_together(target[j])
-              pass
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
             pass
 
         return matched_targets
