@@ -188,7 +188,7 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
           #---------------------------------------------------------------------
           bboxlist3d = bbox_dic_to_BoxList3D(bboxes_dic_i, size3d)
           labels.append(bboxlist3d)
-          if DEBUG and True:
+          if DEBUG and False:
             show_pcl_boxdic(pcl_i, bboxes_dic_i)
             bboxlist3d.show()
             import pdb; pdb.set_trace()  # XXX BREAKPOINT

@@ -137,6 +137,7 @@ class BoxList3D(object):
         # type='prediction'/'ground_truth'/'anchor'
         self.constants = constants
 
+        assert mode == 'yx_zb', "Both anchor, gt_boxes, prediction in the network is yx_zb"
         bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb=True) # [-pi/2, pi/2]
         if not self.is_prediction():
           OBJ_DEF.check_bboxes(bbox3d, yx_zb=True)
@@ -144,7 +145,6 @@ class BoxList3D(object):
           pass
           #print('prediction')
 
-        assert mode == 'yx_zb', "Both anchor, gt_boxes, prediction in the network is yx_zb"
 
         self.bbox3d = bbox3d
         self.size3d = size3d

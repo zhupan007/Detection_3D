@@ -48,6 +48,12 @@ class OBJ_DEF():
       #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
       #  pass
       #assert torch.all(bboxes[:,3] <= bboxes[:,4])
+
+
+      #print(bboxes)
+      #if not torch.max(torch.abs(bboxes[:,-1]))<=math.pi*0.5+ofs:
+      #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      #  pass
       assert torch.max(torch.abs(bboxes[:,-1]))<=math.pi*0.5+ofs
     else:
       assert torch.all(bboxes[:,3] >= bboxes[:,4])
