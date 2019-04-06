@@ -537,8 +537,11 @@ class BoxList3D(object):
       gap = min_posa_objectness - max_notpos_obj
       print(f'\nobjectness quality by pos anchors: {gap}\n')
 
-    def show_by_objectness(self, threshold, targets=None):
+    def show_by_objectness(self, threshold, targets=None,
+          rpn_box_regression=None, anchors=None, regression_targets=None):
       import numpy as np
+      from maskrcnn_benchmark.layers.smooth_l1_loss import get_yaw_loss
+
       objectness = self.get_field('objectness').cpu().data.numpy()
 
       # the top objectness
@@ -557,6 +560,16 @@ class BoxList3D(object):
         min_top_ids = np.where(min_top_mask)[0]
         min_top_preds = top_preds[min_top_ids]
         min_top_preds.show(boxes_show_together=targets)
+
+      if anchors:
+        rpn_box_regression_top = rpn_box_regression[ids]
+        anchors_top = anchors[ids]
+        regression_targets_top = regression_targets[ids]
+        yaw_loss_sindif = get_yaw_loss('SinDiff',  rpn_box_regression_top, regression_targets_top, anchors_top)
+        yaw_loss_dif = get_yaw_loss('Diff',  rpn_box_regression_top, regression_targets_top, anchors_top)
+        print(f'yaw_loss_sindif: max={yaw_loss_sindif.max()}, mean={yaw_loss_sindif.mean()}')
+        print(f'yaw_loss_dif: max={yaw_loss_dif.max()}, mean={yaw_loss_dif.mean()}')
+        pass
 
       #************************
       # the max remaining objectness of (top objectness)
