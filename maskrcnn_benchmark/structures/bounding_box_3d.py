@@ -549,7 +549,10 @@ class BoxList3D(object):
       ids = np.where(mask)[0]
       top_objectness = objectness[ids]
       min_top_objectness = top_objectness.min() if top_objectness.shape[0]>0 else 1
-      print(f"\n objectness over {threshold}:\n {top_objectness} \nmin is {min_top_objectness}")
+      num_top = ids.shape[0]
+      if targets:
+        print(f'\n\nnum_gt={len(targets)}\nnum_top={num_top}\n\n')
+      print(f"\n objectness over {threshold}: \t{num_top} \n {top_objectness} \nmin is {min_top_objectness}")
       top_preds = self[ids]
       top_preds.show(boxes_show_together=targets)
 

@@ -145,6 +145,10 @@ later, SpConv and SparseConvCnn should only need to install one
  - rpn/anchor_generator_sparse3d.py  AnchorGenerator/forward:  
         SHOW_ANCHOR_EACH_SCALE:
 
+ - rpn/inference_3d.py
+        SHOW_RPN_INPUT  
+        SHOW_RPNPOST  
+
 # Basic code structure
 - maskrcnn_benchmark/structures/bounding_box_3d.py/BoxList3D
         Box class used for training
@@ -189,6 +193,12 @@ box_loss = smooth_l1_loss(...)
 ```
 make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_nms_3d  
 -> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
+```
+5. roi: 
+```
+(1) modeling/roi_heads/box_head/box_head.py ROIBoxHead
+(2) roi_heads/box_head/roi_box_feature_extractors.py
+(3) modeling/poolers.py 
 ```
 
 ## Data feeding
