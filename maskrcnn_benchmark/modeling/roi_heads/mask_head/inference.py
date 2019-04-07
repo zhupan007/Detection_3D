@@ -4,17 +4,17 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from maskrcnn_benchmark.structures.bounding_box import BoxList
+from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 
 
-# TODO check if want to return a single BoxList or a composite
+# TODO check if want to return a single BoxList3D or a composite
 # object
 class MaskPostProcessor(nn.Module):
     """
     From the results of the CNN, post process the masks
     by taking the mask corresponding to the class with max
     probability (which are of fixed size and directly output
-    by the CNN) and return the masks in the mask field of the BoxList.
+    by the CNN) and return the masks in the mask field of the BoxList3D.
 
     If a masker object is passed, it will additionally
     project the masks in the image according to the locations in boxes,
@@ -28,11 +28,11 @@ class MaskPostProcessor(nn.Module):
         """
         Arguments:
             x (Tensor): the mask logits
-            boxes (list[BoxList]): bounding boxes that are used as
+            boxes (list[BoxList3D]): bounding boxes that are used as
                 reference, one for ech image
 
         Returns:
-            results (list[BoxList]): one BoxList for each image, containing
+            results (list[BoxList3D]): one BoxList3D for each image, containing
                 the extra field mask
         """
         mask_prob = x.sigmoid()
@@ -52,7 +52,7 @@ class MaskPostProcessor(nn.Module):
 
         results = []
         for prob, box in zip(mask_prob, boxes):
-            bbox = BoxList(box.bbox, box.size, mode="xyxy")
+            bbox = BoxList3D(box.bbox, box.size, mode="xyxy")
             for field in box.fields():
                 bbox.add_field(field, box.get_field(field))
             bbox.add_field("mask", prob)
@@ -178,7 +178,7 @@ class Masker(object):
         return res
 
     def __call__(self, masks, boxes):
-        if isinstance(boxes, BoxList):
+        if isinstance(boxes, BoxList3D):
             boxes = [boxes]
 
         # Make some sanity check

@@ -1,64 +1,134 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+import os
+
 import torch
-import torchvision
+import torch.utils.data
+from PIL import Image
+import sys
 
-from maskrcnn_benchmark.structures.bounding_box import BoxList
-from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
+if sys.version_info[0] == 2:
+    import xml.etree.cElementTree as ET
+else:
+    import xml.etree.ElementTree as ET
 
 
-class SUNCGDataset():
-    def __init__(
-        self, ann_file, root, remove_images_without_annotations, transforms=None
-    ):
-        super(SUNCGDataset, self).__init__(root, ann_file)
-        # sort indices for reproducible results
-        self.ids = sorted(self.ids)
+from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 
-        # filter images without detection annotations
-        if remove_images_without_annotations:
-            self.ids = [
-                img_id
-                for img_id in self.ids
-                if len(self.suncg.getAnnIds(imgIds=img_id, iscrowd=None)) > 0
-            ]
 
-        self.json_category_id_to_contiguous_id = {
-            v: i + 1 for i, v in enumerate(self.suncg.getCatIds())
-        }
-        self.contiguous_category_id_to_json_id = {
-            v: k for k, v in self.json_category_id_to_contiguous_id.items()
-        }
-        self.id_to_img_map = {k: v for k, v in enumerate(self.ids)}
+class SUNCGDataset(torch.utils.data.Dataset):
+
+    CLASSES = (
+        "__background__ ",
+        "aeroplane",
+        "bicycle",
+        "bird",
+        "boat",
+        "bottle",
+        "bus",
+        "car",
+        "cat",
+        "chair",
+        "cow",
+        "diningtable",
+        "dog",
+        "horse",
+        "motorbike",
+        "person",
+        "pottedplant",
+        "sheep",
+        "sofa",
+        "train",
+        "tvmonitor",
+    )
+
+    def __init__(self, data_dir, split, use_difficult=False, transforms=None):
+        self.root = data_dir
+        self.image_set = split
+        self.keep_difficult = use_difficult
         self.transforms = transforms
 
-    def __getitem__(self, idx):
-        img, anno = super(SUNCGDataset, self).__getitem__(idx)
+        self._annopath = os.path.join(self.root, "Annotations", "%s.xml")
+        self._imgpath = os.path.join(self.root, "JPEGImages", "%s.jpg")
+        self._imgsetpath = os.path.join(self.root, "ImageSets", "Main", "%s.txt")
 
-        # filter crowd annotations
-        # TODO might be better to add an extra field
-        anno = [obj for obj in anno if obj["iscrowd"] == 0]
+        with open(self._imgsetpath % self.image_set) as f:
+            self.ids = f.readlines()
+        self.ids = [x.strip("\n") for x in self.ids]
+        self.id_to_img_map = {k: v for k, v in enumerate(self.ids)}
 
-        boxes = [obj["bbox"] for obj in anno]
-        boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
-        target = BoxList(boxes, img.size, mode="xywh").convert("xyxy")
+        cls = SUNCGDataset.CLASSES
+        self.class_to_ind = dict(zip(cls, range(len(cls))))
 
-        classes = [obj["category_id"] for obj in anno]
-        classes = [self.json_category_id_to_contiguous_id[c] for c in classes]
-        classes = torch.tensor(classes)
-        target.add_field("labels", classes)
+    def __getitem__(self, index):
+        img_id = self.ids[index]
+        img = Image.open(self._imgpath % img_id).convert("RGB")
 
-        masks = [obj["segmentation"] for obj in anno]
-        masks = SegmentationMask(masks, img.size)
-        target.add_field("masks", masks)
-
+        target = self.get_groundtruth(index)
         target = target.clip_to_image(remove_empty=True)
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
-        return img, target, idx
+        return img, target, index
+
+    def __len__(self):
+        return len(self.ids)
+
+    def get_groundtruth(self, index):
+        img_id = self.ids[index]
+        anno = ET.parse(self._annopath % img_id).getroot()
+        anno = self._preprocess_annotation(anno)
+
+        height, width = anno["im_info"]
+        target = BoxList3D(anno["boxes"], (width, height), mode="xyxy")
+        target.add_field("labels", anno["labels"])
+        target.add_field("difficult", anno["difficult"])
+        return target
+
+    def _preprocess_annotation(self, target):
+        boxes = []
+        gt_classes = []
+        difficult_boxes = []
+        TO_REMOVE = 1
+
+        for obj in target.iter("object"):
+            difficult = int(obj.find("difficult").text) == 1
+            if not self.keep_difficult and difficult:
+                continue
+            name = obj.find("name").text.lower().strip()
+            bb = obj.find("bndbox")
+            # Make pixel indexes 0-based
+            # Refer to "https://github.com/rbgirshick/py-faster-rcnn/blob/master/lib/datasets/pascal_voc.py#L208-L211"
+            box = [
+                bb.find("xmin").text,
+                bb.find("ymin").text,
+                bb.find("xmax").text,
+                bb.find("ymax").text,
+            ]
+            bndbox = tuple(
+                map(lambda x: x - TO_REMOVE, list(map(int, box)))
+            )
+
+            boxes.append(bndbox)
+            gt_classes.append(self.class_to_ind[name])
+            difficult_boxes.append(difficult)
+
+        size = target.find("size")
+        im_info = tuple(map(int, (size.find("height").text, size.find("width").text)))
+
+        res = {
+            "boxes": torch.tensor(boxes, dtype=torch.float32),
+            "labels": torch.tensor(gt_classes),
+            "difficult": torch.tensor(difficult_boxes),
+            "im_info": im_info,
+        }
+        return res
 
     def get_img_info(self, index):
-        img_id = self.id_to_img_map[index]
-        img_data = self.suncg.imgs[img_id]
-        return img_data
+        img_id = self.ids[index]
+        anno = ET.parse(self._annopath % img_id).getroot()
+        size = anno.find("size")
+        im_info = tuple(map(int, (size.find("height").text, size.find("width").text)))
+        return {"height": im_info[0], "width": im_info[1]}
+
+    def map_class_id_to_class_name(self, class_id):
+        return SUNCGDataset.CLASSES[class_id]

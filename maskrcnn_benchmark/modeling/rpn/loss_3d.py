@@ -12,7 +12,7 @@ from ..utils import cat
 
 from maskrcnn_benchmark.layers import smooth_l1_loss
 from maskrcnn_benchmark.modeling.matcher import Matcher
-from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_iou_3d, cat_boxlist_3d
+from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d, cat_boxlist_3d
 
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False

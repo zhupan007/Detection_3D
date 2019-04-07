@@ -3,8 +3,8 @@ import torch
 
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D, cat_scales_anchor, cat_boxlist_3d
-from maskrcnn_benchmark.structures.boxlist3d_ops import boxlist_nms_3d
-from maskrcnn_benchmark.structures.boxlist3d_ops import remove_small_boxes3d
+from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_nms_3d
+from maskrcnn_benchmark.structures.boxlist_ops_3d import remove_small_boxes3d
 
 from ..utils import cat
 

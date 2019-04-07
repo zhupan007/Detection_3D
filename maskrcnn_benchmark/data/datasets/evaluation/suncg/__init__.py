@@ -1,21 +1,16 @@
+import logging
+
 from .suncg_eval import do_suncg_evaluation
 
 
-def suncg_evaluation(
-    dataset,
-    predictions,
-    output_folder,
-    box_only,
-    iou_types,
-    expected_results,
-    expected_results_sigma_tol,
-):
+def suncg_evaluation(dataset, predictions, output_folder, box_only, **_):
+    logger = logging.getLogger("maskrcnn_benchmark.inference")
+    if box_only:
+        logger.warning("suncg evaluation doesn't support box_only, ignored.")
+    logger.info("performing suncg evaluation, ignored iou_types.")
     return do_suncg_evaluation(
         dataset=dataset,
         predictions=predictions,
-        box_only=box_only,
         output_folder=output_folder,
-        iou_types=iou_types,
-        expected_results=expected_results,
-        expected_results_sigma_tol=expected_results_sigma_tol,
+        logger=logger,
     )

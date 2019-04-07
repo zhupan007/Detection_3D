@@ -2,7 +2,7 @@
 import torch
 from torch import nn
 
-from maskrcnn_benchmark.structures.bounding_box import BoxList
+from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 
 from .roi_mask_feature_extractors import make_roi_mask_feature_extractor
 from .roi_mask_predictors import make_roi_mask_predictor
@@ -12,14 +12,14 @@ from .loss import make_roi_mask_loss_evaluator
 
 def keep_only_positive_boxes(boxes):
     """
-    Given a set of BoxList containing the `labels` field,
-    return a set of BoxList for which `labels > 0`.
+    Given a set of BoxList3D containing the `labels` field,
+    return a set of BoxList3D for which `labels > 0`.
 
     Arguments:
-        boxes (list of BoxList)
+        boxes (list of BoxList3D)
     """
     assert isinstance(boxes, (list, tuple))
-    assert isinstance(boxes[0], BoxList)
+    assert isinstance(boxes[0], BoxList3D)
     assert boxes[0].has_field("labels")
     positive_boxes = []
     positive_inds = []
@@ -46,12 +46,12 @@ class ROIMaskHead(torch.nn.Module):
         """
         Arguments:
             features (list[Tensor]): feature-maps from possibly several levels
-            proposals (list[BoxList]): proposal boxes
-            targets (list[BoxList], optional): the ground-truth targets.
+            proposals (list[BoxList3D]): proposal boxes
+            targets (list[BoxList3D], optional): the ground-truth targets.
 
         Returns:
             x (Tensor): the result of the feature extractor
-            proposals (list[BoxList]): during training, the original proposals
+            proposals (list[BoxList3D]): during training, the original proposals
                 are returned. During testing, the predicted boxlists are returned
                 with the `mask` field set
             losses (dict[Tensor]): During training, returns the losses for the

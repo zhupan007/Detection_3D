@@ -3,10 +3,10 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from maskrcnn_benchmark.structures.bounding_box import BoxList
-from maskrcnn_benchmark.structures.boxlist_ops import boxlist_nms
-from maskrcnn_benchmark.structures.boxlist_ops import cat_boxlist
-from maskrcnn_benchmark.modeling.box_coder import BoxCoder
+from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
+from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_nms_3d
+from maskrcnn_benchmark.structures.boxlist_ops_3d import cat_boxlist_3d
+from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 
 
 class PostProcessor(nn.Module):
@@ -24,14 +24,14 @@ class PostProcessor(nn.Module):
             score_thresh (float)
             nms (float)
             detections_per_img (int)
-            box_coder (BoxCoder)
+            box_coder (BoxCoder3D)
         """
         super(PostProcessor, self).__init__()
         self.score_thresh = score_thresh
         self.nms = nms
         self.detections_per_img = detections_per_img
         if box_coder is None:
-            box_coder = BoxCoder(weights=(10., 10., 5., 5.))
+            box_coder = BoxCoder3D(weights=(10., 10., 5., 5.))
         self.box_coder = box_coder
 
     def forward(self, x, boxes):
@@ -39,11 +39,11 @@ class PostProcessor(nn.Module):
         Arguments:
             x (tuple[tensor, tensor]): x contains the class logits
                 and the box_regression from the model.
-            boxes (list[BoxList]): bounding boxes that are used as
+            boxes (list[BoxList3D]): bounding boxes that are used as
                 reference, one for ech image
 
         Returns:
-            results (list[BoxList]): one BoxList for each image, containing
+            results (list[BoxList3D]): one BoxList3D for each image, containing
                 the extra fields labels and scores
         """
         class_logits, box_regression = x
@@ -75,7 +75,7 @@ class PostProcessor(nn.Module):
 
     def prepare_boxlist(self, boxes, scores, image_shape):
         """
-        Returns BoxList from `boxes` and adds probability scores information
+        Returns BoxList3D from `boxes` and adds probability scores information
         as an extra field
         `boxes` has shape (#detections, 4 * #classes), where each row represents
         a list of predicted bounding boxes for each of the object classes in the
@@ -88,7 +88,7 @@ class PostProcessor(nn.Module):
         """
         boxes = boxes.reshape(-1, 4)
         scores = scores.reshape(-1)
-        boxlist = BoxList(boxes, image_shape, mode="xyxy")
+        boxlist = BoxList3D(boxes, image_shape, mode="xyxy")
         boxlist.add_field("scores", scores)
         return boxlist
 
@@ -110,9 +110,9 @@ class PostProcessor(nn.Module):
             inds = inds_all[:, j].nonzero().squeeze(1)
             scores_j = scores[inds, j]
             boxes_j = boxes[inds, j * 4 : (j + 1) * 4]
-            boxlist_for_class = BoxList(boxes_j, boxlist.size, mode="xyxy")
+            boxlist_for_class = BoxList3D(boxes_j, boxlist.size, mode="xyxy")
             boxlist_for_class.add_field("scores", scores_j)
-            boxlist_for_class = boxlist_nms(
+            boxlist_for_class = boxlist_nms_3d(
                 boxlist_for_class, self.nms, score_field="scores"
             )
             num_labels = len(boxlist_for_class)
@@ -121,7 +121,7 @@ class PostProcessor(nn.Module):
             )
             result.append(boxlist_for_class)
 
-        result = cat_boxlist(result)
+        result = cat_boxlist_3d(result)
         number_of_detections = len(result)
 
         # Limit to max_per_image detections **over all classes**
@@ -140,7 +140,8 @@ def make_roi_box_post_processor(cfg):
     use_fpn = cfg.MODEL.ROI_HEADS.USE_FPN
 
     bbox_reg_weights = cfg.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS
-    box_coder = BoxCoder(weights=bbox_reg_weights)
+    box_coder = BoxCoder3D()
+    #box_coder = BoxCoder3D(weights=bbox_reg_weights)
 
     score_thresh = cfg.MODEL.ROI_HEADS.SCORE_THRESH
     nms_thresh = cfg.MODEL.ROI_HEADS.NMS

@@ -3,9 +3,9 @@ import torch
 from torch.nn import functional as F
 
 from maskrcnn_benchmark.layers import smooth_l1_loss
-from maskrcnn_benchmark.modeling.box_coder import BoxCoder
+from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 from maskrcnn_benchmark.modeling.matcher import Matcher
-from maskrcnn_benchmark.structures.boxlist_ops import boxlist_iou
+from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
     BalancedPositiveNegativeSampler
 )
@@ -23,14 +23,14 @@ class FastRCNNLossComputation(object):
         Arguments:
             proposal_matcher (Matcher)
             fg_bg_sampler (BalancedPositiveNegativeSampler)
-            box_coder (BoxCoder)
+            box_coder (BoxCoder3D)
         """
         self.proposal_matcher = proposal_matcher
         self.fg_bg_sampler = fg_bg_sampler
         self.box_coder = box_coder
 
     def match_targets_to_proposals(self, proposal, target):
-        match_quality_matrix = boxlist_iou(target, proposal)
+        match_quality_matrix = boxlist_iou_3d(target, proposal)
         matched_idxs = self.proposal_matcher(match_quality_matrix)
         # Fast RCNN only need "labels" field for selecting the targets
         target = target.copy_with_fields("labels")
@@ -164,7 +164,8 @@ def make_roi_box_loss_evaluator(cfg):
     )
 
     bbox_reg_weights = cfg.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS
-    box_coder = BoxCoder(weights=bbox_reg_weights)
+    box_coder = BoxCoder3D()
+    #box_coder = BoxCoder3D(weights=bbox_reg_weights)
 
     fg_bg_sampler = BalancedPositiveNegativeSampler(
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE, cfg.MODEL.ROI_HEADS.POSITIVE_FRACTION

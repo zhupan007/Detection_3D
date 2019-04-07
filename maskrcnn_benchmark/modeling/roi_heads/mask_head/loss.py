@@ -4,7 +4,7 @@ from torch.nn import functional as F
 
 from maskrcnn_benchmark.layers import smooth_l1_loss
 from maskrcnn_benchmark.modeling.matcher import Matcher
-from maskrcnn_benchmark.structures.boxlist_ops import boxlist_iou
+from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 from maskrcnn_benchmark.modeling.utils import cat
 
 
@@ -55,7 +55,7 @@ class MaskRCNNLossComputation(object):
         self.discretization_size = discretization_size
 
     def match_targets_to_proposals(self, proposal, target):
-        match_quality_matrix = boxlist_iou(target, proposal)
+        match_quality_matrix = boxlist_iou_3d(target, proposal)
         matched_idxs = self.proposal_matcher(match_quality_matrix)
         # Mask RCNN needs "labels" and "masks "fields for creating the targets
         target = target.copy_with_fields(["labels", "masks"])
