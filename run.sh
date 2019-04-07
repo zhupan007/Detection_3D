@@ -6,5 +6,6 @@ TEST='--skip-test'
 #CONFIG_FILE='nms_bs1_difyaw.yaml'
 CONFIG_FILE='nms_bs1_difyaw_dlr.yaml'
 #CONFIG_FILE='nms_bs1_sinyaw.yaml'
+
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 
