@@ -18,7 +18,7 @@ DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
 SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
-SHOW_PRED_POS_ANCHORS = DEBUG and False
+SHOW_PRED_POS_ANCHORS = DEBUG and True
 
 class RPNLossComputation(object):
     """
