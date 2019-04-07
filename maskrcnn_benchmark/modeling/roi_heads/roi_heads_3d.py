@@ -1,8 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 
-from .box_head.box_head import build_roi_box_head
-from .mask_head.mask_head import build_roi_mask_head
+from .box_head_3d.box_head import build_roi_box_head
+from .mask_head_3d.mask_head import build_roi_mask_head
 
 
 class CombinedROIHeads(torch.nn.ModuleDict):

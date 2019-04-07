@@ -10,7 +10,7 @@ from maskrcnn_benchmark.structures.image_list import to_image_list
 
 from ..backbone import build_backbone
 from ..rpn.rpn_sparse3d import build_rpn
-from ..roi_heads.roi_heads import build_roi_heads
+from ..roi_heads.roi_heads_3d import build_roi_heads
 
 
 class SparseRCNN(nn.Module):
