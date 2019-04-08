@@ -11,6 +11,7 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 )
 from maskrcnn_benchmark.modeling.utils import cat
 
+DEBUG = True
 
 class FastRCNNLossComputation(object):
     """
@@ -30,7 +31,8 @@ class FastRCNNLossComputation(object):
         self.box_coder = box_coder
 
     def match_targets_to_proposals(self, proposal, target):
-        match_quality_matrix = boxlist_iou_3d(target, proposal)
+        match_quality_matrix = boxlist_iou_3d(target, proposal, True)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         matched_idxs = self.proposal_matcher(match_quality_matrix)
         # Fast RCNN only need "labels" field for selecting the targets
         target = target.copy_with_fields("labels")
@@ -45,11 +47,15 @@ class FastRCNNLossComputation(object):
     def prepare_targets(self, proposals, targets):
         labels = []
         regression_targets = []
+        proposals = proposals.seperate_examples()
         for proposals_per_image, targets_per_image in zip(proposals, targets):
+            if DEBUG and False:
+              proposals_per_image.show()
             matched_targets = self.match_targets_to_proposals(
                 proposals_per_image, targets_per_image
             )
             matched_idxs = matched_targets.get_field("matched_idxs")
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
             labels_per_image = matched_targets.get_field("labels")
             labels_per_image = labels_per_image.to(dtype=torch.int64)
@@ -84,6 +90,7 @@ class FastRCNNLossComputation(object):
         """
 
         labels, regression_targets = self.prepare_targets(proposals, targets)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
 
         proposals = list(proposals)

@@ -75,7 +75,7 @@ def remove_small_boxes3d(boxlist, min_size):
     return boxlist[keep]
 
 
-def boxlist_iou_3d(anchors, targets):
+def boxlist_iou_3d(anchors, targets, debug=False):
   '''
   about criterion check:
     second.core.non_max_suppression.nms_gpu/devRotateIoUEval
@@ -91,6 +91,8 @@ def boxlist_iou_3d(anchors, targets):
   targets_2d[:,2] += 0.25
   # criterion=1: use targets_2d as ref
   iou = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=2, device_id=cuda_index)
+  if debug:
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
   iou = torch.from_numpy(iou)
   iou = iou.to(targets.bbox3d.device)
   if DEBUG:

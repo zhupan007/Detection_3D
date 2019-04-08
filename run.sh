@@ -4,8 +4,8 @@ export CUDA_VISIBLE_DEVICES=1
 TEST='--skip-test'
 #TEST='--only-test'
 #CONFIG_FILE='nms_bs1_difyaw.yaml'
-CONFIG_FILE='nms_bs1_difyaw_dlr.yaml'
-#CONFIG_FILE='nms_bs1_sinyaw.yaml'
+#CONFIG_FILE='nms_bs1_difyaw_dlr.yaml'
+CONFIG_FILE='nms_bs2_difyaw_dlr.yaml'
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 
