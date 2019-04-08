@@ -26,7 +26,7 @@ def bbox_dic_to_BoxList3D(bbox_dic, size3d):
   examples_idxscope = torch.tensor([0, bboxes.shape[0]]).view(1,2)
   bboxlist3d = BoxList3D(bboxes, size3d=size3d, mode='yx_zb',
                         examples_idxscope=examples_idxscope)
-  bboxlist3d.add_field('label', labels)
+  bboxlist3d.add_field('labels', labels)
   return bboxlist3d
 
 DATASET = 'SUNCG'

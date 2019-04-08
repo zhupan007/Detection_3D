@@ -12,6 +12,7 @@ from ..backbone import build_backbone
 from ..rpn.rpn_sparse3d import build_rpn
 from ..roi_heads.roi_heads_3d import build_roi_heads
 
+DEBUG = False
 
 class SparseRCNN(nn.Module):
     """
@@ -48,11 +49,12 @@ class SparseRCNN(nn.Module):
         features = self.backbone(points)
         proposals, proposal_losses = self.rpn(points, features, targets)
         if self.roi_heads:
-            #x, result, detector_losses = self.roi_heads(features, proposals, targets)
-
-            x = features
-            result = proposals
-            detector_losses = {}
+            if not DEBUG:
+              x, result, detector_losses = self.roi_heads(features, proposals, targets)
+            else:
+              x = features
+              result = proposals
+              detector_losses = {}
         else:
             # RPN-only models don't have roi_heads
             x = features

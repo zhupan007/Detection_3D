@@ -6,6 +6,7 @@ from maskrcnn_benchmark.modeling import registry
 from maskrcnn_benchmark.modeling.backbone import resnet
 from maskrcnn_benchmark.modeling.poolers_3d import Pooler
 
+DEBUG = True
 
 @registry.ROI_BOX_FEATURE_EXTRACTORS.register("ResNet50Conv5ROIFeatureExtractor")
 class ResNet50Conv5ROIFeatureExtractor(nn.Module):
@@ -70,9 +71,17 @@ class FPN2MLPFeatureExtractor(nn.Module):
             nn.init.kaiming_uniform_(l.weight, a=1)
             nn.init.constant_(l.bias, 0)
 
-    def forward(self, x, proposals):
-        x = self.pooler(x, proposals)
-        x = x.view(x.size(0), -1)
+    def forward(self, x0, proposals):
+        if DEBUG:
+          scale_num = len(x0)
+          print(f"scale_num: {scale_num}")
+          for s in range(scale_num):
+            print(f"x0[{s}]: {x0[s].shape}")
+        x1 = self.pooler(x0, proposals)
+        print(f"x1:{x1.shape}")
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+
+        x2 = x1.view(x1.size(0), -1)
 
         x = F.relu(self.fc6(x))
         x = F.relu(self.fc7(x))

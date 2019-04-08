@@ -7,6 +7,7 @@ from maskrcnn_benchmark.layers import ROIAlign
 
 from .utils import cat
 
+DEBUG = True
 
 class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
@@ -96,6 +97,7 @@ class Pooler(nn.Module):
         Returns:
             result (Tensor)
         """
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         num_levels = len(self.poolers)
         rois = self.convert_to_roi_format(boxes)
         if num_levels == 1:

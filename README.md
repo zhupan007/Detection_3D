@@ -195,10 +195,12 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 -> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
 ```
 5. roi: 
-```
-(1) modeling/roi_heads/box_head/box_head.py ROIBoxHead
-(2) roi_heads/box_head/roi_box_feature_extractors.py
-(3) modeling/poolers.py 
+```python
+(1) modeling/detector/sparse_rcnn.py/SparseRCNN: 
+        x, result, detector_losses = self.roi_heads(features, proposals, targets)
+(2) modeling/roi_heads/box_head_3d/box_head.py ROIBoxHead3D
+(3) roi_heads/box_head_3d/roi_box_feature_extractors.py
+(4) modeling/poolers.py 
 ```
 
 ## Data feeding
