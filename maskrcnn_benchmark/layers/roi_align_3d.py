@@ -8,7 +8,7 @@ from torch.nn.modules.utils import _pair
 from maskrcnn_benchmark import _C
 
 
-class _ROIAlign(Function):
+class _ROIAlign3D(Function):
     @staticmethod
     def forward(ctx, input, roi, output_size, spatial_scale, sampling_ratio):
         ctx.save_for_backward(roi)
@@ -44,12 +44,12 @@ class _ROIAlign(Function):
         return grad_input, None, None, None, None
 
 
-roi_align = _ROIAlign.apply
+roi_align_3d = _ROIAlign3D.apply
 
 
-class ROIAlign(nn.Module):
+class ROIAlign3D(nn.Module):
     def __init__(self, output_size, spatial_scale, sampling_ratio):
-        super(ROIAlign, self).__init__()
+        super(ROIAlign3D, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio

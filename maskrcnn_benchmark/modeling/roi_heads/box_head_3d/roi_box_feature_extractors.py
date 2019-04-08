@@ -76,10 +76,9 @@ class FPN2MLPFeatureExtractor(nn.Module):
           scale_num = len(x0)
           print(f"scale_num: {scale_num}")
           for s in range(scale_num):
-            print(f"x0[{s}]: {x0[s].shape}")
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            print(f"x0[{s}]: {x0[s].features.shape}, {x0[s].spatial_size}")
         x1 = self.pooler(x0, proposals)
-        print(f"x1:{x1.shape}")
+        print(f"x1:{x1.features.shape}, {x1.spatial_size}")
         import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
         x2 = x1.view(x1.size(0), -1)
