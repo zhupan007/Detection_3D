@@ -35,6 +35,7 @@ class ROIBoxHead3D(torch.nn.Module):
                 head. During testing, returns an empty dict.
         """
 
+        proposals = proposals.seperate_examples()
         if self.training:
             # Faster R-CNN subsamples during training the proposals with a fixed
             # positive / negative ratio
@@ -43,8 +44,8 @@ class ROIBoxHead3D(torch.nn.Module):
 
         # extract features that will be fed to the final classifier. The
         # feature_extractor generally corresponds to the pooler + heads
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         x = self.feature_extractor(features, proposals)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         # final classifier that converts the features into predictions
         class_logits, box_regression = self.predictor(x)
 

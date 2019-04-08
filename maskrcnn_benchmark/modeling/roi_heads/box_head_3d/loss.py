@@ -31,8 +31,7 @@ class FastRCNNLossComputation(object):
         self.box_coder = box_coder
 
     def match_targets_to_proposals(self, proposal, target):
-        match_quality_matrix = boxlist_iou_3d(target, proposal, True)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_wall_target_thickness=0)
         matched_idxs = self.proposal_matcher(match_quality_matrix)
         # Fast RCNN only need "labels" field for selecting the targets
         target = target.copy_with_fields("labels")
@@ -45,17 +44,24 @@ class FastRCNNLossComputation(object):
         return matched_targets
 
     def prepare_targets(self, proposals, targets):
+        '''
+        proposals do not have object class info
+        ROI is only performed on matched proposals.
+        Generate class label and regression_targets for all matched proposals.
+        '''
         labels = []
         regression_targets = []
-        proposals = proposals.seperate_examples()
         for proposals_per_image, targets_per_image in zip(proposals, targets):
             if DEBUG and False:
               proposals_per_image.show()
+            if len(targets_per_image) == 0:
+              labels.append(torch.empty(0,dtype=torch.float32))
+              regression_targets.append(torch.empty([0,7],dtype=torch.float32))
+              continue
             matched_targets = self.match_targets_to_proposals(
                 proposals_per_image, targets_per_image
             )
             matched_idxs = matched_targets.get_field("matched_idxs")
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
             labels_per_image = matched_targets.get_field("labels")
             labels_per_image = labels_per_image.to(dtype=torch.int64)
@@ -70,7 +76,7 @@ class FastRCNNLossComputation(object):
 
             # compute regression targets
             regression_targets_per_image = self.box_coder.encode(
-                matched_targets.bbox, proposals_per_image.bbox
+                matched_targets.bbox3d, proposals_per_image.bbox3d
             )
 
             labels.append(labels_per_image)
@@ -88,9 +94,7 @@ class FastRCNNLossComputation(object):
             proposals (list[BoxList])
             targets (list[BoxList])
         """
-
         labels, regression_targets = self.prepare_targets(proposals, targets)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
 
         proposals = list(proposals)

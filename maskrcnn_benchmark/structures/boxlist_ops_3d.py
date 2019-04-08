@@ -75,7 +75,7 @@ def remove_small_boxes3d(boxlist, min_size):
     return boxlist[keep]
 
 
-def boxlist_iou_3d(targets, anchors, aug_target_thickness, debug):
+def boxlist_iou_3d(targets, anchors, aug_wall_target_thickness):
   '''
   about criterion check:
     second.core.non_max_suppression.nms_gpu/devRotateIoUEval
@@ -88,11 +88,12 @@ def boxlist_iou_3d(targets, anchors, aug_target_thickness, debug):
   #print(f"anchors yaw : {anchors_2d[:,-1].min()} , {anchors_2d[:,-1].max()}")
 
   # aug thickness. When thickness==0, iou is wrong
-  targets_2d[:,2] += aug_target_thickness # 0.25
+  targets_2d[:,2] += aug_wall_target_thickness # 0.25
   # criterion=1: use targets_2d as ref
   iou = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=2, device_id=cuda_index)
   iou = torch.from_numpy(iou)
   iou = iou.to(targets.bbox3d.device)
+
   if DEBUG:
     mask = iou == iou.max()
     t_i, a_i = torch.nonzero(mask)[0]

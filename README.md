@@ -2,6 +2,8 @@
 
 
 # on going process
+- subsample not understand:   
+        (2)  modeling/roi_heads/box_head_3d/box_head.py: self.loss_evaluator.subsample(proposals, targets)
 - add yaw loss
 - rethink how to improve acc for long wall: add yaw loss
 - add window
