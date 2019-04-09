@@ -48,6 +48,7 @@ class SparseRCNN(nn.Module):
             raise ValueError("In training mode, targets should be passed")
         features = self.backbone(points)
         proposals, proposal_losses = self.rpn(points, features, targets)
+        proposals.clamp_size()
         if self.roi_heads:
             if not DEBUG:
               x, result, detector_losses = self.roi_heads(features, proposals, targets)

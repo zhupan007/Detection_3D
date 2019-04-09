@@ -102,6 +102,9 @@ class FastRCNNLossComputation(object):
         for labels_per_image, regression_targets_per_image, proposals_per_image in zip(
             labels, regression_targets, proposals
         ):
+            if labels_per_image.shape[0] != proposals_per_image.bbox3d.shape[0]:
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
             proposals_per_image.add_field("labels", labels_per_image)
             proposals_per_image.add_field(
                 "regression_targets", regression_targets_per_image

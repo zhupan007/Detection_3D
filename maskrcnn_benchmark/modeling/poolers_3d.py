@@ -14,7 +14,7 @@ class LevelMapper(object):
     on the heuristic in the FPN paper.
     """
 
-    def __init__(self, k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e-6):
+    def __init__(self, k_min, k_max, canonical_scale=3, canonical_level=3, eps=1e-6):
         """
         Arguments:
             k_min (int)
@@ -35,11 +35,13 @@ class LevelMapper(object):
             boxlists (list[BoxList])
         """
         # Compute level ids
-        s = torch.sqrt(cat([boxlist.area() for boxlist in boxlists]))
+        s0 = torch.sqrt(cat([boxlist.area() for boxlist in boxlists]))
+        s = torch.sqrt(cat([boxlist.bbox3d[:,3:5].max(dim=1)[0] for boxlist in boxlists]))
 
         # Eqn.(1) in FPN paper
-        target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0 + self.eps))
-        target_lvls = torch.clamp(target_lvls, min=self.k_min, max=self.k_max)
+        target_lvls0 = torch.floor(self.lvl0 + torch.log2(s / self.s0 + self.eps))
+        target_lvls = torch.clamp(target_lvls0, min=self.k_min, max=self.k_max)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return target_lvls.to(torch.int64) - self.k_min
 
 

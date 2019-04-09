@@ -19,6 +19,7 @@ def bbox_dic_to_BoxList3D(bbox_dic, size3d):
   for obj in bbox_dic:
     bboxes.append(bbox_dic[obj])
     label_i = SUNCG_META.class_2_label[obj]
+    assert (label_i>0).all(), "label >1, 0 is for negative, -1 is ignore"
     labels.append(np.array([label_i]*bbox_dic[obj].shape[0]))
   bboxes = np.concatenate(bboxes, 0)
   labels = np.concatenate(labels, 0)

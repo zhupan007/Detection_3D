@@ -411,6 +411,9 @@ class BoxList3D(object):
         return self
 
     def area(self):
+        area_xy = self.bbox3d[:,3] * self.bbox3d[:,4]
+        return area_xy
+
         box = self.bbox
         if self.mode == "xyxy":
             TO_REMOVE = 1
@@ -439,6 +442,9 @@ class BoxList3D(object):
         s += "mode={})".format(self.mode)
         return s
 
+
+    def clamp_size(self):
+      self.bbox3d[:,3:6] = torch.clamp(self.bbox3d[:,3:6], min=0.001)
 
     def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None):
       import numpy as np
