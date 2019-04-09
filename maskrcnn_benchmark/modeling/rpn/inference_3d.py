@@ -9,9 +9,9 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import remove_small_boxes3d
 from ..utils import cat
 
 
-DEBUG = True
-SHOW_RPN_INPUT = DEBUG and False
-SHOW_RPNPOST = DEBUG and False
+DEBUG = False
+SHOW_RPN_INPUT = DEBUG and True
+SHOW_RPNPOST = DEBUG and True
 
 class RPNPostProcessor(torch.nn.Module):
     """
