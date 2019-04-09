@@ -55,9 +55,13 @@ class FastRCNNLossComputation(object):
             if DEBUG and False:
               proposals_per_image.show()
             if len(targets_per_image) == 0:
-              labels.append(torch.empty(0,dtype=torch.float32))
-              regression_targets.append(torch.empty([0,7],dtype=torch.float32))
+              prop_num = len(proposals_per_image)
+              # negative
+              labels.append(torch.zeros([prop_num],dtype=torch.float32))
+              regression_targets.append(torch.zeros([prop_num,7],dtype=torch.float32))
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
               continue
+
             matched_targets = self.match_targets_to_proposals(
                 proposals_per_image, targets_per_image
             )

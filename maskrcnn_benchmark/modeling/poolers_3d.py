@@ -9,6 +9,13 @@ from .utils import cat
 
 DEBUG = True
 
+'''
+feature map: []
+POOLER_SCALES: (0.5,0.25, 0.125) is abs ratio compared with pcl.
+k_min: (1, 2, 3) abs
+canonical_level:
+'''
+
 class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
