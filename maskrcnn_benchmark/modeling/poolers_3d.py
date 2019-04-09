@@ -48,7 +48,6 @@ class LevelMapper(object):
         # Eqn.(1) in FPN paper
         target_lvls0 = torch.floor(self.lvl0 + torch.log2(s / self.s0 + self.eps))
         target_lvls = torch.clamp(target_lvls0, min=self.k_min, max=self.k_max)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return target_lvls.to(torch.int64) - self.k_min
 
 
@@ -106,6 +105,14 @@ class Pooler(nn.Module):
         Returns:
             result (Tensor)
         """
+        if DEBUG:
+          levels_num = len(x)
+          print(f'\bx levels_num:{levels_num}')
+          for li in range(levels_num):
+            print(f"{x[li].features.shape}, {x[li].spatial_size}")
+          print(f'\n boxes:')
+          print(boxes)
+
         num_levels = len(self.poolers)
         rois = self.convert_to_roi_format(boxes)
         if num_levels == 1:
@@ -114,11 +121,11 @@ class Pooler(nn.Module):
         levels = self.map_levels(boxes)
 
         num_rois = len(rois)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        num_channels = x[0].shape[1]
+        x0_features = x[0].features
+        num_channels = x0_features.shape[1]
         output_size = self.output_size[0]
 
-        dtype, device = x[0].dtype, x[0].device
+        dtype, device = x0_features.dtype, x0_features.device
         result = torch.zeros(
             (num_rois, num_channels, output_size, output_size),
             dtype=dtype,
@@ -127,6 +134,10 @@ class Pooler(nn.Module):
         for level, (per_level_feature, pooler) in enumerate(zip(x, self.poolers)):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             result[idx_in_level] = pooler(per_level_feature, rois_per_level)
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
 
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return result
