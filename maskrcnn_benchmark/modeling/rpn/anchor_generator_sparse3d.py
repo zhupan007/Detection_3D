@@ -9,8 +9,9 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from data3d.data import locations_to_position
 from utils3d.geometric_torch import OBJ_DEF
 
-DEBUG = False
+DEBUG = True
 SHOW_ANCHOR_EACH_SCALE = DEBUG and False
+CHECK_ANCHOR_STRIDES = True
 if DEBUG:
   from utils3d.bbox3d_ops import Bbox3D
 
@@ -49,12 +50,17 @@ class AnchorGenerator(nn.Module):
         sizes_3d=[[0.2,1,3], [0.5,2,3], [1,3,3]],
         yaws=(0, -1.57),
         anchor_strides=[[8,8,729], [16,16,729], [32,32,729]],
+        scene_size=[8,8,5],
         straddle_thresh=0,
     ):
         super(AnchorGenerator, self).__init__()
 
         sizes_3d = np.array(sizes_3d, dtype=np.float32)
-        assert sizes_3d[0,0] >= sizes_3d[-1,0], "should be from the last scale"
+        anchor_strides = np.array(anchor_strides)
+        levels_num = sizes_3d.shape[0]
+        for l in range(1,levels_num):
+          assert sizes_3d[l,0] >= sizes_3d[l-1,0], "should start from small to large"
+          assert anchor_strides[l,0] >= anchor_strides[l-1,0], "should start from small to large"
         assert sizes_3d.shape[1] == 3
         anchor_strides = np.array(anchor_strides, dtype=np.float32)
         assert anchor_strides.shape[1] == 3
@@ -68,9 +74,11 @@ class AnchorGenerator(nn.Module):
         self.anchor_num_per_loc = len(yaws) # only one size per loc
         self.voxel_scale = voxel_scale
         self.strides = torch.from_numpy(anchor_strides)
-        self.cell_anchors = BufferList(cell_anchors)
+        #self.cell_anchors = BufferList(cell_anchors)
+        self.cell_anchors = cell_anchors
         self.straddle_thresh = straddle_thresh
         self.anchor_mode = 'yx_zb'
+        self.scene_size = torch.tensor(scene_size, dtype=torch.float)
 
     def num_anchors_per_location(self):
         return [len(cell_anchors) for cell_anchors in self.cell_anchors]
@@ -93,8 +101,16 @@ class AnchorGenerator(nn.Module):
             anchors_scale = anchors_scale.reshape(-1,7)
             anchors.append( anchors_scale )
 
-        if DEBUG and False:
-          Bbox3D.draw_bboxes(anchors[0].cpu().numpy(), 'Z', False)
+        # CHECK_ANCHOR_STRIDES:
+        if CHECK_ANCHOR_STRIDES:
+          scales_num = len(anchors)
+          for s in range(scales_num):
+            xyz_max = anchors[s][:,0:2].max(0)[0]
+            er = (xyz_max / self.scene_size[0:2]).min()
+            assert er > 0.9, "CHECK_ANCHOR_STRIDES ERROR"
+            #xyz_min = anchors[s][:,0:2].min(0)[0]
+            #print(f"xyz_min:{xyz_min}\t xyz_max:{xyz_max}")
+
         return anchors
 
     def add_visibility_to(self, boxlist):
@@ -184,6 +200,7 @@ def make_anchor_generator(config):
     straddle_thresh = config.MODEL.RPN.STRADDLE_THRESH
     voxel_scale = config.SPARSE3D.VOXEL_SCALE
     voxel_full_scale = config.SPARSE3D.VOXEL_FULL_SCALE
+    scene_size = config.SPARSE3D.SCENE_SIZE
 
     if config.MODEL.RPN.USE_FPN:
         assert len(anchor_stride) == len(
@@ -192,7 +209,7 @@ def make_anchor_generator(config):
     else:
         assert len(anchor_stride) == 1, "Non-FPN should have a single ANCHOR_STRIDE"
     anchor_generator = AnchorGenerator(
-        voxel_scale, anchor_sizes_3d, yaws, anchor_stride, straddle_thresh
+        voxel_scale, anchor_sizes_3d, yaws, anchor_stride, scene_size, straddle_thresh
     )
     return anchor_generator
 

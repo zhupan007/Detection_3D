@@ -186,6 +186,9 @@ class RPNModule(torch.nn.Module):
         anchors.constants['scale_num'] = scale_num
         anchors.constants['num_anchors_per_location'] = self.head.num_anchors_per_location
 
+        device = features_sparse[0].features.device
+        anchors = anchors.to(device)
+
         if SHOW_ANCHORS_PER_LOC:
           anchors.show_anchors_per_loc()
 

@@ -45,7 +45,7 @@ _C.SPARSE3D.nPlaneMap = 128
 _C.SPARSE3D.nPlanesFront = [32, 32*2, 32*3]
 _C.SPARSE3D.KERNEL = [[2,2,2], [2,2,2]]
 _C.SPARSE3D.STRIDE = [[2,2,2], [2,2,2]]
-
+_C.SPARSE3D.SCENE_SIZE = [8,8,4]
 # -----------------------------------------------------------------------------
 # INPUT
 # -----------------------------------------------------------------------------
@@ -162,7 +162,7 @@ _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead"
 
 
 # xyz add
-_C.MODEL.FPN_SCALES = [4,5]
+_C.MODEL.FPN_SCALES_FROM_TOP = [4,5]
 
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options

@@ -12,7 +12,7 @@ from ..backbone import build_backbone
 from ..rpn.rpn_sparse3d import build_rpn
 from ..roi_heads.roi_heads_3d import build_roi_heads
 
-DEBUG = False
+DEBUG = True
 
 class SparseRCNN(nn.Module):
     """

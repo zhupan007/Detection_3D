@@ -6,13 +6,12 @@ import sparseconvnet as scn
 from .sparseConvNetTensor import SparseConvNetTensor
 import numpy as np
 
-DEBUG = False
-
+SHOW_MODEL = False
 
 class FPN_Net(torch.nn.Module):
-    _show = DEBUG
+    _show = SHOW_MODEL
     def __init__(self, full_scale, dimension, raw_elements, reps, nPlanesF, nPlaneM, residual_blocks,
-                  fpn_scales, downsample=[[2,2,2], [2,2,2]], leakiness=0):
+                  fpn_scales_from_top, downsample=[[2,2,2], [2,2,2]], leakiness=0, voxel_scale=None):
         '''
         downsample:[kernel, stride]
         '''
@@ -20,7 +19,7 @@ class FPN_Net(torch.nn.Module):
 
         self.down_kernels =  downsample[0]
         self.down_strides = downsample[1]
-        self.fpn_scales = fpn_scales
+        self.fpn_scales_from_top = fpn_scales_from_top
         scale_num = len(nPlanesF)
         assert len(self.down_kernels) == scale_num - 1 == len(self.down_strides), f"nPlanesF len = {scale_num}, kernels num = {len(self.down_kernels)}"
         assert all([len(ks)==3 for ks in self.down_kernels])
@@ -39,7 +38,7 @@ class FPN_Net(torch.nn.Module):
             scn.OutputLayer(dimension))
 
         self.linear = nn.Linear(nPlanesF[0], 20)
-
+        self.voxel_scale = voxel_scale
         #**********************************************************************#
 
         def block(m, a, b):
@@ -143,11 +142,11 @@ class FPN_Net(torch.nn.Module):
       net = self.m_shortcuts[-1](net)
       ups = [net]
       #if self._show:    print('\nups:')
-      fpn_scales_from_back = [scales_num-1-i for i in self.fpn_scales]
-      fpn_scales_from_back.sort()
+      #fpn_scales_from_top_from_back = [scales_num-1-i for i in self.fpn_scales_from_top]
+      #fpn_scales_from_top_from_back.sort()
       for k in range(scales_num-1):
-        if k >= max(fpn_scales_from_back):
-          continue
+        #if k >= max(fpn_scales_from_top_from_back):
+        #  continue
         j = scales_num-1-k-1
         net = self.m_ups[k](net)
         #if self._show:  sparse_shape(net)
@@ -157,10 +156,10 @@ class FPN_Net(torch.nn.Module):
         #if self._show:  sparse_shape(net)
         ups.append(self.m_mergeds[k](net))
 
-      fpn_maps = [ups[i] for i in fpn_scales_from_back]
+      fpn_maps = [ups[i] for i in self.fpn_scales_from_top]
 
       if self._show:
-        receptive_field(self.operations_down)
+        receptive_field(self.operations_down, self.voxel_scale)
         print('\n\nSparse FPN\n--------------------------------------------------')
         print(f'scale num: {scales_num}')
         print('downs:')
@@ -182,23 +181,31 @@ class FPN_Net(torch.nn.Module):
           #  print('\tIdentity of the last \t\t', end='\t')
           #else:
           #  print(f'\tKernel:{self.down_kernels[-i]} stride:{self.down_strides[-i]}', end='\t')
-          op = self.operations_up[i]
-          ke = op['kernel']
-          st = op['stride']
-          tmp = f' \tKernel:{ke}, Stride:{st}'
-          sparse_shape(ups[i], post=tmp)
+          if i<len(self.operations_up):
+            op = self.operations_up[i]
+            ke = op['kernel']
+            st = op['stride']
+            rf = self.operations_down[-i-1]['rf']
+            tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
+          else:
+            tmp = ''
+          sparse_shape(ups[i], pre=f'\t{i} ', post=tmp)
 
         print('\n\nFPN_Net out:')
-        print(f'{fpn_scales_from_back} of ups')
-        for t in fpn_maps:
-          sparse_shape(t)
+        print(f'{self.fpn_scales_from_top} of ups')
+        receptive_fields_fpn = [self.operations_down[-i-1]['rf'] for i in self.fpn_scales_from_top]
+        for j,t in enumerate(fpn_maps):
+          tmp = f'\t Receptive:{receptive_fields_fpn[j]}'
+          sparse_shape(t, post=tmp)
           sparse_real_size(t,'\t')
           print('\n')
         print('--------------------------------------------------\n\n')
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        pass
       return fpn_maps
 
 
-def receptive_field(operations, voxel_size_basic = None):
+def receptive_field(operations, voxel_scale = None):
   '''
   https://medium.com/mlreview/a-guide-to-receptive-field-arithmetic-for-convolutional-neural-networks-e0f514068807
   '''
@@ -213,9 +220,9 @@ def receptive_field(operations, voxel_size_basic = None):
     operations[i]['rf'] = rf
     jump *= st
 
-  if voxel_size_basic:
+  if voxel_scale:
     for op in operations:
-      op['rf'] *= voxel_size_basic
+      op['rf'] /= 1.0*voxel_scale
 
 def sparse_shape(t, pre='\t', post=''):
   print(f'{pre}{t.features.shape}, {t.spatial_size}{post}')

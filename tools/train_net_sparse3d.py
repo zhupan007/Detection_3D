@@ -181,7 +181,7 @@ def main():
 
 
 def intact_cfg(cfg):
-  fpn_scalse = cfg.MODEL.FPN_SCALES
+  fpn_scalse = cfg.MODEL.FPN_SCALES_FROM_TOP
   strides = cfg.SPARSE3D.STRIDE
   nPlanesFront = cfg.SPARSE3D.nPlanesFront
   scale_num = len(nPlanesFront)
@@ -190,16 +190,24 @@ def intact_cfg(cfg):
   for s in range(scale_num-1):
     anchor_stride = ANCHOR_STRIDE[-1] * np.array(strides[s])
     ANCHOR_STRIDE.append(anchor_stride)
-  # fpn scales set from 0 to 1..., but used from large to small
-  cfg.MODEL.RPN.ANCHOR_STRIDE = list(reversed([ANCHOR_STRIDE[i] for i in fpn_scalse]))
-  cfg.MODEL.RPN.ANCHOR_SIZES_3D = list(reversed( cfg.MODEL.RPN.ANCHOR_SIZES_3D ))
+  cfg.MODEL.RPN.ANCHOR_STRIDE = [ANCHOR_STRIDE[-i-1] for i in fpn_scalse]
+
+  #cfg.MODEL.RPN.ANCHOR_STRIDE = list(reversed([ANCHOR_STRIDE[i] for i in fpn_scalse]))
+  #cfg.MODEL.RPN.ANCHOR_SIZES_3D = list(reversed( cfg.MODEL.RPN.ANCHOR_SIZES_3D ))
 
   anchor_size = cfg.MODEL.RPN.ANCHOR_SIZES_3D
+  anchor_stride = cfg.MODEL.RPN.ANCHOR_STRIDE
   ns = len(fpn_scalse)
   na = len(anchor_size)
   assert ns==na, f"fpn_scalse num {ns} != anchor_size num {na}. The anchor size for each scale should be seperately"
-  if len(anchor_size)>1:
-    assert anchor_size[0][0] > anchor_size[1][0], "ANCHOR_SIZES_3D should set from small to large after reversed, to match scale order of feature map"
+  for s in range(1,na):
+    assert fpn_scalse[s-1] > fpn_scalse[s], "fpn should from level_id large (map large) to level_id small (map small)"
+    assert anchor_size[s-1][0] < anchor_size[s][0], "ANCHOR_SIZES_3D should set from small to large, to match scale order of feature map"
+    assert anchor_stride[s-1][0] < anchor_stride[s][0]
+
+  pass
+  #if len(anchor_size)>1:
+  #  assert anchor_size[0][0] > anchor_size[1][0], "ANCHOR_SIZES_3D should set from small to large after reversed, to match scale order of feature map"
 
 if __name__ == "__main__":
     main()

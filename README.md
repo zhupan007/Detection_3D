@@ -130,6 +130,7 @@ later, SpConv and SparseConvCnn should only need to install one
 - run.sh
 
 # Debug
+- sparseconvnet/fpn_net.py: SHOW_MODEL
 
  - modeling/rpn/rpn_sparse3d.py 
         SHOW_TARGETS_ANCHORS  
@@ -235,7 +236,7 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 
 ### Positive policy **Very Important**
 -1:ignore, 0: negative, 1:positive  
-Positive anchor: 1. this anchor location is the closest to the target centroid. 2. the feature view field contains the target at most.
+Positive anchor: 1. this anchor location is the closest to the target centroid. 2. the feature receptive field contains the target at most.
 ```
 cfg.MODEL.RPN.FG_IOU_THRESHOLD
 cfg.MODEL.RPN.BG_IOU_THRESHOLD
