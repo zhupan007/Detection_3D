@@ -134,7 +134,6 @@ class Pooler(nn.Module):
         for level, (per_level_feature, pooler) in enumerate(zip(x, self.poolers)):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             result[idx_in_level] = pooler(per_level_feature, rois_per_level)
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             pass

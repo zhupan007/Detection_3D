@@ -8,16 +8,30 @@ from torch.nn.modules.utils import _pair
 from maskrcnn_benchmark import _C
 
 
+def convert_3d_to_2d(input):
+  import sparseconvnet as scn
+  spatial_size = input.spatial_size
+
+  nPlane0 = input.features.shape[1]+1
+  to_dense_layer =  scn.sparseToDense.SparseToDense(dimension=4, nPlanes=nPlane0)
+  features_2d = to_dense_layer(input)
+  features_2d = features_2d.squeeze(4) # [batch_size, channels_num, w,h]
+  return features_2d
+
+
 class _ROIAlign3D(Function):
     @staticmethod
-    def forward(ctx, input, roi, output_size, spatial_scale, sampling_ratio):
+    def forward(ctx, input_s3d, roi, output_size, spatial_scale, sampling_ratio):
+        input_2d = convert_3d_to_2d(input_s3d)
+
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         ctx.save_for_backward(roi)
         ctx.output_size = _pair(output_size)
         ctx.spatial_scale = spatial_scale
         ctx.sampling_ratio = sampling_ratio
-        ctx.input_shape = input.size()
+        ctx.input_shape = input_2d.size()
         output = _C.roi_align_forward(
-            input, roi, spatial_scale, output_size[0], output_size[1], sampling_ratio
+            input_2d, roi, spatial_scale, output_size[0], output_size[1], sampling_ratio
         )
         return output
 
@@ -55,7 +69,7 @@ class ROIAlign3D(nn.Module):
         self.sampling_ratio = sampling_ratio
 
     def forward(self, input, rois):
-        return roi_align(
+        return roi_align_3d(
             input, rois, self.output_size, self.spatial_scale, self.sampling_ratio
         )
 

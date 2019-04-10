@@ -178,6 +178,10 @@ class RPNModule(torch.nn.Module):
         features = [fs.features for fs in features_sparse]
         features = [reshape(f) for f in features]
         #[print(f.shape) for f in features]
+        # len(features) == levels_num
+        # features[l]: [1,channels_num, n, 1]
+        # n is a flatten of all the locations of all examples in a batch.
+        # Because the feature map size in a batch may be diff for each example
         objectness, rpn_box_regression = self.head(features)
         anchors = self.anchor_generator(points_sparse, features_sparse)
         objectness, rpn_box_regression = cat_scales_obj_reg(objectness, rpn_box_regression, anchors)

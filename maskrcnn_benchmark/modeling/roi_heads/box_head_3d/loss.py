@@ -59,7 +59,6 @@ class FastRCNNLossComputation(object):
               # negative
               labels.append(torch.zeros([prop_num],dtype=torch.float32))
               regression_targets.append(torch.zeros([prop_num,7],dtype=torch.float32))
-              import pdb; pdb.set_trace()  # XXX BREAKPOINT
               continue
 
             matched_targets = self.match_targets_to_proposals(
