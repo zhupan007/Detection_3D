@@ -62,6 +62,12 @@ data3d/data.py trainMerge
 pcl xyz: [0:max]
 ```
 
+## ROIALIGN
+- spatial_scale: the pyramid scale id
+        modeling/poolers.py/__init__
+- sampling_ratio
+
+
 # Installation
 
 ## Envirionment 1 tested
