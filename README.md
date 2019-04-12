@@ -2,6 +2,7 @@
 
 
 # on going process
+- sparseconvnet/tools_3d_2d.py when not dense, 0 used, if this is ok?
 - subsample not understand:   
         (2)  modeling/roi_heads/box_head_3d/box_head.py: self.loss_evaluator.subsample(proposals, targets)
 - add yaw loss
@@ -62,12 +63,6 @@ Dif_sin does not limit in [-pi/2, pi/2].
 data3d/data.py trainMerge
 pcl xyz: [0:max]
 ```
-
-## ROIALIGN
-- spatial_scale: the pyramid scale id
-        modeling/poolers.py/__init__
-- sampling_ratio
-
 
 # Installation
 
@@ -159,16 +154,17 @@ later, SpConv and SparseConvCnn should only need to install one
         SHOW_RPN_INPUT  
         SHOW_RPNPOST  
 
-# Basic code structure
-- maskrcnn_benchmark/structures/bounding_box_3d.py/BoxList3D
-        Box class used for training
-## configurations:
+# configurations:
 - maskrcnn_benchmark/config/defaults.py 
 - configs/sparse_faster_rcnn.yaml
 
-  ### Learning rate
-        - maskrcnn_benchmark/solver/lr_scheduler.py
+## Learning rate
+- maskrcnn_benchmark/solver/lr_scheduler.py
+## ROI
 
+# Basic code structure
+- maskrcnn_benchmark/structures/bounding_box_3d.py/BoxList3D
+        Box class used for training
 ## MODEL
 1. tools/train_net_sparse3d.py:main -> :train & test
 2. modeling/detector/detectors.py: 

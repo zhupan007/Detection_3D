@@ -87,13 +87,7 @@ class Pooler(nn.Module):
     def convert_to_roi_format(self, boxes):
         # roialign use [center_w, center_h, roi_width, roi_height, theta]
         assert boxes[0].mode == 'yx_zb'
-        if DEBUG:
-          boxes = boxes[0:1]
-          #boxes[0].show()
-          boxes[0].check_bboxes()
-
         boxes = [b.convert('standard') for b in boxes]
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         concat_boxes = cat([b.bbox3d for b in boxes], dim=0)
         device, dtype = concat_boxes.device, concat_boxes.dtype
         ids = cat(
@@ -144,8 +138,5 @@ class Pooler(nn.Module):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
             result[idx_in_level] = pooler(per_level_feature, rois_per_level)
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            pass
 
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return result

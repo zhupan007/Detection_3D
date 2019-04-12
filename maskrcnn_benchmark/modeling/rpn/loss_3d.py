@@ -166,7 +166,7 @@ class RPNLossComputation(object):
         box_loss = smooth_l1_loss(
             box_regression[sampled_pos_inds],
             regression_targets[sampled_pos_inds],
-            anchors[sampled_pos_inds],
+            anchors[sampled_pos_inds].bbox3d,
             beta=1.0 / 9,
             size_average=False,
             yaw_loss_mode = self.yaw_loss_mode,

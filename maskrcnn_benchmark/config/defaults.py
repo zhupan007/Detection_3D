@@ -168,7 +168,7 @@ _C.MODEL.FPN_SCALES_FROM_TOP = [4,5]
 # ROI HEADS options
 # ---------------------------------------------------------------------------- #
 _C.MODEL.ROI_HEADS = CN()
-_C.MODEL.ROI_HEADS.USE_FPN = False
+_C.MODEL.ROI_HEADS.USE_FPN = True
 # Overlap threshold for an RoI to be considered foreground (if >= FG_IOU_THRESHOLD)
 _C.MODEL.ROI_HEADS.FG_IOU_THRESHOLD = 0.5
 # Overlap threshold for an RoI to be considered background
@@ -200,12 +200,12 @@ _C.MODEL.ROI_HEADS.DETECTIONS_PER_IMG = 100
 
 
 _C.MODEL.ROI_BOX_HEAD = CN()
-_C.MODEL.ROI_BOX_HEAD.FEATURE_EXTRACTOR = "ResNet50Conv5ROIFeatureExtractor"
-_C.MODEL.ROI_BOX_HEAD.PREDICTOR = "FastRCNNPredictor"
+_C.MODEL.ROI_BOX_HEAD.FEATURE_EXTRACTOR = "FPN2MLPFeatureExtractor"
+_C.MODEL.ROI_BOX_HEAD.PREDICTOR = "FPNPredictor"
 _C.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = 14
-_C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 0
+_C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 2
 _C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (1.0 / 16,)
-_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 81
+_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
 # Hidden layer dimension when using an MLP for the RoI box head
 _C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 1024
 

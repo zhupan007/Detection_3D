@@ -4,18 +4,8 @@ from torch import nn
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 from torch.nn.modules.utils import _pair
-
+from sparseconvnet.tools_3d_2d import sparse_3d_to_dense_2d
 import _C
-
-def convert_3d_to_2d(input):
-  import sparseconvnet as scn
-  spatial_size = input.spatial_size
-
-  nPlane0 = input.features.shape[1]+1
-  to_dense_layer =  scn.sparseToDense.SparseToDense(dimension=4, nPlanes=nPlane0)
-  features_2d = to_dense_layer(input)
-  features_2d = features_2d.squeeze(4) # [batch_size, channels_num, w,h]
-  return features_2d
 
 
 class _ROIAlignRotated3D(Function):
@@ -80,12 +70,13 @@ class ROIAlignRotated3D(nn.Module):
         rois: [n,5] [batch_ind, center_w, center_h, roi_width, roi_height, theta]
             theta unit: degree, anti-clock wise is positive
         '''
+        input = sparse_3d_to_dense_2d(input)
         rois = rois[:,[0,1,2,4,5,7]]
         assert rois.shape[1] == 6
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        return roi_align_rotated_3d(
+        output = roi_align_rotated_3d(
             input, rois, self.output_size, self.spatial_scale, self.sampling_ratio
         )
+        return output
 
     def __repr__(self):
         tmpstr = self.__class__.__name__ + "("

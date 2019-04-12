@@ -33,6 +33,9 @@ def smooth_l1_loss(input, target, anchor, beta=1. / 9, size_average=True, yaw_lo
     very similar to the smooth_l1_loss from pytorch, but with
     the extra beta parameter
     """
+    assert input.shape[0] == target.shape[0] == anchor.shape[0]
+    assert input.shape[1] == target.shape[1] == anchor.shape[1]  == 7
+
     dif = torch.abs(input - target)
 
     dif[:,-1] = get_yaw_loss(yaw_loss_mode, input, target, anchor)

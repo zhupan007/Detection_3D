@@ -57,8 +57,9 @@ class FastRCNNLossComputation(object):
             if len(targets_per_image) == 0:
               prop_num = len(proposals_per_image)
               # negative
-              labels.append(torch.zeros([prop_num],dtype=torch.float32))
-              regression_targets.append(torch.zeros([prop_num,7],dtype=torch.float32))
+              device = proposals[0].bbox3d.device
+              labels.append(torch.zeros([prop_num],dtype=torch.int64).to(device))
+              regression_targets.append(torch.zeros([prop_num,7],dtype=torch.float32).to(device))
               continue
 
             matched_targets = self.match_targets_to_proposals(
@@ -85,6 +86,9 @@ class FastRCNNLossComputation(object):
             labels.append(labels_per_image)
             regression_targets.append(regression_targets_per_image)
 
+        #if not labels[0].device == torch.device('cuda:0'):
+        #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        #  pass
         return labels, regression_targets
 
     def subsample(self, proposals, targets):
@@ -152,6 +156,7 @@ class FastRCNNLossComputation(object):
         regression_targets = cat(
             [proposal.get_field("regression_targets") for proposal in proposals], dim=0
         )
+        bbox3ds = cat([p.bbox3d for p in proposals], dim=0)
 
         classification_loss = F.cross_entropy(class_logits, labels)
 
@@ -160,11 +165,12 @@ class FastRCNNLossComputation(object):
         # advanced indexing
         sampled_pos_inds_subset = torch.nonzero(labels > 0).squeeze(1)
         labels_pos = labels[sampled_pos_inds_subset]
-        map_inds = 4 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3], device=device)
+        map_inds = 7 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3, 4, 5, 6], device=device)
 
         box_loss = smooth_l1_loss(
             box_regression[sampled_pos_inds_subset[:, None], map_inds],
             regression_targets[sampled_pos_inds_subset],
+            bbox3ds[sampled_pos_inds_subset],
             size_average=False,
             beta=1,
         )

@@ -1243,7 +1243,11 @@ def review_bbox_format():
   # bbox standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
   # x_size > y_size,
   # yaw:(-pi/2, pi/2], clock wise is right, following rules in SECOND
-  bbox0 = np.array([[1,2,1, 5, 0.5, 2, np.pi/2.0*0.5]])
+  bbox0 = np.array([
+                    [1,2,1, 5, 0.5, 1, 0],
+                    [1,2,1, 5, 0.5, 1.5, np.pi/2.0*0.5],
+                    [1,2,1, 5, 0.5, 0.5, -np.pi/2.0*0.5],
+                    ])
   print(f'{bbox0}')
   Bbox3D.draw_bboxes(bbox0, 'Z', is_yx_zb=False)
 
@@ -1302,8 +1306,10 @@ def test_draw():
   box = np.array([[0,0,0, 2,1,2, 0]])
   Bbox3D.draw_bboxes_mesh(box, 'Z', False)
 
+
+
 if __name__ ==  '__main__':
   #test_merge_walls()
   #show_bboxes()
-  #review_bbox_format()
-  test_draw()
+  review_bbox_format()
+  #test_draw()

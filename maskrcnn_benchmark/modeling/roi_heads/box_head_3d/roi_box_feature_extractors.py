@@ -6,7 +6,7 @@ from maskrcnn_benchmark.modeling import registry
 from maskrcnn_benchmark.modeling.backbone import resnet
 from maskrcnn_benchmark.modeling.poolers_3d import Pooler
 
-DEBUG = True
+DEBUG = False
 
 @registry.ROI_BOX_FEATURE_EXTRACTORS.register("ResNet50Conv5ROIFeatureExtractor")
 class ResNet50Conv5ROIFeatureExtractor(nn.Module):
@@ -72,21 +72,24 @@ class FPN2MLPFeatureExtractor(nn.Module):
             nn.init.constant_(l.bias, 0)
 
     def forward(self, x0, proposals):
+        x1 = self.pooler(x0, proposals)
+
+        x2 = x1.view(x1.size(0), -1)
+
+        x3 = F.relu(self.fc6(x2))
+        x4 = F.relu(self.fc7(x3))
+
         if DEBUG:
+          print('\nFPN2MLPFeatureExtractorN:\n')
           scale_num = len(x0)
           print(f"scale_num: {scale_num}")
           for s in range(scale_num):
             print(f"x0[{s}]: {x0[s].features.shape}, {x0[s].spatial_size}")
-        x1 = self.pooler(x0, proposals)
-        print(f"x1:{x1.features.shape}, {x1.spatial_size}")
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-
-        x2 = x1.view(x1.size(0), -1)
-
-        x = F.relu(self.fc6(x))
-        x = F.relu(self.fc7(x))
-
-        return x
+          print(f'x1: {x1.shape}')
+          print(f'x2: {x2.shape}')
+          print(f'x3: {x3.shape}')
+          print(f'x4: {x4.shape}')
+        return x4
 
 
 def make_roi_box_feature_extractor(cfg):
