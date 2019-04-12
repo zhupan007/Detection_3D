@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from maskrcnn_benchmark.layers import ROIAlign3D
+from maskrcnn_benchmark.layers import ROIAlignRotated3D
 
 from .utils import cat
 
@@ -54,7 +54,7 @@ class LevelMapper(object):
 class Pooler(nn.Module):
     """
     Pooler for Detection with or without FPN.
-    It currently hard-code ROIAlign3D in the implementation,
+    It currently hard-code ROIAlignRotated3D in the implementation,
     but that can be made more generic later on.
     Also, the requirement of passing the scales is not strictly necessary, as they
     can be inferred from the size of the feature map / size of original image,
@@ -66,13 +66,13 @@ class Pooler(nn.Module):
         Arguments:
             output_size (list[tuple[int]] or list[int]): output size for the pooled region
             scales (list[float]): scales for each Pooler
-            sampling_ratio (int): sampling ratio for ROIAlign3D
+            sampling_ratio (int): sampling ratio for ROIAlignRotated3D
         """
         super(Pooler, self).__init__()
         poolers = []
         for scale in scales:
             poolers.append(
-                ROIAlign3D(
+                ROIAlignRotated3D(
                     output_size, spatial_scale=scale, sampling_ratio=sampling_ratio
                 )
             )
@@ -85,6 +85,15 @@ class Pooler(nn.Module):
         self.map_levels = LevelMapper(lvl_min, lvl_max)
 
     def convert_to_roi_format(self, boxes):
+        # roialign use [center_w, center_h, roi_width, roi_height, theta]
+        assert boxes[0].mode == 'yx_zb'
+        if DEBUG:
+          boxes = boxes[0:1]
+          #boxes[0].show()
+          boxes[0].check_bboxes()
+
+        boxes = [b.convert('standard') for b in boxes]
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         concat_boxes = cat([b.bbox3d for b in boxes], dim=0)
         device, dtype = concat_boxes.device, concat_boxes.dtype
         ids = cat(
@@ -105,7 +114,7 @@ class Pooler(nn.Module):
         Returns:
             result (Tensor)
         """
-        if DEBUG:
+        if DEBUG and False:
           levels_num = len(x)
           print(f'\bx levels_num:{levels_num}')
           for li in range(levels_num):

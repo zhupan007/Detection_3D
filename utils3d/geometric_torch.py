@@ -5,7 +5,7 @@ def limit_period(val, offset, period):
   '''
     [-pi/2, pi/2]: offset=0.5, period=pi
     [-pi, 0]: offset=1, period=pi
-    [0, pi]: offset=-1, period=pi
+    [0, pi]: offset=0, period=pi
   '''
   return val - torch.floor(val / period + offset) * period
 
@@ -31,7 +31,7 @@ class OBJ_DEF():
     if yx_zb:
       yaws = limit_period(yaws, 0.5, math.pi)
     else:
-      yaws = limit_period(yaws, -1, math.pi)
+      yaws = limit_period(yaws, 0, math.pi)
     return yaws
 
   @staticmethod
@@ -57,5 +57,9 @@ class OBJ_DEF():
       assert torch.max(torch.abs(bboxes[:,-1]))<=math.pi*0.5+ofs
     else:
       assert torch.all(bboxes[:,3] >= bboxes[:,4])
+      if not torch.max(bboxes[:,-1]) <= math.pi+ofs:
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        pass
       assert torch.max(bboxes[:,-1]) <= math.pi+ofs
       assert torch.min(bboxes[:,-1]) >= 0-ofs
+

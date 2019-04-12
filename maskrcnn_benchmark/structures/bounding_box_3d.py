@@ -137,10 +137,10 @@ class BoxList3D(object):
         # type='prediction'/'ground_truth'/'anchor'
         self.constants = constants
 
-        assert mode == 'yx_zb', "Both anchor, gt_boxes, prediction in the network is yx_zb"
-        bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb=True) # [-pi/2, pi/2]
+        #assert mode == 'yx_zb', "Both anchor, gt_boxes, prediction in the network is yx_zb"
+        bbox3d[:,-1] =  OBJ_DEF.limit_yaw( bbox3d[:,-1], yx_zb = mode=='yx_zb') # [-pi/2, pi/2]
         if not self.is_prediction():
-          OBJ_DEF.check_bboxes(bbox3d, yx_zb=True)
+          OBJ_DEF.check_bboxes(bbox3d, yx_zb = mode=='yx_zb')
         else:
           pass
           #print('prediction')
@@ -152,6 +152,8 @@ class BoxList3D(object):
         self.examples_idxscope = examples_idxscope
         self.extra_fields = {}
 
+    def check_bboxes(self):
+      OBJ_DEF.check_bboxes(self.bbox3d, self.mode=='yx_zb')
 
     def is_prediction(self):
       return 'prediction' in self.constants and self.constants['prediction']
@@ -190,6 +192,7 @@ class BoxList3D(object):
             self.extra_fields[k] = v
 
     def convert(self, mode):
+        # ref: utils3d/bbox3d_ops.py/Bbox3D
         self.check_mode(mode)
         if mode == self.mode:
             return self
@@ -197,8 +200,14 @@ class BoxList3D(object):
         bbox3d1 = bbox3d0[:,[0,1,2,4,3,5,6]]
         if mode == 'standard':
           bbox3d1[:,2] += bbox3d0[:,5] * 0.5
+          bbox3d1[:,-1] += math.pi*0.5
         else:
           bbox3d1[:,2] -= bbox3d0[:,5] * 0.5
+          bbox3d1[:,-1] -= math.pi*0.5
+        #print(f'0 max: {bbox3d0[:,-1].min()}')
+        #print(f'0 min: {bbox3d0[:,-1].max()}\n')
+        #print(f'1 max: {bbox3d1[:,-1].min()}')
+        #print(f'1 min: {bbox3d1[:,-1].max()}')
         bbox = BoxList3D(bbox3d1, self.size3d, mode, self.examples_idxscope)
         bbox._copy_extra_fields(self)
         return bbox

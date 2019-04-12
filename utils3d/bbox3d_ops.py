@@ -124,9 +124,7 @@ class Bbox3D():
     if boxes.shape[0] == 0:
       return boxes
     boxes[:,2] += boxes[:,5]*0.5
-    tmp = boxes[:,3].copy()
-    boxes[:,3] = boxes[:,4]
-    boxes[:,4] = tmp
+    boxes = boxes[:,[0,1,2,4,3,5,6]]
     boxes[:,-1] += np.pi*0.5
     # limit in [-pi/2, pi/2]
     boxes[:,_yaw] = OBJ_DEF.limit_yaw(boxes[:,_yaw], False)

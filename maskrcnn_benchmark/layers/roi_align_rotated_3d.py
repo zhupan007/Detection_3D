@@ -7,7 +7,18 @@ from torch.nn.modules.utils import _pair
 
 import _C
 
-class _ROIAlignRotated(Function):
+def convert_3d_to_2d(input):
+  import sparseconvnet as scn
+  spatial_size = input.spatial_size
+
+  nPlane0 = input.features.shape[1]+1
+  to_dense_layer =  scn.sparseToDense.SparseToDense(dimension=4, nPlanes=nPlane0)
+  features_2d = to_dense_layer(input)
+  features_2d = features_2d.squeeze(4) # [batch_size, channels_num, w,h]
+  return features_2d
+
+
+class _ROIAlignRotated3D(Function):
     @staticmethod
     def forward(ctx, input, roi, output_size, spatial_scale, sampling_ratio):
         ctx.save_for_backward(roi)
@@ -48,17 +59,17 @@ class _ROIAlignRotated(Function):
         return grad_input, None, None, None, None
 
 
-roi_align = _ROIAlignRotated.apply
+roi_align_rotated_3d = _ROIAlignRotated3D.apply
 
 
-class ROIAlignRotated(nn.Module):
+class ROIAlignRotated3D(nn.Module):
     def __init__(self, output_size, spatial_scale, sampling_ratio):
         '''
         output_size:[pooled_height, pooled_width]
         spatial_scale: size_of_map/size_of_original_image
         sampling_ratio: how many points to use for bilinear_interpolate
         '''
-        super(ROIAlignRotated, self).__init__()
+        super(ROIAlignRotated3D, self).__init__()
         self.output_size = output_size # (7,7)
         self.spatial_scale = spatial_scale # 0.25
         self.sampling_ratio = sampling_ratio # 2
@@ -69,8 +80,10 @@ class ROIAlignRotated(nn.Module):
         rois: [n,5] [batch_ind, center_w, center_h, roi_width, roi_height, theta]
             theta unit: degree, anti-clock wise is positive
         '''
+        rois = rois[:,[0,1,2,4,5,7]]
         assert rois.shape[1] == 6
-        return roi_align(
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        return roi_align_rotated_3d(
             input, rois, self.output_size, self.spatial_scale, self.sampling_ratio
         )
 
@@ -88,7 +101,7 @@ if __name__ == '__main__':
     # note: output_size: [h,w],  rois: [w,h]
     # order is different
 
-    align_roi = ROIAlignRotated((1, 3), 1, 2)
+    align_roi = ROIAlignRotated3D((1, 3), 1, 2)
     feat = torch.arange(64).view(1, 1, 8, 8).float()
     # Note: first element is batch_idx
     rois = torch.tensor([
