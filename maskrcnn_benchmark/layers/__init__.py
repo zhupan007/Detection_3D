@@ -1,5 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
+import sys,os
+
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(CUR_DIR)
 
 from .batch_norm import FrozenBatchNorm2d
 from .misc import Conv2d

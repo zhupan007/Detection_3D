@@ -1,4 +1,5 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+# borrow from
+# https://github.com/facebookresearch/maskrcnn-benchmark/blob/master/setup.py
 #!/usr/bin/env python
 
 import glob
@@ -16,7 +17,7 @@ requirements = ["torch", "torchvision"]
 
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    extensions_dir = os.path.join(this_dir, "maskrcnn_benchmark", "csrc")
+    extensions_dir = os.path.join(this_dir, "csrc")
 
     main_file = glob.glob(os.path.join(extensions_dir, "*.cpp"))
     source_cpu = glob.glob(os.path.join(extensions_dir, "cpu", "*.cpp"))
@@ -28,7 +29,7 @@ def get_extensions():
     extra_compile_args = {"cxx": []}
     define_macros = []
 
-    if torch.cuda.is_available() and CUDA_HOME is not None:
+    if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv("FORCE_CUDA", "0") == "1":
         extension = CUDAExtension
         sources += source_cuda
         define_macros += [("WITH_CUDA", None)]
@@ -45,7 +46,7 @@ def get_extensions():
 
     ext_modules = [
         extension(
-            "maskrcnn_benchmark._C",
+            "cv_ops_lib._C",
             sources,
             include_dirs=include_dirs,
             define_macros=define_macros,
@@ -57,11 +58,11 @@ def get_extensions():
 
 
 setup(
-    name="maskrcnn_benchmark",
+    name="cv_ops_lib",
     version="0.1",
-    author="fmassa",
-    url="https://github.com/facebookresearch/maskrcnn-benchmark",
-    description="object detection in pytorch",
+    author="xyz",
+    url="https://github.com/xuyongzhi/cv_ops_pytorch.git",
+    description="cv ops in pytorch",
     packages=find_packages(exclude=("configs", "tests",)),
     # install_requires=requirements,
     ext_modules=get_extensions(),
