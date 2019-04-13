@@ -2,6 +2,7 @@
 
 
 # on going process
+- \_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE
 - sparseconvnet/tools_3d_2d.py when not dense, 0 used, if this is ok?
 - subsample not understand:   
         (2)  modeling/roi_heads/box_head_3d/box_head.py: self.loss_evaluator.subsample(proposals, targets)
@@ -217,6 +218,21 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 (2) modeling/roi_heads/box_head_3d/box_head.py ROIBoxHead3D
 (3) roi_heads/box_head_3d/roi_box_feature_extractors.py
 (4) modeling/poolers.py 
+```
+## matcher
+1. rpn/loss_3d.py/make_rpn_loss_evaluator
+```
+cfg.MODEL.RPN.FG_IOU_THRESHOLD
+cfg.MODEL.RPN.BG_IOU_THRESHOLD
+allow_low_quality_matches=True
+yaw_threshold = cfg.MODEL.RPN.YAW_THRESHOLD
+```
+
+## BalancedPositiveNegativeSampler
+1. rpn/loss_3d.py/make_rpn_loss_evaluator
+```
+cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE
+cfg.MODEL.RPN.POSITIVE_FRACTION
 ```
 
 ## Data feeding

@@ -129,17 +129,17 @@ _C.MODEL.RPN.USE_FPN = False
 _C.MODEL.RPN.STRADDLE_THRESH = 0
 # Minimum overlap required between an anchor and ground-truth box for the
 # (anchor, gt box) pair to be a positive example (IoU >= FG_IOU_THRESHOLD
-# ==> positive RPN example)
-_C.MODEL.RPN.FG_IOU_THRESHOLD = 0.3 #  0.7
+# ==> positive RPN example) (->Matcher)
+_C.MODEL.RPN.FG_IOU_THRESHOLD = 0.6 #  0.7
 # Maximum overlap allowed between an anchor and ground-truth box for the
 # (anchor, gt box) pair to be a negative examples (IoU < BG_IOU_THRESHOLD
-# ==> negative RPN example)
-_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.1 # 0.3
-# Maximum yaw dif for positive anchor
-_C.MODEL.RPN.YAW_THRESHOLD = 0.78
-# Total number of RPN examples per image
+# ==> negative RPN example) (->Matcher)
+_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.3 # 0.3
+# Maximum yaw dif for positive anchor (->Matcher)
+_C.MODEL.RPN.YAW_THRESHOLD = 0.7
+# Total number of RPN examples per image (-> BalancedPositiveNegativeSampler)
 _C.MODEL.RPN.BATCH_SIZE_PER_IMAGE = 256
-# Target fraction of foreground (positive) examples per RPN minibatch
+# Target fraction of foreground (positive) examples per RPN minibatch (->BalancedPositiveNegativeSampler)
 _C.MODEL.RPN.POSITIVE_FRACTION = 0.5
 # Number of top scoring RPN proposals to keep before applying NMS
 # When FPN is used, this is *per FPN level* (not total)
@@ -176,7 +176,7 @@ _C.MODEL.ROI_HEADS.FG_IOU_THRESHOLD = 0.5
 _C.MODEL.ROI_HEADS.BG_IOU_THRESHOLD = 0.5
 # Default weights on (dx, dy, dw, dh) for normalizing bbox regression targets
 # These are empirically chosen to approximately lead to unit variance targets
-_C.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS = (10., 10., 5., 5.)
+_C.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS = (10., 10., 10, 5., 5., 5., 10)
 # RoI minibatch size *per image* (number of regions of interest [ROIs])
 # Total number of RoIs per training minibatch =
 #   TRAIN.BATCH_SIZE_PER_IM * TRAIN.IMS_PER_BATCH * NUM_GPUS

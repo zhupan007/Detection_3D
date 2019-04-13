@@ -38,12 +38,12 @@ class BalancedPositiveNegativeSampler(object):
             positive = torch.nonzero(matched_idxs_per_image >= 1).squeeze(1)
             negative = torch.nonzero(matched_idxs_per_image == 0).squeeze(1)
 
-            num_pos = int(self.batch_size_per_image * self.positive_fraction)
+            num_pos0 = int(self.batch_size_per_image * self.positive_fraction)
             # protect against not enough positive examples
-            num_pos = min(positive.numel(), num_pos)
-            num_neg = self.batch_size_per_image - num_pos
+            num_pos = min(positive.numel(), num_pos0)
+            num_neg0 = self.batch_size_per_image - num_pos
             # protect against not enough negative examples
-            num_neg = min(negative.numel(), num_neg)
+            num_neg = min(negative.numel(), num_neg0)
 
             # randomly select positive and negative examples
             perm1 = torch.randperm(positive.numel(), device=positive.device)[:num_pos]
