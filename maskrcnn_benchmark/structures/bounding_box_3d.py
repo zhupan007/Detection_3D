@@ -155,6 +155,8 @@ class BoxList3D(object):
     def check_bboxes(self):
       OBJ_DEF.check_bboxes(self.bbox3d, self.mode=='yx_zb')
 
+    def set_as_prediction(self):
+      self.constants['prediction'] = True
     def is_prediction(self):
       return 'prediction' in self.constants and self.constants['prediction']
     def check_mode(self, mode):

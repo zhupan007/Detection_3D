@@ -253,6 +253,7 @@ class RPNModule(torch.nn.Module):
             "loss_objectness": loss_objectness,
             "loss_rpn_box_reg": loss_rpn_box_reg,
         }
+        boxes.set_as_prediction()
         return boxes, losses
 
     def _forward_test(self, anchors, objectness, rpn_box_regression, targets=None):
@@ -268,6 +269,7 @@ class RPNModule(torch.nn.Module):
             ]
             boxes = [box[ind] for box, ind in zip(boxes, inds)]
             #boxes = cat_boxlist_3d(boxes, per_example=True)
+        boxes.set_as_prediction()
         return boxes, {}
 
 
