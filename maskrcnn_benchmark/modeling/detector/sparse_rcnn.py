@@ -30,6 +30,7 @@ class SparseRCNN(nn.Module):
         self.backbone = build_backbone(cfg)
         self.rpn = build_rpn(cfg)
         self.roi_heads = build_roi_heads(cfg)
+        self.DISABLE_ROILOSS = cfg.DEBUG.DISABLE_ROILOSS
 
     def forward(self, points, targets=None):
         """
@@ -50,12 +51,7 @@ class SparseRCNN(nn.Module):
         proposals, proposal_losses = self.rpn(points, features, targets)
         proposals.clamp_size()
         if self.roi_heads:
-            if not DEBUG:
-              x, result, detector_losses = self.roi_heads(features, proposals, targets)
-            else:
-              x = features
-              result = proposals
-              detector_losses = {}
+            x, result, detector_losses = self.roi_heads(features, proposals, targets)
         else:
             # RPN-only models don't have roi_heads
             x = features
@@ -64,7 +60,8 @@ class SparseRCNN(nn.Module):
 
         if self.training:
             losses = {}
-            losses.update(detector_losses)
+            if not self.DISABLE_ROILOSS:
+              losses.update(detector_losses)
             losses.update(proposal_losses)
             return losses
 

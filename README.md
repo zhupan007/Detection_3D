@@ -235,6 +235,10 @@ cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE
 cfg.MODEL.RPN.POSITIVE_FRACTION
 ```
 
+## loss
+- rpn_sparse3d.py: loss_objectness, loss_rpn_box_reg
+- modeling/roi_heads/box_head_3d/box_head.py:  loss_classifier_roi, loss_box_reg_roi
+
 ## Data feeding
 1. data.py/make_data_loader/
 

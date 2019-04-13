@@ -20,6 +20,9 @@ from yacs.config import CfgNode as CN
 
 _C = CN()
 
+_C.DEBUG = CN()
+_C.DEBUG.DISABLE_ROILOSS = True
+
 _C.MODEL = CN()
 _C.MODEL.RPN_ONLY = False
 _C.MODEL.MASK_ON = False

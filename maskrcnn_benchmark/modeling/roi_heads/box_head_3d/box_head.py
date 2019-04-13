@@ -59,7 +59,7 @@ class ROIBoxHead3D(torch.nn.Module):
         return (
             x,
             proposals,
-            dict(loss_classifier=loss_classifier, loss_box_reg=loss_box_reg),
+            {"loss_classifier_roi":loss_classifier, "loss_box_reg_roi":loss_box_reg},
         )
 
 
