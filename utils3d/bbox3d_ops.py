@@ -13,6 +13,8 @@ from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 
 DEBUG = True
 
+FRAME_SHOW = 0
+
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
 SameDisThs = 1e-3 * 50 # 0.1 mm
@@ -226,9 +228,13 @@ class Bbox3D():
     #print('boxes:\n', gt_boxes1)
 
     if bn > 0:
-      mesh_frame = open3d.create_mesh_coordinate_frame(size = 0.6, origin = gt_boxes1[0,0:3])
-      return [bboxes_lineset]
-      #return [bboxes_lineset, mesh_frame]
+      out = [bboxes_lineset]
+      if FRAME_SHOW == 0:
+        mesh_frame = open3d.create_mesh_coordinate_frame(size = 0.6, origin = [0,0,0])
+      elif FRAME_SHOW == 1:
+        mesh_frame = open3d.create_mesh_coordinate_frame(size = 0.6, origin = gt_boxes1[0,0:3])
+      out = out + [mesh_frame]
+      return out
     else:
       return []
 
@@ -375,6 +381,12 @@ class Bbox3D():
 
   @staticmethod
   def bbox_corners(bbox, up_axis):
+    '''
+    for yaw, clock wise is positive.
+    In Geou.Rz, anticlock wise is positive. But by:
+      corners = (np.matmul(R, (corners-bsize*0.5).T )).T + bsize*0.5
+    do not use R.transpose(), it is changed to clock wise.
+    '''
     assert bbox.shape == (7,)
     cx,cy,cz, sx,sy,sz, yaw = bbox
     centroid = bbox[0:3]

@@ -37,6 +37,16 @@ yaw_s-0.5pi:   [-pi/2, pi/2]
   data preparation: standard  
   feed into network: yx_zb (to use second lib)  
 
+- yaw positive direction:
+```
+(1) clock wise during data preparation and rpn.
+ref: utils3d/bbox3d_ops.py Bbox3D.bbox_corners()  check by: review_bbox_format()  
+Although in geometric_util.py, positive for Rz is anti-clock wise, by do not transposing R in Bbox3D.bbox_corners(), it is clock wise finanly.  
+(2) anti-clock wise in ROIAlignRotated_cuda.cu/ROIAlignRotated_forward_cuda
+ref: layers/roi_align_rotated_3d.py  
+This is the definition in caff2, so keep it. change sign of yaw in roi_align_rotated_3d.py/ROIAlignRotated3D.forward()
+```
+
 ## box encoding
 - modeling/box_coder_3d.py/encode & decode  
 - second.pytorch.core.box_torch_ops/second_box_encode & second_box_decode  
