@@ -230,7 +230,7 @@ class RPNModule(torch.nn.Module):
         pred_boxes.bbox3d = pred_boxes_3d
         pred_boxes.add_field('objectness', objectness_normed)
         for bi,pdb in enumerate(pred_boxes.seperate_examples()):
-          pdb.show_by_field('objectness',0.97, targets[bi])
+          pdb.show_by_objectness(0.97, targets[bi])
 
     def _forward_train(self, anchors, objectness, rpn_box_regression, targets):
         if self.cfg.MODEL.RPN_ONLY:

@@ -50,7 +50,7 @@ class SparseRCNN(nn.Module):
         features = self.backbone(points)
         proposals, proposal_losses = self.rpn(points, features, targets)
         proposals.clamp_size()
-        if self.roi_heads:
+        if not self.DISABLE_ROILOSS:
             x, result, detector_losses = self.roi_heads(features, proposals, targets)
         else:
             # RPN-only models don't have roi_heads
