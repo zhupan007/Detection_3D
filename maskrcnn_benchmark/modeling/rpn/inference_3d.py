@@ -9,7 +9,7 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import remove_small_boxes3d
 from ..utils import cat
 
 
-DEBUG = True
+DEBUG = False
 SHOW_RPN_INPUT = DEBUG and True
 SHOW_RPNPOST = DEBUG and True
 

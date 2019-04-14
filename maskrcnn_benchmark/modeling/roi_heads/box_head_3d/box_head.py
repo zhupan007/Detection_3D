@@ -7,6 +7,7 @@ from .roi_box_predictors import make_roi_box_predictor
 from .inference import make_roi_box_post_processor
 from .loss import make_roi_box_loss_evaluator
 
+DEBUG = True
 
 class ROIBoxHead3D(torch.nn.Module):
     """
@@ -36,6 +37,9 @@ class ROIBoxHead3D(torch.nn.Module):
         """
 
         proposals = proposals.seperate_examples()
+        if DEBUG and False:
+          proposals[0].show_by_objectness(0.5, targets[0])
+
         if self.training:
             # Faster R-CNN subsamples during training the proposals with a fixed
             # positive / negative ratio
@@ -54,8 +58,14 @@ class ROIBoxHead3D(torch.nn.Module):
             return x, result, {}
 
         loss_classifier, loss_box_reg = self.loss_evaluator(
-            [class_logits], [box_regression]
+            [class_logits], [box_regression], targets
         )
+        if DEBUG:
+          print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")
+          batch_size = len(proposals)
+          proposals[0].show_by_objectness(0.5, targets[0])
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
         return (
             x,
             proposals,

@@ -47,6 +47,6 @@ SOLVER:
   STEPS: (1000,)
   CHECKPOINT_PERIOD: 200
   WARMUP_ITERS: 40
-OUTPUT_DIR: "results_bs1_dlr2"
+OUTPUT_DIR: "results_bs1_dlr2_rpn"
 TEST:
   IMS_PER_BATCH: 1

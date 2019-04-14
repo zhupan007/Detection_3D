@@ -10,6 +10,7 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
     BalancedPositiveNegativeSampler
 )
 from maskrcnn_benchmark.modeling.utils import cat
+from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
 DEBUG = True
 
@@ -129,7 +130,7 @@ class FastRCNNLossComputation(object):
         self._proposals = proposals
         return proposals
 
-    def __call__(self, class_logits, box_regression):
+    def __call__(self, class_logits, box_regression, targets=None):
         """
         Computes the loss for Faster R-CNN.
         This requires that the subsample method has been called beforehand.
@@ -137,6 +138,7 @@ class FastRCNNLossComputation(object):
         Arguments:
             class_logits (list[Tensor])
             box_regression (list[Tensor])
+            targets for debuging only
 
         Returns:
             classification_loss (Tensor)
@@ -152,11 +154,16 @@ class FastRCNNLossComputation(object):
 
         proposals = self._proposals
 
-        labels = cat([proposal.get_field("labels") for proposal in proposals], dim=0)
-        regression_targets = cat(
-            [proposal.get_field("regression_targets") for proposal in proposals], dim=0
-        )
-        bbox3ds = cat([p.bbox3d for p in proposals], dim=0)
+        #labels = cat([proposal.get_field("labels") for proposal in proposals], dim=0)
+        #regression_targets = cat(
+        #    [proposal.get_field("regression_targets") for proposal in proposals], dim=0
+        #)
+        #bbox3ds = cat([p.bbox3d for p in proposals], dim=0)
+
+        proposals = cat_boxlist_3d(proposals, per_example=True)
+        labels = proposals.get_field("labels")
+        regression_targets = proposals.get_field("regression_targets")
+        bbox3ds = proposals.bbox3d
 
         classification_loss = F.cross_entropy(class_logits, labels)
 
@@ -175,6 +182,17 @@ class FastRCNNLossComputation(object):
             beta=1,
         )
         box_loss = box_loss / labels.numel()
+
+        if DEBUG:
+          assert proposals.batch_size() == 1
+          print(f"classification_loss:{classification_loss}, box_loss: {box_loss}")
+          pred_logits = torch.argmax(class_logits, 1)
+          err = pred_logits - labels
+          err_inds = torch.nonzero(err).view(-1)
+          if err_inds.shape[0]>0:
+            proposals[err_inds].show_together(targets[0])
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
 
         return classification_loss, box_loss
 
