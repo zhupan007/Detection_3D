@@ -324,7 +324,7 @@ def point_in_quadrilateral(pt_x, pt_y, corners):
     adap = ad0 * ap0 + ad1 * ap1
 
     #return abab >= abap and abap >= 0 and adad >= adap and adap >= 0
-    eps = -1e-6
+    eps = -1e-6 # 1e-5 is checked to be too small
     return abab - abap >= eps and abap >= eps and adad - adap >= eps and adap >= eps
 
 
@@ -390,7 +390,7 @@ def inter(rbbox1, rbbox2):
     num_intersection = quadrilateral_intersection(corners1, corners2,
                                                   intersection_corners)
     sort_vertex_in_convex_polygon(intersection_corners, num_intersection)
-    # print(intersection_corners.reshape([-1, 2])[:num_intersection])
+    #print(intersection_corners.reshape([-1, 2])[:num_intersection])
 
     return area(intersection_corners, num_intersection)
 
@@ -525,6 +525,7 @@ def rotate_iou_gpu(boxes, query_boxes, device_id=0):
     Returns:
         [type]: [description]
     """
+    drift_same_boxes(boxes, query_boxes)
     box_dtype = boxes.dtype
     boxes = boxes.astype(np.float32)
     query_boxes = query_boxes.astype(np.float32)
@@ -621,6 +622,7 @@ def rotate_iou_gpu_eval(boxes, query_boxes, criterion=-1, device_id=0):
     Returns:
         [type]: [description]
     """
+    drift_same_boxes(boxes, query_boxes)
     box_dtype = boxes.dtype
     boxes = boxes.astype(np.float32)
     query_boxes = query_boxes.astype(np.float32)
@@ -642,3 +644,15 @@ def rotate_iou_gpu_eval(boxes, query_boxes, criterion=-1, device_id=0):
             N, K, boxes_dev, query_boxes_dev, iou_dev, criterion)
         iou_dev.copy_to_host(iou.reshape([-1]), stream=stream)
     return iou.astype(boxes.dtype)
+
+def drift_same_boxes(boxes, query_boxes):
+  dif = boxes.reshape([-1,1,5]) - query_boxes.reshape([1,-1,5])
+  dif = np.abs(dif)
+  mask = dif < 1e-6
+  mask = mask.all(2)
+  mask = mask.any(1)
+  drift_inds = np.where(mask)[0]
+  tmp = boxes[drift_inds]
+  tmp[:,0:2] += 1e-5
+  boxes[drift_inds] = tmp
+

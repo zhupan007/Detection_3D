@@ -12,7 +12,9 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
-DEBUG = False
+DEBUG = True
+SHOW_WRONG_CLASSFICATION = DEBUG and False
+CHECK_IOU = True
 
 class FastRCNNLossComputation(object):
     """
@@ -42,6 +44,19 @@ class FastRCNNLossComputation(object):
         # out of bounds
         matched_targets = target[matched_idxs.clamp(min=0)]
         matched_targets.add_field("matched_idxs", matched_idxs)
+
+        if CHECK_IOU:
+          num_gt = len(target)
+          if not torch.all( matched_idxs[-num_gt:].cpu() == torch.arange(num_gt) ):
+            ious = match_quality_matrix[:,-num_gt:].diag()
+            err_inds = torch.nonzero(torch.abs(ious - 1) > 1e-5 ).view(-1) - len(ious)
+            print( f"IOU error: \n{ious}")
+            err_targets = target[err_inds]
+            ious__ = boxlist_iou_3d(err_targets, err_targets, 0)
+            print(err_targets.bbox3d)
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            assert False
+            pass
         return matched_targets
 
     def prepare_targets(self, proposals, targets):
@@ -61,17 +76,11 @@ class FastRCNNLossComputation(object):
               regression_targets.append(torch.zeros([prop_num,7],dtype=torch.float32).to(device))
               continue
 
-            if DEBUG:
-              matched_targets0 = self.match_targets_to_proposals( targets_per_image, targets_per_image)
-              matched_idxs0 = matched_targets0.get_field('matched_idxs')
-              print(f'matched_idxs0:{matched_idxs0}')
-              import pdb; pdb.set_trace()  # XXX BREAKPOINT
-              pass
-
             matched_targets = self.match_targets_to_proposals(
                 proposals_per_image, targets_per_image
             )
             matched_idxs = matched_targets.get_field("matched_idxs")
+
 
             labels_per_image0 = matched_targets.get_field("labels")
             labels_per_image = labels_per_image0.to(dtype=torch.int64)
@@ -188,21 +197,48 @@ class FastRCNNLossComputation(object):
         )
         box_loss = box_loss / labels.numel()
 
-        if DEBUG and False:
+        if SHOW_WRONG_CLASSFICATION:
+          self.show_classification(proposals, classification_loss, box_loss, class_logits, labels, targets)
+
+        return classification_loss, box_loss
+
+    def show_classification(self, proposals, classification_loss, box_loss,
+              class_logits, labels, targets ):
           assert proposals.batch_size() == 1
+          targets = cat_boxlist_3d(targets, per_example=True)
           print(f"classification_loss:{classification_loss}, box_loss: {box_loss}")
           pred_logits = torch.argmax(class_logits, 1)
           err = pred_logits - labels
           err_inds = torch.nonzero(err).view(-1)
+
+          props_err = proposals[err_inds]
+          objectness_err = props_err.get_field('objectness')
+
+          # err classification
+          print(f"err_inds:\n{err_inds}")
           if err_inds.shape[0]>0:
-            print(f"err_inds:\n{err_inds}")
             print(f"err labels:\n{labels[err_inds]}")
             print(f"err logits:\n{class_logits[err_inds]}")
-            proposals[err_inds].show_together(targets[0])
+            print(f"err objectness:\n {objectness_err}")
+            props_err.show_together(targets)
+
+          neg_inds = torch.nonzero(labels-1).view(-1)
+          objectness_neg = proposals[neg_inds].get_field('objectness')
+          max_obj_neg = objectness_neg.max()
+          print('\nmax_obj_neg: {max_obj_neg}')
+
+          # positive proposals
+          pos_inds = torch.nonzero(labels).view(-1)
+          gt_num = len(targets)
+          pos_inds = pos_inds[0:-gt_num]
+          props_pos = proposals[pos_inds]
+          objectness_pos = props_pos.get_field('objectness')
+          pos_logits = class_logits[pos_inds]
+          print(f"\ngt_num: {gt_num}\n objectness of pos: {objectness_pos}")
+          print(f"\npos_logits:\n{pos_logits.cpu().data}")
+          props_pos.show_together(targets)
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
-
-        return classification_loss, box_loss
 
 
 def make_roi_box_loss_evaluator(cfg):

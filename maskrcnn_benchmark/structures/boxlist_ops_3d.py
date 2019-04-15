@@ -167,10 +167,12 @@ def test_iou_3d(bbox3d0, bbox3d1, mode):
 
   ious = boxlist_iou_3d(boxlist3d0, boxlist3d1, 0)
   ious_diag = ious.diag()
+
+  print(f"ious_diag: {ious_diag}")
+
   err_mask = torch.abs(ious_diag - 1) > 0.01
   err_inds = torch.nonzero(err_mask).view(-1)
   #print(f"ious:{ious}")
-  print(f"ious_diag: {ious_diag}")
   print(f"err_inds: {err_inds}")
   #print(err_boxlist.bbox3d)
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -195,13 +197,23 @@ def main_test_iou_3d():
 
    [0,0,   0.0000,   0.1,   2.,   2.,  np.pi/2],
    [0,0,   0.0000,   1,   2.,   2.,  np.pi/2],
+      [ 2.3569,  7.0700, -0.0300,  0.0947,  1.8593,  2.7350,  0.0000],
    ],
    dtype=torch.float32
   )
 
   bbox3d1 = torch.tensor([
-   [0.00001,0,   0.0000,   1,   2.,   2.,  np.pi/2],
-   ],
+        #[ 3.9165,  2.2180, -0.0500,  0.0947,  5.0945,  2.7350, -1.5708],
+        [ 7.2792,  0.2153, -0.0500,  0.0947,  1.4407,  2.7350, -1.5708],
+        [ 6.5114,  0.1272, -0.0500,  0.0947,  0.2544,  2.7350,  0.0000]
+    ],
+   dtype=torch.float32
+  )
+
+  bbox3d1 = torch.tensor([
+      [ 2.3569,  7.0700, -0.0300,  0.0947,  1.8593,  2.7350,  0.0000],
+        [ 1.1548,  6.1797, -0.0300,  0.0947,  2.3096,  2.7350, -1.5708]
+    ],
    dtype=torch.float32
   )
 
@@ -209,7 +221,7 @@ def main_test_iou_3d():
   bbox3d1 = bbox3d1.to(device)
 
 
-  test_iou_3d(bbox3d0, bbox3d0, 'yx_zb')
+  test_iou_3d(bbox3d1, bbox3d1, 'yx_zb')
 
 if __name__ == '__main__':
   main_test_iou_3d()
