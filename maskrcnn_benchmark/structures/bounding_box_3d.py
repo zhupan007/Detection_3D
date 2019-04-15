@@ -104,7 +104,7 @@ class BoxList3D(object):
     labels.
     """
 
-    def __init__(self, bbox3d, size3d, mode, examples_idxscope, constants={}):
+    def __init__(self, bbox3d, size3d, mode, examples_idxscope=None, constants={}):
         '''
         All examples in same batch are concatenated together.
         examples_idxscope: [batch_size,2] record the index scope per example
@@ -115,6 +115,8 @@ class BoxList3D(object):
         '''
         assert mode == 'yx_zb' or mode == 'standard'
         assert bbox3d.shape[1] == 7, bbox3d.shape
+        if examples_idxscope is None:
+          examples_idxscope = torch.tensor([[0, bbox3d.shape[0]]], dtype=torch.int32)
         assert examples_idxscope[-1,-1] == bbox3d.shape[0]
         if size3d is not None:
           assert size3d.shape[1] == 6

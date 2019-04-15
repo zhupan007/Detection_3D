@@ -1,7 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
+import numpy as np
 
-from .bounding_box_3d import BoxList3D, cat_boxlist_3d
+from bounding_box_3d import BoxList3D, cat_boxlist_3d
 
 from maskrcnn_benchmark.layers import nms as _box_nms
 from second.pytorch.core.box_torch_ops import rotate_nms, \
@@ -9,7 +10,7 @@ from second.pytorch.core.box_torch_ops import rotate_nms, \
 
 from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu_eval
 
-DEBUG = False
+DEBUG = True
 
 def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score"):
     """
@@ -80,6 +81,8 @@ def boxlist_iou_3d(targets, anchors, aug_wall_target_thickness):
   about criterion check:
     second.core.non_max_suppression.nms_gpu/devRotateIoUEval
   '''
+  targets.mode == 'yx_zb'
+  anchors.mode == 'yx_zb'
   cuda_index = targets.bbox3d.device.index
   anchors_2d = anchors.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
   targets_2d = targets.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
@@ -91,6 +94,12 @@ def boxlist_iou_3d(targets, anchors, aug_wall_target_thickness):
   targets_2d[:,2] += aug_wall_target_thickness # 0.25
   # criterion=1: use targets_2d as ref
   iou = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=2, device_id=cuda_index)
+
+  area_inter = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=-2, device_id=cuda_index)
+  area_1 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=-3, device_id=cuda_index)
+  area_2 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=-4, device_id=cuda_index)
+
+
   iou = torch.from_numpy(iou)
   iou = iou.to(targets.bbox3d.device)
 
@@ -147,5 +156,63 @@ def boxlist_iou(boxlist1, boxlist2):
     return iou
 
 
+def test_iou_3d(bbox3d0, bbox3d1, mode):
+  '''
+  bbox3d: [N,7]
+  '''
+  boxlist3d0 = BoxList3D(bbox3d0, size3d = None, mode=mode, examples_idxscope = None, constants={})
+  boxlist3d1 = BoxList3D(bbox3d1, size3d = None, mode=mode, examples_idxscope = None, constants={})
+  boxlist3d0 = boxlist3d0.convert("yx_zb")
+  boxlist3d1 = boxlist3d1.convert("yx_zb")
+
+  ious = boxlist_iou_3d(boxlist3d0, boxlist3d1, 0)
+  ious_diag = ious.diag()
+  err_mask = torch.abs(ious_diag - 1) > 0.01
+  err_inds = torch.nonzero(err_mask).view(-1)
+  err_boxlist = boxlist3d[err_inds]
+  #print(f"ious:{ious}")
+  print(f"ious_diag: {ious_diag}")
+  print(f"err_inds: {err_inds}")
+  #print(err_boxlist.bbox3d)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  pass
+
+
+def main_test_iou_3d():
+  '''
+  small yaw, small thickness
+  '''
+  device = torch.device('cuda:0')
+  #[ 43.9440, -40.0217,   0.0000,   0.0947,   2.4079,   2.7350,  -1.5549],
+  #[ 43.9400, -45.1191,   0.0000,   0.0947,   2.4011,   2.7350,  -1.5550],
+
+  bbox3d0 = torch.tensor([
+   #[0,0,   0.0000,   0.001,   2.,   2.,  0],
+   #[0,0,   0.0000,   0.01,   2.,   2.,  0],
+
+   #[0,0,   0.0000,   0.001,   2.,   2.,  np.pi/2],
+   #[0,0,   0.0000,   0.01,   2.,   2.,  np.pi/2],
+
+
+   #[0,0,   0.0000,   0.1,   2.,   2.,  np.pi/2],
+   [0,0,   0.0000,   1,   2.,   2.,  np.pi/2],
+   ],
+   dtype=torch.float32
+  )
+
+  bbox3d1 = torch.tensor([
+   [0.00001,0,   0.0000,   1,   2.,   2.,  np.pi/2],
+   ],
+   dtype=torch.float32
+  )
+
+  bbox3d0 = bbox3d0.to(device)
+  bbox3d1 = bbox3d1.to(device)
+
+
+  test_iou_3d(bbox3d0, bbox3d1, 'yx_zb')
+
+if __name__ == '__main__':
+  main_test_iou_3d()
 
 

@@ -6,6 +6,7 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
 import torch
 from collections import defaultdict
+from maskrcnn_benchmark.structures.boxlist_ops_3d import test_iou_3d
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
@@ -68,8 +69,10 @@ def render_splited_house_walls(pth_fn):
   points = pcl[:,0:3]
   points = cut_points_roof(points)
   walls = bboxes['wall']
-  #Bbox3D.draw_bboxes(walls, up_axis='Z', is_yx_zb=False)
 
+  test_iou_3d(walls, walls, "standard")
+
+  #Bbox3D.draw_bboxes(walls, up_axis='Z', is_yx_zb=False)
   #Bbox3D.draw_points_bboxes(points, walls, up_axis='Z', is_yx_zb=False)
   Bbox3D.draw_points_bboxes_mesh(points, walls, up_axis='Z', is_yx_zb=False)
 
@@ -122,7 +125,7 @@ def render_cam_positions(parsed_dir):
   save_cam_ply(cam_fn, show=True, with_pcl=True)
 
 
-def render_houses():
+def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = os.listdir(PARSED_DIR)
   house_names = ['8c033357d15373f4079b1cecef0e065a']
   for house_name in house_names:
@@ -132,16 +135,19 @@ def render_houses():
 
     parsed_dir = f'{PARSED_DIR}/{house_name}'
 
-    #render_cam_positions(parsed_dir)
+    if r_cam:
+      render_cam_positions(parsed_dir)
 
-    render_parsed_house_walls(parsed_dir, True)
+    if r_whole:
+      render_parsed_house_walls(parsed_dir, True)
 
     splited_boxfn = f'{SPLITED_DIR}/houses/{house_name}/*.pth'
     pth_fns = glob.glob(splited_boxfn)
-    for pth_fn in pth_fns:
-      print('The splited walls')
-      render_splited_house_walls(pth_fn)
+    if r_splited:
+      for pth_fn in pth_fns:
+        print('The splited walls')
+        render_splited_house_walls(pth_fn)
 
 
 if __name__ == '__main__':
-  render_houses()
+  render_houses(r_cam=False, r_whole=False, r_splited=True)
