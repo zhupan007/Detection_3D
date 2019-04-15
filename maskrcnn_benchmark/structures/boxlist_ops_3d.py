@@ -169,7 +169,6 @@ def test_iou_3d(bbox3d0, bbox3d1, mode):
   ious_diag = ious.diag()
   err_mask = torch.abs(ious_diag - 1) > 0.01
   err_inds = torch.nonzero(err_mask).view(-1)
-  err_boxlist = boxlist3d[err_inds]
   #print(f"ious:{ious}")
   print(f"ious_diag: {ious_diag}")
   print(f"err_inds: {err_inds}")
@@ -187,14 +186,14 @@ def main_test_iou_3d():
   #[ 43.9400, -45.1191,   0.0000,   0.0947,   2.4011,   2.7350,  -1.5550],
 
   bbox3d0 = torch.tensor([
-   #[0,0,   0.0000,   0.001,   2.,   2.,  0],
-   #[0,0,   0.0000,   0.01,   2.,   2.,  0],
+   [0,0,   0.0000,   0.001,   2.,   2.,  0],
+   [0,0,   0.0000,   0.01,   2.,   2.,  0],
 
-   #[0,0,   0.0000,   0.001,   2.,   2.,  np.pi/2],
-   #[0,0,   0.0000,   0.01,   2.,   2.,  np.pi/2],
+   [0,0,   0.0000,   0.001,   2.,   2.,  np.pi/2],
+   [0,0,   0.0000,   0.01,   2.,   2.,  np.pi/2],
 
 
-   #[0,0,   0.0000,   0.1,   2.,   2.,  np.pi/2],
+   [0,0,   0.0000,   0.1,   2.,   2.,  np.pi/2],
    [0,0,   0.0000,   1,   2.,   2.,  np.pi/2],
    ],
    dtype=torch.float32
@@ -210,7 +209,7 @@ def main_test_iou_3d():
   bbox3d1 = bbox3d1.to(device)
 
 
-  test_iou_3d(bbox3d0, bbox3d1, 'yx_zb')
+  test_iou_3d(bbox3d0, bbox3d0, 'yx_zb')
 
 if __name__ == '__main__':
   main_test_iou_3d()

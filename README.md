@@ -12,7 +12,8 @@
 - crop gt box with anchor
 - multi scale: feature concate
 - rpn acc
-- 3d roi
+- IOU: area_inter / (area2 + max(0,area1*0.5 - area_inter))   
+   second/core/non_max_suppression/nms_gpu.py devRotateIoUEval
 
 # Geometric
 

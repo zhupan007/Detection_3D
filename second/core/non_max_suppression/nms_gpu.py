@@ -7,6 +7,17 @@ from numba import cuda
 
 from spconv.utils import non_max_suppression
 
+def nms_gpu_cc(dets, nms_overlap_thresh, device_id=0):
+    boxes_num = dets.shape[0]
+    keep = np.zeros(boxes_num, dtype=np.int32)
+    scores = dets[:, 4]
+    order = scores.argsort()[::-1].astype(np.int32)
+    sorted_dets = dets[order, :]
+    num_out = non_max_suppression(sorted_dets, keep, nms_overlap_thresh,
+                                  device_id)
+    keep = keep[:num_out]
+    return list(order[keep])
+
 @cuda.jit('(float32[:], float32[:])', device=True, inline=True)
 def iou_device(a, b):
     left = max(a[0], b[0])
@@ -149,18 +160,6 @@ def nms_gpu(dets, nms_overlap_thresh, device_id=0):
     # stream.synchronize()
     num_out = nms_postprocess(keep_out, mask_host, boxes_num)
     keep = keep_out[:num_out]
-    return list(order[keep])
-
-
-def nms_gpu_cc(dets, nms_overlap_thresh, device_id=0):
-    boxes_num = dets.shape[0]
-    keep = np.zeros(boxes_num, dtype=np.int32)
-    scores = dets[:, 4]
-    order = scores.argsort()[::-1].astype(np.int32)
-    sorted_dets = dets[order, :]
-    num_out = non_max_suppression(sorted_dets, keep, nms_overlap_thresh,
-                                  device_id)
-    keep = keep[:num_out]
     return list(order[keep])
 
 
@@ -324,7 +323,9 @@ def point_in_quadrilateral(pt_x, pt_y, corners):
     adad = ad0 * ad0 + ad1 * ad1
     adap = ad0 * ap0 + ad1 * ap1
 
-    return abab >= abap and abap >= 0 and adad >= adap and adap >= 0
+    #return abab >= abap and abap >= 0 and adad >= adap and adap >= 0
+    eps = -1e-6
+    return abab - abap >= eps and abap >= eps and adad - adap >= eps and adap >= eps
 
 
 @cuda.jit('(float32[:], float32[:], float32[:])', device=True, inline=True)
@@ -549,18 +550,16 @@ def rotate_iou_gpu(boxes, query_boxes, device_id=0):
 
 @cuda.jit('(float32[:], float32[:], int32)', device=True, inline=True)
 def devRotateIoUEval(rbox1, rbox2, criterion=-1):
-    area1 = rbox1[2] * rbox1[3]
-    area2 = rbox2[2] * rbox2[3]
+    area1 = rbox1[2] * rbox1[3] # anchor
+    area2 = rbox2[2] * rbox2[3] # target
     area_inter = inter(rbox1, rbox2)
-    # area1 is anchor
-    # area2 is target
     if criterion == -1:
         return area_inter / (area1 + area2 - area_inter)
     elif criterion == 0:
         return area_inter / area1
     elif criterion == 1:
         return area_inter / area2
-    if criterion == 2:
+    elif criterion == 2:
         return area_inter / (area2 + max(0,area1*0.5 - area_inter))
     else:
         return area_inter
@@ -608,7 +607,7 @@ def rotate_iou_kernel_eval(N,
 
 
 def rotate_iou_gpu_eval(boxes, query_boxes, criterion=-1, device_id=0):
-    """rotated box iou running in gpu. 500x faster than cpu version
+    """rotated box iou running in gpu. 8x faster than cpu version
     (take 5ms in one example with numba.cuda code).
     convert from [this project](
         https://github.com/hongzhenwang/RRPN-revise/tree/master/lib/rotation).
@@ -617,7 +616,6 @@ def rotate_iou_gpu_eval(boxes, query_boxes, criterion=-1, device_id=0):
         boxes (float tensor: [N, 5]): rbboxes. format: centers, dims,
             angles(clockwise when positive)
         query_boxes (float tensor: [K, 5]): [description]
-        criterion=0: use query_boxes as refenece, 1: boxes as ref
         device_id (int, optional): Defaults to 0. [description]
 
     Returns:
