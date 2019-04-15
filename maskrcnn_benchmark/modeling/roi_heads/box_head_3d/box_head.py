@@ -60,7 +60,7 @@ class ROIBoxHead3D(torch.nn.Module):
         loss_classifier, loss_box_reg = self.loss_evaluator(
             [class_logits], [box_regression], targets
         )
-        if DEBUG:
+        if DEBUG and False:
           print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")
           batch_size = len(proposals)
           proposals[0].show_by_objectness(0.5, targets[0])

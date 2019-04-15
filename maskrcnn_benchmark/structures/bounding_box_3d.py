@@ -568,6 +568,8 @@ class BoxList3D(object):
       min_top_objectness = top_objectness.min() if top_objectness.shape[0]>0 else 1
       num_top = ids.shape[0]
       if targets:
+        targets = targets.copy()
+        targets.bbox3d[:,2] += 0.01
         print(f'\n\nnum_gt={len(targets)}\nnum_top={num_top}\n\n')
       print(f"\n objectness over {threshold}: \t{num_top} \n {top_objectness} \nmin is {min_top_objectness}")
       top_preds = self[ids]
