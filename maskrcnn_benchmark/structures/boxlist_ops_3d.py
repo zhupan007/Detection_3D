@@ -2,7 +2,7 @@
 import torch
 import numpy as np
 
-from bounding_box_3d import BoxList3D, cat_boxlist_3d
+from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D, cat_boxlist_3d
 
 from maskrcnn_benchmark.layers import nms as _box_nms
 from second.pytorch.core.box_torch_ops import rotate_nms, \
@@ -10,7 +10,7 @@ from second.pytorch.core.box_torch_ops import rotate_nms, \
 
 from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu_eval
 
-DEBUG = True
+DEBUG = False
 
 def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score"):
     """

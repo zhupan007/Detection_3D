@@ -12,7 +12,7 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
-DEBUG = True
+DEBUG = False
 
 class FastRCNNLossComputation(object):
     """
@@ -42,7 +42,6 @@ class FastRCNNLossComputation(object):
         # out of bounds
         matched_targets = target[matched_idxs.clamp(min=0)]
         matched_targets.add_field("matched_idxs", matched_idxs)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return matched_targets
 
     def prepare_targets(self, proposals, targets):
@@ -62,7 +61,6 @@ class FastRCNNLossComputation(object):
               regression_targets.append(torch.zeros([prop_num,7],dtype=torch.float32).to(device))
               continue
 
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             if DEBUG:
               matched_targets0 = self.match_targets_to_proposals( targets_per_image, targets_per_image)
               matched_idxs0 = matched_targets0.get_field('matched_idxs')
@@ -91,10 +89,6 @@ class FastRCNNLossComputation(object):
                 matched_targets.bbox3d, proposals_per_image.bbox3d
             )
 
-            if DEBUG:
-              pass
-
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             labels.append(labels_per_image)
             regression_targets.append(regression_targets_per_image)
 
@@ -194,7 +188,7 @@ class FastRCNNLossComputation(object):
         )
         box_loss = box_loss / labels.numel()
 
-        if DEBUG and True:
+        if DEBUG and False:
           assert proposals.batch_size() == 1
           print(f"classification_loss:{classification_loss}, box_loss: {box_loss}")
           pred_logits = torch.argmax(class_logits, 1)

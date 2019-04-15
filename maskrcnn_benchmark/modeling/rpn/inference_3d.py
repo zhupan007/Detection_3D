@@ -123,6 +123,7 @@ class RPNPostProcessor(torch.nn.Module):
                               examples_idxscope= examples_idxscope_new,
                               constants={'prediction':True})
           boxlist.add_field("objectness", objectness_i)
+          boxlist.set_as_prediction()
           if SHOW_RPN_INPUT:
             boxlist.show_together(targets[bi])
             boxlist.show_by_objectness(0.8, targets[bi])

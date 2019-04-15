@@ -7,7 +7,7 @@ from .roi_box_predictors import make_roi_box_predictor
 from .inference import make_roi_box_post_processor
 from .loss import make_roi_box_loss_evaluator
 
-DEBUG = True
+DEBUG = False
 
 class ROIBoxHead3D(torch.nn.Module):
     """
