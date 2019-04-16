@@ -1,4 +1,5 @@
 import math
+from functools import reduce
 
 import numpy as np
 import torch
@@ -6,8 +7,7 @@ from torch import stack as tstack
 
 import torchplus
 from torchplus.tools import torch_to_np_dtype
-from second.core.box_np_ops import iou_jit
-from second.core.non_max_suppression.nms_gpu import (nms_gpu, rotate_iou_gpu,
+from second.core.non_max_suppression.nms_gpu import (nms_gpu_cc, rotate_iou_gpu,
                                                        rotate_nms_gpu)
 from second.core.non_max_suppression.nms_cpu import rotate_nms_cc
 
@@ -20,8 +20,6 @@ def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=F
     """
     xa, ya, za, wa, la, ha, ra = torch.split(anchors, 1, dim=-1)
     xg, yg, zg, wg, lg, hg, rg = torch.split(boxes, 1, dim=-1)
-    za = za + ha / 2
-    zg = zg + hg / 2
     diagonal = torch.sqrt(la**2 + wa**2)
     xt = (xg - xa) / diagonal
     yt = (yg - ya) / diagonal
@@ -63,9 +61,8 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
 
     else:
         xt, yt, zt, wt, lt, ht, rt = torch.split(box_encodings, 1, dim=-1)
-
+    # za = za + ha / 2
     # xt, yt, zt, wt, lt, ht, rt = torch.split(box_encodings, 1, dim=-1)
-    za = za + ha / 2
     diagonal = torch.sqrt(la**2 + wa**2)
     xg = xt * diagonal + xa
     yg = yt * diagonal + ya
@@ -87,7 +84,7 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
         rg = torch.atan2(rgy, rgx)
     else:
         rg = rt + ra
-    zg = zg - hg / 2
+    # zg = zg - hg / 2
     return torch.cat([xg, yg, zg, wg, lg, hg, rg], dim=-1)
 
 def bev_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=False):
@@ -160,15 +157,15 @@ def bev_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smooth_
 
 def corners_nd(dims, origin=0.5):
     """generate relative box corners based on length per dim and
-    origin point.
-
+    origin point. 
+    
     Args:
         dims (float array, shape=[N, ndim]): array of length per dim
         origin (list or array or float): origin point relate to smallest point.
-        dtype (output dtype, optional): Defaults to np.float32
-
+        dtype (output dtype, optional): Defaults to np.float32 
+    
     Returns:
-        float array, shape=[N, 2 ** ndim, ndim]: returned corners.
+        float array, shape=[N, 2 ** ndim, ndim]: returned corners. 
         point layout example: (2d) x0y0, x0y1, x1y0, x1y1;
             (3d) x0y0z0, x0y0z1, x0y1z0, x0y1z1, x1y0z0, x1y0z1, x1y1z0, x1y1z1
             where x0 < x1, y0 < y1, z0 < z1
@@ -198,14 +195,14 @@ def corners_nd(dims, origin=0.5):
 def corners_2d(dims, origin=0.5):
     """generate relative 2d box corners based on length per dim and
     origin point.
-
+    
     Args:
         dims (float array, shape=[N, 2]): array of length per dim
         origin (list or array or float): origin point relate to smallest point.
-        dtype (output dtype, optional): Defaults to np.float32
-
+        dtype (output dtype, optional): Defaults to np.float32 
+    
     Returns:
-        float array, shape=[N, 4, 2]: returned corners.
+        float array, shape=[N, 4, 2]: returned corners. 
         point layout: x0y0, x0y1, x1y1, x1y0
     """
     return corners_nd(dims, origin)
@@ -248,8 +245,8 @@ def rotation_3d_in_axis(points, angles, axis=0):
         ])
     else:
         raise ValueError("axis should in range")
-
-    return torch.einsum('aij,jka->aik', (points, rot_mat_T))
+    # print(points.shape, rot_mat_T.shape)
+    return torch.einsum('aij,jka->aik', points, rot_mat_T)
 
 
 def rotation_points_single_angle(points, angle, axis=0):
@@ -259,21 +256,21 @@ def rotation_points_single_angle(points, angle, axis=0):
     point_type = torchplus.get_tensor_class(points)
     if axis == 1:
         rot_mat_T = torch.stack([
-            torch.tensor([rot_cos, 0, -rot_sin], dtype=points.dtype, device=points.device),
-            torch.tensor([0, 1, 0], dtype=points.dtype, device=points.device),
-            torch.tensor([rot_sin, 0, rot_cos], dtype=points.dtype, device=points.device)
+            point_type([rot_cos, 0, -rot_sin]),
+            point_type([0, 1, 0]),
+            point_type([rot_sin, 0, rot_cos])
         ])
     elif axis == 2 or axis == -1:
         rot_mat_T = torch.stack([
-            torch.tensor([rot_cos, -rot_sin, 0], dtype=points.dtype, device=points.device),
-            torch.tensor([rot_sin, rot_cos, 0], dtype=points.dtype, device=points.device),
-            torch.tensor([0, 0, 1], dtype=points.dtype, device=points.device)
+            point_type([rot_cos, -rot_sin, 0]),
+            point_type([rot_sin, rot_cos, 0]),
+            point_type([0, 0, 1])
         ])
     elif axis == 0:
         rot_mat_T = torch.stack([
-            torch.tensor([1, 0, 0], dtype=points.dtype, device=points.device),
-            torch.tensor([0, rot_cos, -rot_sin], dtype=points.dtype, device=points.device),
-            torch.tensor([0, rot_sin, rot_cos], dtype=points.dtype, device=points.device)
+            point_type([1, 0, 0]),
+            point_type([0, rot_cos, -rot_sin]),
+            point_type([0, rot_sin, rot_cos])
         ])
     else:
         raise ValueError("axis should in range")
@@ -282,7 +279,7 @@ def rotation_points_single_angle(points, angle, axis=0):
 
 def rotation_2d(points, angles):
     """rotation 2d points based on origin point clockwise when angle positive.
-
+    
     Args:
         points (float array, shape=[N, point_size, 2]): points to be rotated.
         angles (float array, shape=[N]): rotation angle.
@@ -301,10 +298,10 @@ def rotation_2d(points, angles):
 def center_to_corner_box3d(centers,
                            dims,
                            angles,
-                           origin=[0.5, 1.0, 0.5],
+                           origin=(0.5, 0.5, 0.5),
                            axis=1):
     """convert kitti locations, dimensions and angles to corners
-
+    
     Args:
         centers (float array, shape=[N, 3]): locations in kitti label file.
         dims (float array, shape=[N, 3]): dimensions in kitti label file.
@@ -327,12 +324,12 @@ def center_to_corner_box3d(centers,
 
 def center_to_corner_box2d(centers, dims, angles=None, origin=0.5):
     """convert kitti locations, dimensions and angles to corners
-
+    
     Args:
         centers (float array, shape=[N, 2]): locations in kitti label file.
         dims (float array, shape=[N, 2]): dimensions in kitti label file.
         angles (float array, shape=[N]): rotation_y in kitti label file.
-
+    
     Returns:
         [type]: [description]
     """
@@ -345,7 +342,6 @@ def center_to_corner_box2d(centers, dims, angles=None, origin=0.5):
         corners = rotation_2d(corners, angles)
     corners += centers.view(-1, 1, 2)
     return corners
-
 
 def project_to_image(points_3d, proj_mat):
     points_num = list(points_3d.shape)[:-1]
@@ -454,16 +450,15 @@ def nms(bboxes,
     if len(dets_np) == 0:
         keep = np.array([], dtype=np.int64)
     else:
-        ret = np.array(nms_gpu(dets_np, iou_threshold), dtype=np.int64)
+        ret = np.array(nms_gpu_cc(dets_np, iou_threshold), dtype=np.int64)
         keep = ret[:post_max_size]
     if keep.shape[0] == 0:
-        return None
+        return torch.zeros([0]).long().to(bboxes.device)
     if pre_max_size is not None:
-        keep = torch.from_numpy(keep).long().cuda()
+        keep = torch.from_numpy(keep).long().to(bboxes.device)
         return indices[keep]
     else:
-        return torch.from_numpy(keep).long().cuda()
-
+        return torch.from_numpy(keep).long().to(bboxes.device)
 
 def rotate_nms(rbboxes,
                scores,
@@ -483,9 +478,9 @@ def rotate_nms(rbboxes,
         ret = np.array(rotate_nms_cc(dets_np, iou_threshold), dtype=np.int64)
         keep = ret[:post_max_size]
     if keep.shape[0] == 0:
-        return None
+        return torch.zeros([0]).long().to(rbboxes.device)
     if pre_max_size is not None:
-        keep = torch.from_numpy(keep).long().cuda()
+        keep = torch.from_numpy(keep).long().to(rbboxes.device)
         return indices[keep]
     else:
-        return torch.from_numpy(keep).long().cuda()
+        return torch.from_numpy(keep).long().to(rbboxes.device)
