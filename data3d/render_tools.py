@@ -6,7 +6,6 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
 import torch
 from collections import defaultdict
-from maskrcnn_benchmark.structures.boxlist_ops_3d import test_iou_3d
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
@@ -68,11 +67,10 @@ def render_splited_house_walls(pth_fn):
   pcl, bboxes = torch.load(pth_fn)
   points = pcl[:,0:3]
   points = cut_points_roof(points)
+
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+
   walls = bboxes['wall']
-
-  test_iou_3d(walls, walls, "standard")
-
-  #Bbox3D.draw_bboxes(walls, up_axis='Z', is_yx_zb=False)
   #Bbox3D.draw_points_bboxes(points, walls, up_axis='Z', is_yx_zb=False)
   Bbox3D.draw_points_bboxes_mesh(points, walls, up_axis='Z', is_yx_zb=False)
 

@@ -3,9 +3,9 @@ import torch, math
 
 def limit_period(val, offset, period):
   '''
+   [0, pi]: offset=0, period=pi
     [-pi/2, pi/2]: offset=0.5, period=pi
     [-pi, 0]: offset=1, period=pi
-    [0, pi]: offset=0, period=pi
   '''
   return val - torch.floor(val / period + offset) * period
 

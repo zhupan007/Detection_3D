@@ -23,6 +23,7 @@ PARSED_DIR = f'{DSET_DIR}/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 MAX_FLOAT_DRIFT = 1e-6
 DATASET = 'SUNCG'
+CLASSES_USED = ['wall', 'window', 'door']
 
 def points2pcd_open3d(points):
   assert points.shape[-1] == 3
@@ -106,8 +107,7 @@ class IndoorData():
       return
     points_splited = IndoorData.split_pcl_plyf(pcl_fn)
     bboxes_splited = {}
-    #for obj in ['wall', 'window', 'door']:
-    for obj in ['wall']:
+    for obj in CLASSES_USED:
       bbox_fn = os.path.join(scene_dir, f'object_bbox/{obj}.txt')
       if os.path.exists(bbox_fn):
         bboxes_splited[obj] = IndoorData.split_bbox(bbox_fn, points_splited)

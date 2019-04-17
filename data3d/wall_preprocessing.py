@@ -14,7 +14,7 @@ def preprocess_walls(wall_bboxes):
   '''
   #show_walls_offsetz(wall_bboxes)
   #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
-  wall_bboxes = Bbox3D.define_walls_direction(wall_bboxes, 'Z')
+  wall_bboxes = Bbox3D.define_walls_direction(wall_bboxes, 'Z', yx_zb=False)
 
 
   wall_bboxes = merge_pieces_of_same_walls_alongY(wall_bboxes)
@@ -263,7 +263,7 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
     # 1) parallel along X
     angles_dif = angles[i] - angles[i+1:]
     # make to [0,np.pi/2]
-    angles_dif = np.abs( Bbox3D.limit_period(angles_dif, 0.5, np.pi) )
+    angles_dif = np.abs( limit_period(angles_dif, 0.5, np.pi) )
     angle_mask = angles_dif < 7 * np.pi/180
 
     # 2) one of centroid line corners is very close

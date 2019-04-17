@@ -17,7 +17,7 @@ USER_DIR = os.path.dirname(os.path.dirname(ROOT_DIR))
 from utils3d.bbox3d_ops import Bbox3D
 
 
-Debug = False
+Debug = True
 FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
@@ -367,7 +367,7 @@ class Suncg():
       scene_id8 = '7411df25770eaf8d656cac2be42a9af0' # walls
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-      scene_id = scene_id5
+      scene_id = scene_id8
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
