@@ -323,9 +323,9 @@ def point_in_quadrilateral(pt_x, pt_y, corners):
     adad = ad0 * ad0 + ad1 * ad1
     adap = ad0 * ap0 + ad1 * ap1
 
-    #return abab >= abap and abap >= 0 and adad >= adap and adap >= 0
-    eps = -1e-6 # 1e-5 is checked to be too small
-    return abab - abap >= eps and abap >= eps and adad - adap >= eps and adap >= eps
+    return abab >= abap and abap >= 0 and adad >= adap and adap >= 0
+    #eps = -1e-6 # 1e-5 is checked to be too small
+    #return abab - abap >= eps and abap >= eps and adad - adap >= eps and adap >= eps
 
 
 @cuda.jit('(float32[:], float32[:], float32[:])', device=True, inline=True)
@@ -525,7 +525,6 @@ def rotate_iou_gpu(boxes, query_boxes, device_id=0):
     Returns:
         [type]: [description]
     """
-    drift_same_boxes(boxes, query_boxes)
     box_dtype = boxes.dtype
     boxes = boxes.astype(np.float32)
     query_boxes = query_boxes.astype(np.float32)
@@ -546,6 +545,7 @@ def rotate_iou_gpu(boxes, query_boxes, device_id=0):
         rotate_iou_kernel[blockspergrid, threadsPerBlock, stream](
             N, K, boxes_dev, query_boxes_dev, iou_dev)
         iou_dev.copy_to_host(iou.reshape([-1]), stream=stream)
+    check_same_boxes(iou, boxes, query_boxes)
     return iou.astype(boxes.dtype)
 
 
@@ -622,7 +622,6 @@ def rotate_iou_gpu_eval(boxes, query_boxes, criterion=-1, device_id=0):
     Returns:
         [type]: [description]
     """
-    drift_same_boxes(boxes, query_boxes)
     box_dtype = boxes.dtype
     boxes = boxes.astype(np.float32)
     query_boxes = query_boxes.astype(np.float32)
@@ -643,16 +642,20 @@ def rotate_iou_gpu_eval(boxes, query_boxes, criterion=-1, device_id=0):
         rotate_iou_kernel_eval[blockspergrid, threadsPerBlock, stream](
             N, K, boxes_dev, query_boxes_dev, iou_dev, criterion)
         iou_dev.copy_to_host(iou.reshape([-1]), stream=stream)
+    check_same_boxes(iou, boxes, query_boxes)
     return iou.astype(boxes.dtype)
 
-def drift_same_boxes(boxes, query_boxes):
+
+def check_same_boxes(iou, boxes, query_boxes):
+  '''
+  forcely set iou of same boxes to be 1
+  '''
   dif = boxes.reshape([-1,1,5]) - query_boxes.reshape([1,-1,5])
   dif = np.abs(dif)
   mask = dif < 1e-6
   mask = mask.all(2)
-  mask = mask.any(1)
-  drift_inds = np.where(mask)[0]
-  tmp = boxes[drift_inds]
-  tmp[:,0:2] += 1e-5
-  boxes[drift_inds] = tmp
+  inds0 = np.where(mask)
+  inds = np.concatenate([inds0[0].reshape([-1,1]), inds0[1].reshape([-1,1])], 1)
+  for ind in inds:
+    iou[ind[0], ind[1]] = 1
 

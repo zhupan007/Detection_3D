@@ -9,7 +9,7 @@ def main():
     [0, 0, 0.1, 2., -np.pi/2],
     ])
 
-  ious = np.diag( rotate_iou_gpu_eval(boxes, boxes) )
+  ious = np.diag( rotate_iou_gpu_eval(boxes, boxes[0:3]) )
   print(f"ious: {ious}")
   #old: [0.         0.         0.33333316 0.        ]
   #new: [1.         0.99998605 0.99999934 1.        ]
