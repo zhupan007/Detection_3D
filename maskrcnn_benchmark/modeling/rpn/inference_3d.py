@@ -10,8 +10,8 @@ from ..utils import cat
 
 
 DEBUG = False
-SHOW_RPN_INPUT = DEBUG and True
-SHOW_RPNPOST = DEBUG and True
+SHOW_RPN_OUT_BEFORE_NMS = DEBUG and True
+SHOW_NMS_OUT = DEBUG and True
 
 class RPNPostProcessor(torch.nn.Module):
     """
@@ -67,6 +67,7 @@ class RPNPostProcessor(torch.nn.Module):
         # so we need to add a dummy for objectness that's missing
         for gt_box in gt_boxes:
             gt_box.add_field("objectness", torch.ones(len(gt_box), device=device))
+            gt_box.constants = proposals.constants
 
         batch_size = proposals.batch_size()
         proposals = proposals.seperate_examples()
@@ -124,7 +125,8 @@ class RPNPostProcessor(torch.nn.Module):
                               constants={'prediction':True})
           boxlist.add_field("objectness", objectness_i)
           boxlist.set_as_prediction()
-          if SHOW_RPN_INPUT:
+          if SHOW_RPN_OUT_BEFORE_NMS:
+            print(f'\n\n------------------------------------\n RPN out before NMS ')
             boxlist.show_together(targets[bi])
             boxlist.show_by_objectness(0.8, targets[bi])
 
@@ -138,8 +140,9 @@ class RPNPostProcessor(torch.nn.Module):
           )
           result.append(boxlist_new)
 
-          if SHOW_RPNPOST:
-            print('inference_3d.py SHOW_RPNPOST')
+          if SHOW_NMS_OUT:
+            print(f'\n\n------------------------------------\n RPN out after NMS ')
+            print('inference_3d.py SHOW_NMS_OUT')
             objectness_i_new = boxlist_new.get_field('objectness')
             print(f"objectness: {objectness_i_new[0:10]}")
             boxlist_new.show_by_objectness(0.8, targets[bi])

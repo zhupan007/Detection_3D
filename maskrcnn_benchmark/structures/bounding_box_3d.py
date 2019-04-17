@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, BoxList3DInc. and its affiliates. All Rights Reserved.
 import torch, math
+import numpy as np
 
 from utils3d.geometric_torch import limit_period, OBJ_DEF
 
@@ -46,6 +47,12 @@ def cat_boxlist_3d(bboxes_ls, per_example):
     fields = set(bboxes_ls[0].fields())
     assert all(set(bbox.fields()) == fields for bbox in bboxes_ls)
 
+    constants_all = bboxes_ls[0].constants
+    if not all(constants_all == bbox.constants for bbox in bboxes_ls):
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      assert False
+      pass
+
     batch_size0 = bboxes_ls[0].batch_size()
     for bbox in bboxes_ls:
       assert bbox.batch_size() == batch_size0
@@ -62,7 +69,7 @@ def cat_boxlist_3d(bboxes_ls, per_example):
       examples_idxscope = torch.cat([b.examples_idxscope for b in bboxes_ls])
       for b in range(1,batch_size):
         examples_idxscope[b,:] += examples_idxscope[b-1,1]
-    cat_boxes = BoxList3D(bbox3d_cat, size3d, mode, examples_idxscope)
+    cat_boxes = BoxList3D(bbox3d_cat, size3d, mode, examples_idxscope, constants=constants_all)
 
     for field in fields:
         data = _cat([bbox.get_field(field) for bbox in bboxes_ls], dim=0)
@@ -212,7 +219,7 @@ class BoxList3D(object):
         #print(f'0 min: {bbox3d0[:,-1].max()}\n')
         #print(f'1 max: {bbox3d1[:,-1].min()}')
         #print(f'1 min: {bbox3d1[:,-1].max()}')
-        bbox = BoxList3D(bbox3d1, self.size3d, mode, self.examples_idxscope)
+        bbox = BoxList3D(bbox3d1, self.size3d, mode, self.examples_idxscope, self.constants)
         bbox._copy_extra_fields(self)
         return bbox
 
@@ -398,8 +405,7 @@ class BoxList3D(object):
         if bi != batch_size-1:
           examples_idxscope[bi+1:] += num_bi
 
-      boxlist = BoxList3D(self.bbox3d[items], self.size3d, self.mode, examples_idxscope)
-      boxlist.constants = self.constants
+      boxlist = BoxList3D(self.bbox3d[items], self.size3d, self.mode, examples_idxscope, self.constants)
       for k, v in self.extra_fields.items():
           boxlist.add_field(k, v[items])
       return boxlist
@@ -557,14 +563,17 @@ class BoxList3D(object):
       print(f'\nobjectness quality by pos anchors: {gap}\n')
 
     def show_by_objectness(self, threshold, targets=None,
-          rpn_box_regression=None, anchors=None, regression_targets=None):
+          rpn_box_regression=None, anchors=None, regression_targets=None, below=False):
       import numpy as np
       from maskrcnn_benchmark.layers.smooth_l1_loss import get_yaw_loss
 
       objectness = self.get_field('objectness').cpu().data.numpy()
 
       # the top objectness
-      mask = objectness > threshold
+      if below:
+        mask = objectness <= threshold
+      else:
+        mask = objectness > threshold
       ids = np.where(mask)[0]
       top_objectness = objectness[ids]
       min_top_objectness = top_objectness.min() if top_objectness.shape[0]>0 else 1
@@ -633,6 +642,34 @@ class BoxList3D(object):
         j = int(i//num_anchors_per_location) * num_anchors_per_location
         anchors_i = self[range(j,j+4)]
         anchors_i.show()
+
+
+    def metric_4areas(self, low_threshold, high_threshold):
+      labels = self.get_field('labels')
+      labels = labels.cpu().data.numpy()
+      gt_objectness = labels > 0
+      objectness = self.get_field('objectness')
+      objectness = objectness.cpu().data.numpy()
+      pos = objectness > high_threshold
+      neg = objectness <= low_threshold
+
+      T = gt_objectness == pos
+      F = 1 - T
+
+      TP = T * pos
+      TN = T * neg
+      FP = F * pos
+      FN = F * neg
+
+      TPi = np.where(TP)[0]
+      TNi = np.where(TN)[0]
+      FPi = np.where(FP)[0]
+      FNi = np.where(FN)[0]
+
+      metric_masks = {'T': T, 'F':F,'TP':TP, 'TN':TN, 'FP':FP, 'FN':FN}
+      metric_inds = {'TP':TPi, 'TN':TNi, 'FP':FPi, 'FN':FNi}
+      metric_evals = {'TP':TP.sum(), 'TN':TN.sum(), 'FP':FP.sum(), 'FN':FN.sum()}
+      return  metric_inds, metric_evals
 
 
 if __name__ == "__main__":

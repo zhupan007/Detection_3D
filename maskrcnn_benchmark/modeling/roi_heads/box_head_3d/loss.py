@@ -13,7 +13,7 @@ from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
 DEBUG = True
-SHOW_WRONG_CLASSFICATION = DEBUG and False
+SHOW_WRONG_CLASSFICATION = DEBUG and True
 CHECK_IOU = True
 
 class FastRCNNLossComputation(object):
@@ -32,6 +32,10 @@ class FastRCNNLossComputation(object):
         self.proposal_matcher = proposal_matcher
         self.fg_bg_sampler = fg_bg_sampler
         self.box_coder = box_coder
+
+        self.high_threshold = proposal_matcher.high_threshold
+        self.low_threshold = proposal_matcher.low_threshold
+
 
     def match_targets_to_proposals(self, proposal, target):
         match_quality_matrix = boxlist_iou_3d(target, proposal, aug_wall_target_thickness=0)
@@ -198,16 +202,57 @@ class FastRCNNLossComputation(object):
         box_loss = box_loss / labels.numel()
 
         if SHOW_WRONG_CLASSFICATION:
-          self.show_classification(proposals, classification_loss, box_loss, class_logits, labels, targets)
+          self.show_classification(proposals, classification_loss, box_loss, class_logits,  targets)
 
         return classification_loss, box_loss
 
+
     def show_classification(self, proposals, classification_loss, box_loss,
-              class_logits, labels, targets ):
+              class_logits, targets ):
+          '''
+          From rpn nms: FP, FN, TP
+          ROI: (1)remove all FP (2) add all FN, (3) keep all TP
+          '''
           assert proposals.batch_size() == 1
           targets = cat_boxlist_3d(targets, per_example=True)
-          print(f"classification_loss:{classification_loss}, box_loss: {box_loss}")
           pred_logits = torch.argmax(class_logits, 1)
+          labels = proposals.get_field("labels")
+          metric_inds, metric_evals = proposals.metric_4areas(self.low_threshold, self.high_threshold)
+
+          class_err = (labels != pred_logits).sum()
+
+          print('\n--------------------------------\n roi classificatio\n')
+          print(f"RPN_NMS: {metric_evals}")
+          print(f"classification_loss:{classification_loss}, box_loss: {box_loss}")
+
+
+          def show_one_type(eval_type):
+              indices = metric_inds[eval_type]
+              n0 = indices.shape[0]
+              pro_ = proposals[indices]
+              objectness_ = pro_.get_field('objectness')
+              class_logits_ = class_logits[indices]
+              logits_ = pred_logits[indices]
+              labels_ = labels[indices]
+              err_ = logits_ - labels_
+              err_num = err_.sum()
+              print(f"\n{eval_type} :{n0} err num: {err_num}")
+              print(f"objectness_:{objectness_}\n")
+              if (eval_type == 'FP' or eval_type == 'FN') and n0 > 0:
+                print(f"class_logits_:\n{class_logits_}")
+                pro_.show_together(targets)
+              if err_num == 0:
+                return
+              pro_.show_together(targets)
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
+
+          show_one_type('FP')
+          show_one_type('FN')
+          show_one_type('TP')
+          return
+
+
           err = pred_logits - labels
           err_inds = torch.nonzero(err).view(-1)
 
@@ -230,7 +275,10 @@ class FastRCNNLossComputation(object):
           # positive proposals
           pos_inds = torch.nonzero(labels).view(-1)
           gt_num = len(targets)
-          pos_inds = pos_inds[0:-gt_num]
+          rpn_nms_num = len(proposals)
+          pos_inds = pos_inds[0:-gt_num] # remove gt in proposals
+          pos_rpn_num = pos_inds.shape[0]
+
           props_pos = proposals[pos_inds]
           objectness_pos = props_pos.get_field('objectness')
           pos_logits = class_logits[pos_inds]

@@ -7,7 +7,8 @@ from .roi_box_predictors import make_roi_box_predictor
 from .inference import make_roi_box_post_processor
 from .loss import make_roi_box_loss_evaluator
 
-DEBUG = False
+DEBUG = True
+SHOW_ROI_INPUT = DEBUG and False
 
 class ROIBoxHead3D(torch.nn.Module):
     """
@@ -37,8 +38,15 @@ class ROIBoxHead3D(torch.nn.Module):
         """
 
         proposals = proposals.seperate_examples()
-        if DEBUG and False:
-          proposals[0].show_by_objectness(0.5, targets[0])
+        if SHOW_ROI_INPUT and False:
+          fgt = cfg.MODEL.ROI_HEADS.FG_IOU_THRESHOLD
+          bgt = cfg.MODEL.ROI_HEADS.BG_IOU_THRESHOLD
+          print(f"proposals over FG_IOU_THRESHOLD: {fgt}")
+          proposals[0].show_by_objectness(fgt, targets[0])
+          print(f"proposals below BG_IOU_THRESHOLD: {bgt}")
+          proposals[0].show_by_objectness(bgt, targets[0], below=True)
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
 
         if self.training:
             # Faster R-CNN subsamples during training the proposals with a fixed
