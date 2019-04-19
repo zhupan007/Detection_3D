@@ -27,17 +27,8 @@ class BoxCoder3D(object):
         self.bbox_xform_clip = bbox_xform_clip
 
 
-    def encode(self, proposals, reference_boxes):
-        """
-        Encode a set of proposals with respect to some
-        reference boxes
-
-        Arguments:
-            reference_boxes (Tensor): reference boxes : anchors
-            proposals (Tensor): boxes to be encoded
-        """
-
-        box_encodings = second_box_encode(proposals, reference_boxes, smooth_dim=self.smooth_dim)
+    def encode(self, targets, anchors):
+        box_encodings = second_box_encode(targets, anchors, smooth_dim=self.smooth_dim)
         box_encodings = box_encodings * self.weights.to(box_encodings.device)
         return box_encodings
 

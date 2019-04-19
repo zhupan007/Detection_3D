@@ -191,10 +191,12 @@ class FastRCNNLossComputation(object):
         sampled_pos_inds_subset = torch.nonzero(labels > 0).squeeze(1)
         labels_pos = labels[sampled_pos_inds_subset]
         map_inds = 7 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3, 4, 5, 6], device=device)
+        box_regression_pos = box_regression[sampled_pos_inds_subset[:, None], map_inds]
+        regression_targets_pos = regression_targets[sampled_pos_inds_subset]
 
         box_loss = smooth_l1_loss(
-            box_regression[sampled_pos_inds_subset[:, None], map_inds],
-            regression_targets[sampled_pos_inds_subset],
+            box_regression_pos,
+            regression_targets_pos,
             bbox3ds[sampled_pos_inds_subset],
             size_average=False,
             beta=1,
@@ -202,13 +204,13 @@ class FastRCNNLossComputation(object):
         box_loss = box_loss / labels.numel()
 
         if SHOW_ROI_CLASSFICATION:
-          self.show_roi_cls_regs(proposals, classification_loss, box_loss, class_logits,  targets, box_regression)
+          self.show_roi_cls_regs(proposals, classification_loss, box_loss, class_logits,  targets, box_regression, regression_targets)
 
         return classification_loss, box_loss
 
 
     def show_roi_cls_regs(self, proposals, classification_loss, box_loss,
-              class_logits, targets,  box_regression):
+              class_logits, targets,  box_regression, regression_targets):
           '''
           From rpn nms: FP, FN, TP
           ROI: (1)remove all FP (2) add all FN, (3) keep all TP
@@ -220,6 +222,8 @@ class FastRCNNLossComputation(object):
           labels = proposals.get_field("labels")
           metric_inds, metric_evals = proposals.metric_4areas(self.low_threshold, self.high_threshold)
           gt_num = len(targets)
+          device = class_logits.device
+          num_classes = class_logits.shape[1]
 
           class_err = (labels != pred_logits).sum()
 
@@ -236,29 +240,30 @@ class FastRCNNLossComputation(object):
               objectness_ = pro_.get_field('objectness')
               logits_ = pred_logits[indices]
               labels_ = labels[indices]
-              roi_class_pred_ = roi_class_pred[indices]
-              class_logits_ = class_logits[indices]
 
               err_ = logits_ - labels_
               err_num = err_.sum()
-              print(f"\n{eval_type} :{n0} err num: {err_num}")
+              print(f"\n * * * * * * * * \n{eval_type} :{n0} err num: {err_num}")
               print(f"objectness_:{objectness_}\n")
               if n0 > 0:
-                #print(f"class_logits_:\n{class_logits_}")
-                lab = labels_[0]
-                roi_class_pred_ = roi_class_pred_[:,lab]
-                if eval_type != 'TP':
-                  print(f"roi_class_pred_:\n{roi_class_pred_}")
+                roi_class_pred_ = roi_class_pred[indices[:,None], labels_[:,None]]
+
+                #if eval_type != 'TP':
+                print(f"roi_class_pred_:\n{roi_class_pred_}")
 
                 if eval_type == 'FP':
                   #pro_.show_together(targets)
                   pass
 
                 if eval_type == 'FN' or eval_type == 'TP':
-                  roi_box_regression_ = box_regression[indices].view(n0, -1, 7)
-                  roi_box_regression_ = roi_box_regression_[:,lab,:]
-                  #roi_box_regression_ = roi_box_regression_[:,0,:]
+                  map_inds_ = 7 * labels_[:, None] + torch.tensor([0, 1, 2, 3, 4, 5, 6], device=device)
+                  roi_box_regression_ = box_regression[indices[:,None], map_inds_]
                   roi_box = self.box_coder.decode(roi_box_regression_, pro_.bbox3d)
+                  tar_reg = regression_targets[indices]
+                  #roi_box = self.box_coder.decode(tar_reg, pro_.bbox3d)
+                  print(f"target reg: \n{tar_reg[0:3]}")
+                  print(f"roi_reg: \n{roi_box_regression_[0:3]}")
+
                   roi_box[:,0] += 10
                   roi_boxlist_ = pro_.copy()
                   roi_boxlist_.bbox3d = roi_box
