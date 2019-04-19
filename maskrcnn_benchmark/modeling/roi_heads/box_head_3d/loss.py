@@ -12,9 +12,9 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
-DEBUG = True
+DEBUG = False
 SHOW_ROI_CLASSFICATION = DEBUG and True
-CHECK_IOU = True
+CHECK_IOU = False
 
 class FastRCNNLossComputation(object):
     """
@@ -22,7 +22,7 @@ class FastRCNNLossComputation(object):
     Also supports FPN
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -32,6 +32,7 @@ class FastRCNNLossComputation(object):
         self.proposal_matcher = proposal_matcher
         self.fg_bg_sampler = fg_bg_sampler
         self.box_coder = box_coder
+        self.yaw_loss_mode = yaw_loss_mode
 
         self.high_threshold = proposal_matcher.high_threshold
         self.low_threshold = proposal_matcher.low_threshold
@@ -199,7 +200,8 @@ class FastRCNNLossComputation(object):
             regression_targets_pos,
             bbox3ds[sampled_pos_inds_subset],
             size_average=False,
-            beta=1,
+            beta=1 / 5.,  # 1
+            yaw_loss_mode = self.yaw_loss_mode
         )
         box_loss = box_loss / labels.numel()
 
@@ -334,7 +336,8 @@ def make_roi_box_loss_evaluator(cfg):
     fg_bg_sampler = BalancedPositiveNegativeSampler(
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE, cfg.MODEL.ROI_HEADS.POSITIVE_FRACTION
     )
+    yaw_loss_mode = cfg.MODEL.LOSS.YAW_MODE
 
-    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder)
+    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode)
 
     return loss_evaluator
