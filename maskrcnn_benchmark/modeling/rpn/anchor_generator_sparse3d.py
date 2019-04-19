@@ -138,7 +138,7 @@ class AnchorGenerator(nn.Module):
         examples_idxscope = [examples_bidx_2_sizes(f.get_spatial_locations()[:,-1]) * self.anchor_num_per_loc
                               for f in feature_maps_sparse]
         size3d = sparse_points_scope(points_sparse)
-        anchors = [BoxList3D(a, size3d, self.anchor_mode, ei) \
+        anchors = [BoxList3D(a, size3d, self.anchor_mode, ei, {}) \
                       for a,ei in zip(anchors_over_all_feature_maps_sparse, examples_idxscope)]
 
         if SHOW_ANCHOR_EACH_SCALE:

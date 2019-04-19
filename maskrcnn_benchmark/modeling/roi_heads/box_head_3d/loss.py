@@ -13,7 +13,7 @@ from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
 DEBUG = True
-SHOW_WRONG_CLASSFICATION = DEBUG and True
+SHOW_ROI_CLASSFICATION = DEBUG and True
 CHECK_IOU = True
 
 class FastRCNNLossComputation(object):
@@ -201,50 +201,77 @@ class FastRCNNLossComputation(object):
         )
         box_loss = box_loss / labels.numel()
 
-        if SHOW_WRONG_CLASSFICATION:
-          self.show_classification(proposals, classification_loss, box_loss, class_logits,  targets)
+        if SHOW_ROI_CLASSFICATION:
+          self.show_roi_cls_regs(proposals, classification_loss, box_loss, class_logits,  targets, box_regression)
 
         return classification_loss, box_loss
 
 
-    def show_classification(self, proposals, classification_loss, box_loss,
-              class_logits, targets ):
+    def show_roi_cls_regs(self, proposals, classification_loss, box_loss,
+              class_logits, targets,  box_regression):
           '''
           From rpn nms: FP, FN, TP
           ROI: (1)remove all FP (2) add all FN, (3) keep all TP
           '''
           assert proposals.batch_size() == 1
           targets = cat_boxlist_3d(targets, per_example=True)
+          roi_class_pred = F.softmax(class_logits)
           pred_logits = torch.argmax(class_logits, 1)
           labels = proposals.get_field("labels")
           metric_inds, metric_evals = proposals.metric_4areas(self.low_threshold, self.high_threshold)
+          gt_num = len(targets)
 
           class_err = (labels != pred_logits).sum()
 
-          print('\n--------------------------------\n roi classificatio\n')
+          print('\n-----------------------------------------\n roi classificatio\n')
           print(f"RPN_NMS: {metric_evals}")
           print(f"classification_loss:{classification_loss}, box_loss: {box_loss}")
 
-
           def show_one_type(eval_type):
               indices = metric_inds[eval_type]
+              if eval_type == 'TP':
+                indices = indices[0:-gt_num]
               n0 = indices.shape[0]
               pro_ = proposals[indices]
               objectness_ = pro_.get_field('objectness')
-              class_logits_ = class_logits[indices]
               logits_ = pred_logits[indices]
               labels_ = labels[indices]
+              roi_class_pred_ = roi_class_pred[indices]
+              class_logits_ = class_logits[indices]
+
               err_ = logits_ - labels_
               err_num = err_.sum()
               print(f"\n{eval_type} :{n0} err num: {err_num}")
               print(f"objectness_:{objectness_}\n")
-              if (eval_type == 'FP' or eval_type == 'FN') and n0 > 0:
-                print(f"class_logits_:\n{class_logits_}")
-                pro_.show_together(targets)
-              if err_num == 0:
-                return
-              pro_.show_together(targets)
-              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              if n0 > 0:
+                #print(f"class_logits_:\n{class_logits_}")
+                lab = labels_[0]
+                roi_class_pred_ = roi_class_pred_[:,lab]
+                if eval_type != 'TP':
+                  print(f"roi_class_pred_:\n{roi_class_pred_}")
+
+                if eval_type == 'FP':
+                  #pro_.show_together(targets)
+                  pass
+
+                if eval_type == 'FN' or eval_type == 'TP':
+                  roi_box_regression_ = box_regression[indices].view(n0, -1, 7)
+                  roi_box_regression_ = roi_box_regression_[:,lab,:]
+                  #roi_box_regression_ = roi_box_regression_[:,0,:]
+                  roi_box = self.box_coder.decode(roi_box_regression_, pro_.bbox3d)
+                  roi_box[:,0] += 10
+                  roi_boxlist_ = pro_.copy()
+                  roi_boxlist_.bbox3d = roi_box
+
+                  targets_ = targets.copy()
+                  targets_.bbox3d[:,0] += 10
+
+                  bs_ = cat_boxlist_3d([pro_, roi_boxlist_], per_example = False)
+                  tg_ = cat_boxlist_3d([targets, targets_], False)
+                  bs_.show_together(tg_)
+
+                  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                  pass
               pass
 
           show_one_type('FP')

@@ -109,15 +109,16 @@ class RPNHead(nn.Module):
         #reg_shape_method = 'yaws_toghter'
         for feature in x:
             t = F.relu(self.conv(feature))    # [1,feature, sparse_locations, 1]
+            # yaws_num: self.num_anchors_per_location
             logit = self.cls_logits(t) # [1,yaws_num, sparse_location_num, 1]
             logit = logit.permute(0,2,1,3) # [1,sparse_location_num, yaws_num,1]
             logits.append(logit)
             reg = self.bbox_pred(t) # [1,7*yaws_num, sparse_location_num,1]
             reg = reg.permute(0,2,1,3) # [1,sparse_location_num, yaws_num*7,1]
             if reg_shape_method == 'box_toghter':
-              reg = reg.reshape(1,reg.shape[1],4,7) # [1,sparse_location_num, yaws_num,7]
+              reg = reg.reshape(1,reg.shape[1],self.num_anchors_per_location,7) # [1,sparse_location_num, yaws_num,7]
             elif reg_shape_method == 'yaws_toghter':
-              reg = reg.reshape(1,reg.shape[1],7,4) # [1,sparse_location_num, yaws_num,7]
+              reg = reg.reshape(1,reg.shape[1],7,self.num_anchors_per_location) # [1,sparse_location_num, yaws_num,7]
               reg = reg.permute(0,1,3,2)
             else:
               raise NotImplementedError

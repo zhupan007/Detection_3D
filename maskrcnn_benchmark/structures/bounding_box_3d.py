@@ -18,7 +18,7 @@ def _cat(tensors, dim=0):
         return tensors[0]
     return torch.cat(tensors, dim)
 
-def cat_boxlist_3d(bboxes_ls, per_example):
+def cat_boxlist_3d(bboxes_ls, per_example, use_constants0=False):
     """
     Concatenates a list of BoxList (having the same image size) into a
     single BoxList
@@ -48,10 +48,11 @@ def cat_boxlist_3d(bboxes_ls, per_example):
     assert all(set(bbox.fields()) == fields for bbox in bboxes_ls)
 
     constants_all = bboxes_ls[0].constants
-    if not all(constants_all == bbox.constants for bbox in bboxes_ls):
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      assert False
-      pass
+    if not use_constants0:
+      if not all(constants_all == bbox.constants for bbox in bboxes_ls):
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        assert False
+        pass
 
     batch_size0 = bboxes_ls[0].batch_size()
     for bbox in bboxes_ls:
@@ -111,7 +112,7 @@ class BoxList3D(object):
     labels.
     """
 
-    def __init__(self, bbox3d, size3d, mode, examples_idxscope=None, constants={}):
+    def __init__(self, bbox3d, size3d, mode, examples_idxscope, constants):
         '''
         All examples in same batch are concatenated together.
         examples_idxscope: [batch_size,2] record the index scope per example
@@ -119,6 +120,9 @@ class BoxList3D(object):
         size3d: None or [N,6] -> [6] [is xyz_min, xyz_max]
         mode: "standard", "yx_zb"
         extra_fields: "label" "objectness"
+
+        examples_idxscope=None: for batch_size=1
+        constants={}: for non required
         '''
         assert mode == 'yx_zb' or mode == 'standard'
         assert bbox3d.shape[1] == 7, bbox3d.shape
@@ -223,130 +227,11 @@ class BoxList3D(object):
         bbox._copy_extra_fields(self)
         return bbox
 
-    def _split_into_xyxy(self):
-        if self.mode == "xyxy":
-            xmin, ymin, xmax, ymax = self.bbox.split(1, dim=-1)
-            return xmin, ymin, xmax, ymax
-        elif self.mode == "xywh":
-            TO_REMOVE = 1
-            xmin, ymin, w, h = self.bbox.split(1, dim=-1)
-            return (
-                xmin,
-                ymin,
-                xmin + (w - TO_REMOVE).clamp(min=0),
-                ymin + (h - TO_REMOVE).clamp(min=0),
-            )
-        else:
-            raise RuntimeError("Should not be here")
-
-    def resize(self, size, *args, **kwargs):
-        """
-        Returns a resized copy of this bounding box
-
-        :param size: The requested size in pixels, as a 2-tuple:
-            (width, height).
-        """
-
-        ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(size, self.size))
-        if ratios[0] == ratios[1]:
-            ratio = ratios[0]
-            scaled_box = self.bbox * ratio
-            bbox = BoxList(scaled_box, size, mode=self.mode)
-            # bbox._copy_extra_fields(self)
-            for k, v in self.extra_fields.items():
-                if not isinstance(v, torch.Tensor):
-                    v = v.resize(size, *args, **kwargs)
-                bbox.add_field(k, v)
-            return bbox
-
-        ratio_width, ratio_height = ratios
-        xmin, ymin, xmax, ymax = self._split_into_xyxy()
-        scaled_xmin = xmin * ratio_width
-        scaled_xmax = xmax * ratio_width
-        scaled_ymin = ymin * ratio_height
-        scaled_ymax = ymax * ratio_height
-        scaled_box = torch.cat(
-            (scaled_xmin, scaled_ymin, scaled_xmax, scaled_ymax), dim=-1
-        )
-        bbox = BoxList(scaled_box, size, mode="xyxy")
-        # bbox._copy_extra_fields(self)
-        for k, v in self.extra_fields.items():
-            if not isinstance(v, torch.Tensor):
-                v = v.resize(size, *args, **kwargs)
-            bbox.add_field(k, v)
-
-        return bbox.convert(self.mode)
-
-    def transpose(self, method):
-        """
-        Transpose bounding box (flip or rotate in 90 degree steps)
-        :param method: One of :py:attr:`PIL.Image.FLIP_LEFT_RIGHT`,
-          :py:attr:`PIL.Image.FLIP_TOP_BOTTOM`, :py:attr:`PIL.Image.ROTATE_90`,
-          :py:attr:`PIL.Image.ROTATE_180`, :py:attr:`PIL.Image.ROTATE_270`,
-          :py:attr:`PIL.Image.TRANSPOSE` or :py:attr:`PIL.Image.TRANSVERSE`.
-        """
-        if method not in (FLIP_LEFT_RIGHT, FLIP_TOP_BOTTOM):
-            raise NotImplementedError(
-                "Only FLIP_LEFT_RIGHT and FLIP_TOP_BOTTOM implemented"
-            )
-
-        image_width, image_height = self.size
-        xmin, ymin, xmax, ymax = self._split_into_xyxy()
-        if method == FLIP_LEFT_RIGHT:
-            TO_REMOVE = 1
-            transposed_xmin = image_width - xmax - TO_REMOVE
-            transposed_xmax = image_width - xmin - TO_REMOVE
-            transposed_ymin = ymin
-            transposed_ymax = ymax
-        elif method == FLIP_TOP_BOTTOM:
-            transposed_xmin = xmin
-            transposed_xmax = xmax
-            transposed_ymin = image_height - ymax
-            transposed_ymax = image_height - ymin
-
-        transposed_boxes = torch.cat(
-            (transposed_xmin, transposed_ymin, transposed_xmax, transposed_ymax), dim=-1
-        )
-        bbox = BoxList(transposed_boxes, self.size, mode="xyxy")
-        # bbox._copy_extra_fields(self)
-        for k, v in self.extra_fields.items():
-            if not isinstance(v, torch.Tensor):
-                v = v.transpose(method)
-            bbox.add_field(k, v)
-        return bbox.convert(self.mode)
-
-    def crop(self, box):
-        """
-        Cropss a rectangular region from this bounding box. The box is a
-        4-tuple defining the left, upper, right, and lower pixel
-        coordinate.
-        """
-        xmin, ymin, xmax, ymax = self._split_into_xyxy()
-        w, h = box[2] - box[0], box[3] - box[1]
-        cropped_xmin = (xmin - box[0]).clamp(min=0, max=w)
-        cropped_ymin = (ymin - box[1]).clamp(min=0, max=h)
-        cropped_xmax = (xmax - box[0]).clamp(min=0, max=w)
-        cropped_ymax = (ymax - box[1]).clamp(min=0, max=h)
-
-        # TODO should I filter empty boxes here?
-        if False:
-            is_empty = (cropped_xmin == cropped_xmax) | (cropped_ymin == cropped_ymax)
-
-        cropped_box = torch.cat(
-            (cropped_xmin, cropped_ymin, cropped_xmax, cropped_ymax), dim=-1
-        )
-        bbox = BoxList(cropped_box, (w, h), mode="xyxy")
-        # bbox._copy_extra_fields(self)
-        for k, v in self.extra_fields.items():
-            if not isinstance(v, torch.Tensor):
-                v = v.crop(box)
-            bbox.add_field(k, v)
-        return bbox.convert(self.mode)
 
     # Tensor-like methods
 
     def to(self, device):
-        bbox3d = BoxList3D(self.bbox3d.to(device), self.size3d.to(device), self.mode, self.examples_idxscope)
+        bbox3d = BoxList3D(self.bbox3d.to(device), self.size3d.to(device), self.mode, self.examples_idxscope, self.constants)
 
         for k, v in self.extra_fields.items():
             if hasattr(v, "to"):
@@ -445,7 +330,7 @@ class BoxList3D(object):
         return area
 
     def copy_with_fields(self, fields):
-        bbox3d = BoxList3D(self.bbox3d, self.size3d, self.mode, self.examples_idxscope)
+        bbox3d = BoxList3D(self.bbox3d.clone(), self.size3d.clone(), self.mode, self.examples_idxscope.clone(), self.constants)
         if not isinstance(fields, (list, tuple)):
             fields = [fields]
         for field in fields:
