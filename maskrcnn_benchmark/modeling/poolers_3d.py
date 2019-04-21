@@ -7,7 +7,7 @@ from maskrcnn_benchmark.layers import ROIAlignRotated3D
 
 from .utils import cat
 
-DEBUG = True
+DEBUG = False
 
 '''
 feature map: []
@@ -21,18 +21,18 @@ class LevelMapper(object):
     on the heuristic in the FPN paper.
     """
 
-    def __init__(self, k_min, k_max, canonical_scale=3, canonical_level=3, eps=1e-6):
+    def __init__(self, k_min, k_max, canonical_size, canonical_level, eps=1e-6):
         """
         Arguments:
             k_min (int)
             k_max (int)
-            canonical_scale (int)
+            canonical_size (int)
             canonical_level (int)
             eps (float)
         """
         self.k_min = k_min
         self.k_max = k_max
-        self.s0 = canonical_scale
+        self.s0 = canonical_size
         self.lvl0 = canonical_level
         self.eps = eps
 
@@ -42,13 +42,31 @@ class LevelMapper(object):
             boxlists (list[BoxList])
         """
         # Compute level ids
-        s0 = torch.sqrt(cat([boxlist.area() for boxlist in boxlists]))
+        #s0 = torch.sqrt(cat([boxlist.area() for boxlist in boxlists]))
         s = torch.sqrt(cat([boxlist.bbox3d[:,3:5].max(dim=1)[0] for boxlist in boxlists]))
 
         # Eqn.(1) in FPN paper
         target_lvls0 = torch.floor(self.lvl0 + torch.log2(s / self.s0 + self.eps))
         target_lvls = torch.clamp(target_lvls0, min=self.k_min, max=self.k_max)
-        return target_lvls.to(torch.int64) - self.k_min
+        levels = target_lvls.to(torch.int64) - self.k_min
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        return levels
+
+
+class LevelMapper_3d(object):
+    def __init__(self, scales, canonical_size):
+        self.scales = torch.tensor(scales)
+        self.canonical_size = canonical_size
+
+    def __call__(self, boxlists):
+        size = torch.sqrt(cat([boxlist.bbox3d[:,3:5].max(dim=1)[0] for boxlist in boxlists]))
+        rate = size / self.canonical_size
+        dif = torch.abs(self.scales.to(rate.device)[None,:] - rate[:,None])
+        # get the smallest one within all the scales larger than rate. The dif
+        # cloest to 0
+        levels = torch.argmin(dif,1)
+        return levels
+
 
 
 class Pooler(nn.Module):
@@ -61,7 +79,7 @@ class Pooler(nn.Module):
     which is available thanks to the BoxList.
     """
 
-    def __init__(self, output_size, scales, sampling_ratio):
+    def __init__(self, output_size, scales, sampling_ratio, canonical_size, canonical_level):
         """
         Arguments:
             output_size (list[tuple[int]] or list[int]): output size for the pooled region
@@ -73,7 +91,7 @@ class Pooler(nn.Module):
         for scale in scales:
             poolers.append(
                 ROIAlignRotated3D(
-                    output_size, spatial_scale=scale, sampling_ratio=sampling_ratio
+                    output_size, spatial_scale=scale, sampling_ratio=sampling_ratio,
                 )
             )
         self.poolers = nn.ModuleList(poolers)
@@ -82,7 +100,8 @@ class Pooler(nn.Module):
         # downsamples by a factor of 2 at each level.
         lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
         lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
-        self.map_levels = LevelMapper(lvl_min, lvl_max)
+        self.map_levels = LevelMapper_3d(scales, canonical_size)
+        #self.map_levels = LevelMapper(lvl_min, lvl_max, canonical_size, canonical_level)
 
     def convert_to_roi_format(self, boxes):
         # roialign use [center_w, center_h, roi_width, roi_height, theta]
@@ -108,7 +127,7 @@ class Pooler(nn.Module):
         Returns:
             result (Tensor)
         """
-        if DEBUG and False:
+        if DEBUG:
           levels_num = len(x)
           print(f'\bx levels_num:{levels_num}')
           for li in range(levels_num):
@@ -135,8 +154,12 @@ class Pooler(nn.Module):
             device=device,
         )
         for level, (per_level_feature, pooler) in enumerate(zip(x, self.poolers)):
+            if DEBUG:
+              print(f"\nlevel: {level}")
+              print(f"f: {per_level_feature.spatial_size}")
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
             result[idx_in_level] = pooler(per_level_feature, rois_per_level)
 
         return result
+

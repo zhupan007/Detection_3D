@@ -243,7 +243,7 @@ class FastRCNNLossComputation(object):
               logits_ = pred_logits[indices]
               labels_ = labels[indices]
 
-              err_ = logits_ - labels_
+              err_ = torch.abs(logits_ - labels_)
               err_num = err_.sum()
               print(f"\n * * * * * * * * \n{eval_type} :{n0} err num: {err_num}")
               print(f"objectness_:{objectness_}\n")

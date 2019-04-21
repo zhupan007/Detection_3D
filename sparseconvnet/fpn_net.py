@@ -11,15 +11,17 @@ SHOW_MODEL = False
 class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
     def __init__(self, full_scale, dimension, raw_elements, reps, nPlanesF, nPlaneM, residual_blocks,
-                  fpn_scales_from_top, downsample=[[2,2,2], [2,2,2]], leakiness=0, voxel_scale=None):
+                  fpn_scales_from_top, roi_scales_from_top, downsample,
+                  leakiness=0, voxel_scale=None):
         '''
-        downsample:[kernel, stride]
+        downsample:[kernel, stride] :[[2,2,2], [2,2,2]]
         '''
         nn.Module.__init__(self)
 
         self.down_kernels =  downsample[0]
         self.down_strides = downsample[1]
         self.fpn_scales_from_top = fpn_scales_from_top
+        self.roi_scales_from_top = roi_scales_from_top
         scale_num = len(nPlanesF)
         assert len(self.down_kernels) == scale_num - 1 == len(self.down_strides), f"nPlanesF len = {scale_num}, kernels num = {len(self.down_kernels)}"
         assert all([len(ks)==3 for ks in self.down_kernels])
@@ -156,53 +158,63 @@ class FPN_Net(torch.nn.Module):
         #if self._show:  sparse_shape(net)
         ups.append(self.m_mergeds[k](net))
 
-      fpn_maps = [ups[i] for i in self.fpn_scales_from_top]
+      rpn_maps = [ups[i] for i in self.fpn_scales_from_top]
+      roi_maps = [ups[i] for i in self.roi_scales_from_top]
 
       if self._show:
-        receptive_field(self.operations_down, self.voxel_scale)
-        print('\n\nSparse FPN\n--------------------------------------------------')
-        print(f'scale num: {scales_num}')
-        print('downs:')
-        for i in range(len(downs)):
-          #if i!=0:
-          #  print(f'\tKernel:{self.down_kernels[i-1]} stride:{self.down_strides[i-1]}', end='\t')
-          #else:
-          #  print('\tSubmanifoldConvolution \t\t', end='\t')
-          op = self.operations_down[i]
-          ke = op['kernel']
-          st = op['stride']
-          rf = op['rf']
-          tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
-          sparse_shape(downs[i], pre=f'\t{i} ', post=tmp)
-
-        print('\n\nups:')
-        for i in range(len(ups)):
-          #if i==0:
-          #  print('\tIdentity of the last \t\t', end='\t')
-          #else:
-          #  print(f'\tKernel:{self.down_kernels[-i]} stride:{self.down_strides[-i]}', end='\t')
-          if i<len(self.operations_up):
-            op = self.operations_up[i]
+          receptive_field(self.operations_down, self.voxel_scale)
+          print('\n\nSparse FPN\n--------------------------------------------------')
+          print(f'scale num: {scales_num}')
+          print('downs:')
+          for i in range(len(downs)):
+            #if i!=0:
+            #  print(f'\tKernel:{self.down_kernels[i-1]} stride:{self.down_strides[i-1]}', end='\t')
+            #else:
+            #  print('\tSubmanifoldConvolution \t\t', end='\t')
+            op = self.operations_down[i]
             ke = op['kernel']
             st = op['stride']
-            rf = self.operations_down[-i-1]['rf']
+            rf = op['rf']
             tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
-          else:
-            tmp = ''
-          sparse_shape(ups[i], pre=f'\t{i} ', post=tmp)
+            sparse_shape(downs[i], pre=f'\t{i} ', post=tmp)
 
-        print('\n\nFPN_Net out:')
-        print(f'{self.fpn_scales_from_top} of ups')
-        receptive_fields_fpn = [self.operations_down[-i-1]['rf'] for i in self.fpn_scales_from_top]
-        for j,t in enumerate(fpn_maps):
-          tmp = f'\t Receptive:{receptive_fields_fpn[j]}'
-          sparse_shape(t, post=tmp)
-          sparse_real_size(t,'\t')
-          print('\n')
-        print('--------------------------------------------------\n\n')
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        pass
-      return fpn_maps
+          print('\n\nups:')
+          for i in range(len(ups)):
+            #if i==0:
+            #  print('\tIdentity of the last \t\t', end='\t')
+            #else:
+            #  print(f'\tKernel:{self.down_kernels[-i]} stride:{self.down_strides[-i]}', end='\t')
+            if i<len(self.operations_up):
+              op = self.operations_up[i]
+              ke = op['kernel']
+              st = op['stride']
+              rf = self.operations_down[-i-1]['rf']
+              tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
+            else:
+              tmp = ''
+            sparse_shape(ups[i], pre=f'\t{i} ', post=tmp)
+
+          print('\n\nFPN_Net out:')
+          print(f'{self.fpn_scales_from_top} of ups')
+          receptive_fields_fpn = [self.operations_down[-i-1]['rf'] for i in self.fpn_scales_from_top]
+          for j,t in enumerate(rpn_maps):
+            tmp = f'\t Receptive:{receptive_fields_fpn[j]}'
+            sparse_shape(t, post=tmp)
+            sparse_real_size(t,'\t')
+            print('\n')
+
+          print('\n\nROI map:')
+          print(f'{self.roi_scales_from_top} of ups')
+          receptive_fields_roi = [self.operations_down[-i-1]['rf'] for i in self.roi_scales_from_top]
+          for j,t in enumerate(roi_maps):
+            tmp = f'\t Receptive:{receptive_fields_roi[j]}'
+            sparse_shape(t, post=tmp)
+            sparse_real_size(t,'\t')
+            print('\n')
+          print('--------------------------------------------------\n\n')
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
+      return rpn_maps, roi_maps
 
 
 def receptive_field(operations, voxel_scale = None):

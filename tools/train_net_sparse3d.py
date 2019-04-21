@@ -182,7 +182,7 @@ def main():
 
 
 def intact_cfg(cfg):
-  fpn_scalse = cfg.MODEL.FPN_SCALES_FROM_TOP
+  fpn_scalse = cfg.MODEL.RPN_SCALES_FROM_TOP
   strides = cfg.SPARSE3D.STRIDE
   nPlanesFront = cfg.SPARSE3D.nPlanesFront
   scale_num = len(nPlanesFront)
@@ -206,9 +206,32 @@ def intact_cfg(cfg):
     assert anchor_size[s-1][0] < anchor_size[s][0], "ANCHOR_SIZES_3D should set from small to large, to match scale order of feature map"
     assert anchor_stride[s-1][0] < anchor_stride[s][0]
 
-  pass
   #if len(anchor_size)>1:
   #  assert anchor_size[0][0] > anchor_size[1][0], "ANCHOR_SIZES_3D should set from small to large after reversed, to match scale order of feature map"
+
+  check_roi_parameters(cfg)
+
+def check_roi_parameters(cfg):
+  #spatial_scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL
+  #canonical_size = cfg.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE
+  #canonical_level = cfg.MODEL.ROI_BOX_HEAD.CANONICAL_LEVEL
+  strides = cfg.SPARSE3D.STRIDE
+  roi_scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_FROM_TOP
+
+  strides = np.array(strides)
+  strides = np.cumprod(strides, 0)
+  spatial_scales_all = np.flip(1.0 / strides, 0)
+  roi_spatial_scales = spatial_scales_all[roi_scales, :]
+  assert np.all(roi_spatial_scales[:,0] == roi_spatial_scales[:,1])
+  roi_spatial_scales_xy = roi_spatial_scales[:,0].tolist()
+
+  cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL = roi_spatial_scales_xy
+
+  show = True
+  if show:
+    print(f"\n\nroi_spatial_scales_xy: {roi_spatial_scales_xy}\n")
+
+
 
 if __name__ == "__main__":
     main()

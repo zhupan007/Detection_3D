@@ -52,12 +52,15 @@ class FPN2MLPFeatureExtractor(nn.Module):
         super(FPN2MLPFeatureExtractor, self).__init__()
 
         resolution = cfg.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION
-        scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES
+        scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL
         sampling_ratio = cfg.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO
+        canonical_size = cfg.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE
         pooler = Pooler(
             output_size=(resolution, resolution),
             scales=scales,
             sampling_ratio=sampling_ratio,
+            canonical_size=canonical_size,
+            canonical_level=None
         )
         input_size = cfg.MODEL.BACKBONE.OUT_CHANNELS * resolution ** 2
         representation_size = cfg.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM

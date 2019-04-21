@@ -2,6 +2,7 @@
 
 
 # on going process
+- considering aug both proposal and targets in match_targets_to_proposals in roi_heads/box_head_3d/loss.py
 - \_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE
 - sparseconvnet/tools_3d_2d.py when not dense, 0 used, if this is ok?
 - subsample not understand:   
@@ -151,20 +152,18 @@ later, SpConv and SparseConvCnn should only need to install one
         SHOW_PRED_GT  
         SHOW_ANCHORS_PER_LOC    
 
- - modeling/rpn/loss_3d.py  RPNLossComputation/\__call\__  
-        SHOW_POS_ANCHOR_IOU_SAME_LOC: the positive anchor policy
-        SHOW_POS_NEG_ANCHORS: Positive and negative anchors  
-        SHOW_PRED_GT: show prediction and ground truth  
-
- - modeling/rpn/loss_3d.py  RPNLossComputation/match_targets_to_anchors  
-        SHOW_POS_ANCHOR_IOU: Show the process of finding positive anchors by iou with ground truth target  
+ - modeling/rpn/loss_3d.py  
+        SHOW_POS_ANCHOR_IOU_SAME_LOC: the positive anchor policy  
+        SHOW_IGNORED_ANCHOR  
+        SHOW_POS_NEG_ANCHORS  
+        SHOW_PRED_POS_ANCHORS  
 
  - rpn/anchor_generator_sparse3d.py  AnchorGenerator/forward:  
         SHOW_ANCHOR_EACH_SCALE:
 
  - rpn/inference_3d.py
-        SHOW_RPN_INPUT  
-        SHOW_RPNPOST  
+        SHOW_RPN_OUT_BEFORE_NMS  
+        SHOW_NMS_OUT  
 
 # configurations:
 - maskrcnn_benchmark/config/defaults.py 
@@ -172,7 +171,6 @@ later, SpConv and SparseConvCnn should only need to install one
 
 ## Learning rate
 - maskrcnn_benchmark/solver/lr_scheduler.py
-## ROI
 
 # Basic code structure
 - maskrcnn_benchmark/structures/bounding_box_3d.py/BoxList3D
@@ -213,12 +211,21 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 -> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
 ```
 5. roi: 
-```python
+```
 (1) modeling/detector/sparse_rcnn.py/SparseRCNN: 
         x, result, detector_losses = self.roi_heads(features, proposals, targets)
 (2) modeling/roi_heads/box_head_3d/box_head.py ROIBoxHead3D
 (3) roi_heads/box_head_3d/roi_box_feature_extractors.py
 (4) modeling/poolers.py 
+```
+```
+POOLER_SCALES: roi_box_feature_extractors.py -> poolers_3d.py/LevelMapper -> layers/roi_align_rotated_3d.py/ROIAlignRotated3D
+
+LevelMapper in poolers_3d.py:
+level = canonical_level + log2(size / canonical_size)
+* size: (1) The square root of predicted box area. Used in MaskRCNN 
+        (2) The maximum of width and length. USed in this project.
+* canonical_size: the canonical size of object in the full size feature map (original point cloud). For example, 4 meters when pcl size is 8 meters.
 ```
 ## matcher
 1. rpn/loss_3d.py/make_rpn_loss_evaluator

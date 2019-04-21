@@ -47,14 +47,14 @@ class SparseRCNN(nn.Module):
         """
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
-        features = self.backbone(points)
-        proposals, proposal_losses = self.rpn(points, features, targets)
+        rpn_features, roi_features = self.backbone(points)
+        proposals, proposal_losses = self.rpn(points, rpn_features, targets)
         proposals.clamp_size()
         if not self.DISABLE_ROILOSS:
-            x, result, detector_losses = self.roi_heads(features, proposals, targets)
+            x, result, detector_losses = self.roi_heads(roi_features, proposals, targets)
         else:
             # RPN-only models don't have roi_heads
-            x = features
+            x = rpn_features
             result = proposals
             detector_losses = {}
 
