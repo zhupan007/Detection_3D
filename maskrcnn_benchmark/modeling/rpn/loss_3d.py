@@ -16,9 +16,33 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d, cat_box
 
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
+CHECK_MATCHER = DEBUG and False
+
 SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
+
 SHOW_PRED_POS_ANCHORS = DEBUG and False
+
+def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
+  num_gt = target.bbox3d.shape[0]
+  for j in range(num_gt):
+    ious_j = match_quality_matrix[j]
+    mathched_inds_j = torch.nonzero(matched_idxs == j).squeeze(1)
+    iou_m_j = ious_j[mathched_inds_j]
+    a_m_j = anchor[mathched_inds_j]
+    print(f"matched iou: {iou_m_j}")
+    a_m_j.show_together(target[j], points=anchor.bbox3d[:,0:3] )
+
+    mask_j = ious_j > 0.1
+    indices_tops_j = torch.nonzero(mask_j).squeeze(1)
+    ious_j_tops = ious_j[indices_tops_j]
+    a_j_tops = anchor[indices_tops_j]
+    print(f"top ious:{ious_j_tops}")
+    a_j_tops.show_together(target[j], points=anchor.bbox3d[:,0:3])
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  pass
 
 class RPNLossComputation(object):
     """
@@ -63,6 +87,9 @@ class RPNLossComputation(object):
           sampled_ign_inds = torch.nonzero(matched_idxs==-2).squeeze(1)
           anchors_ign = anchor[sampled_ign_inds]
           anchors_ign.show_together(target)
+
+        if CHECK_MATCHER:
+          check_matcher(target, anchor, match_quality_matrix, matched_idxs)
 
         if SHOW_POS_ANCHOR_IOU_SAME_LOC:
           num_gt = target.bbox3d.shape[0]
