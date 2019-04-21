@@ -5,7 +5,7 @@ export PYTHONPATH=$PWD
 TEST='--skip-test'
 #TEST='--only-test'
 
-CONFIG_FILE='dlr_bs1_rpn.yaml'
+CONFIG_FILE='fpn3_bs1_rpn.yaml'
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 

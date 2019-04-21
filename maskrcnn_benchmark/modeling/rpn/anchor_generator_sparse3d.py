@@ -156,9 +156,10 @@ class AnchorGenerator(nn.Module):
               print(f'points ctr mean: {points.mean(0)}')
               print(f'points ctr max: {points.max(0)}')
 
-              anchors[scale_i].show(20, points, with_centroids=True)
+              anchors[scale_i].show(200, points, with_centroids=True)
               #anchors[scale_i].show_centroids(-1, points)
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
         return anchors
 
 

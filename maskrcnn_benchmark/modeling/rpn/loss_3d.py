@@ -33,12 +33,13 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
     print(f"matched iou: {iou_m_j}")
     a_m_j.show_together(target[j], points=anchor.bbox3d[:,0:3] )
 
-    mask_j = ious_j > 0.1
-    indices_tops_j = torch.nonzero(mask_j).squeeze(1)
-    ious_j_tops = ious_j[indices_tops_j]
-    a_j_tops = anchor[indices_tops_j]
-    print(f"top ious:{ious_j_tops}")
-    a_j_tops.show_together(target[j], points=anchor.bbox3d[:,0:3])
+    ious_j_top, ids_top_j = ious_j.topk(5)
+    print(f"top ious:{ious_j_top}")
+
+    for k in range(len(ids_top_j)):
+      a_j_top = anchor[ids_top_j[k]]
+      print(f"iou:{ious_j_top[k]}")
+      a_j_top.show_together(target[j], points=anchor.bbox3d[:,0:3])
     import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -88,7 +89,7 @@ class RPNLossComputation(object):
           anchors_ign = anchor[sampled_ign_inds]
           anchors_ign.show_together(target)
 
-        if CHECK_MATCHER:
+        if CHECK_MATCHER and target.bbox3d.shape[0]>0:
           check_matcher(target, anchor, match_quality_matrix, matched_idxs)
 
         if SHOW_POS_ANCHOR_IOU_SAME_LOC:

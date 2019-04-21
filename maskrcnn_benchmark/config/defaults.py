@@ -137,7 +137,7 @@ _C.MODEL.RPN.FG_IOU_THRESHOLD = 0.6 #  0.7
 # Maximum overlap allowed between an anchor and ground-truth box for the
 # (anchor, gt box) pair to be a negative examples (IoU < BG_IOU_THRESHOLD
 # ==> negative RPN example) (->Matcher)
-_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.3 # 0.3
+_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.28 # 0.3
 # Maximum yaw dif for positive anchor (->Matcher)
 _C.MODEL.RPN.YAW_THRESHOLD = 0.7
 # Total number of RPN examples per image (-> BalancedPositiveNegativeSampler)
