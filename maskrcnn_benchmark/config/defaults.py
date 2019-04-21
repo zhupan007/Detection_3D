@@ -27,7 +27,7 @@ _C.MODEL = CN()
 _C.MODEL.RPN_ONLY = False
 _C.MODEL.MASK_ON = False
 _C.MODEL.DEVICE = "cuda"
-_C.MODEL.META_ARCHITECTURE = "GeneralizedRCNN"
+_C.MODEL.META_ARCHITECTURE = "SparseRCNN"
 
 # If the WEIGHT starts with a catalog://, like :R-50, the code will look for
 # the path in paths_catalog. Else, it will use it as the specified absolute
@@ -39,16 +39,16 @@ _C.MODEL.WEIGHT = ""
 # Sparse 3D
 # -----------------------------------------------------------------------------
 _C.SPARSE3D = CN()
-_C.SPARSE3D.VOXEL_SCALE = 20
-_C.SPARSE3D.VOXEL_FULL_SCALE = [4096,4096,4096]
+_C.SPARSE3D.VOXEL_SCALE = 50
+_C.SPARSE3D.VOXEL_FULL_SCALE = [2048, 2048, 514]
 _C.SPARSE3D.VAL_REPS = 3
 _C.SPARSE3D.RESIDUAL_BLOCK = True
 _C.SPARSE3D.BLOCK_REPS = 1
 _C.SPARSE3D.nPlaneMap = 128
-_C.SPARSE3D.nPlanesFront = [32, 32*2, 32*3]
-_C.SPARSE3D.KERNEL = [[2,2,2], [2,2,2]]
-_C.SPARSE3D.STRIDE = [[2,2,2], [2,2,2]]
-_C.SPARSE3D.SCENE_SIZE = [8,8,4]
+_C.SPARSE3D.nPlanesFront = [32, 64, 64, 128, 128, 128, 256, 256, 256, 256]
+_C.SPARSE3D.SCENE_SIZE = [8,8,5]
+_C.SPARSE3D.KERNEL = [[2,2,4], [2,2,4], [2,2,4], [1,1,4], [2,2,4], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
+_C.SPARSE3D.STRIDE = [[2,2,2], [2,2,4], [2,2,4], [1,1,4], [2,2,1], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
 # -----------------------------------------------------------------------------
 # INPUT
 # -----------------------------------------------------------------------------
@@ -102,11 +102,11 @@ _C.MODEL.BACKBONE = CN()
 # The string must match a function that is imported in modeling.model_builder
 # (e.g., 'FPN.add_fpn_ResNet101_conv5_body' to specify a ResNet-101-FPN
 # backbone)
-_C.MODEL.BACKBONE.CONV_BODY = "R-50-C4"
+_C.MODEL.BACKBONE.CONV_BODY = "Sparse-R-50-FPN"
 
 # Add StopGrad at a specified stage so the bottom layers are frozen
 _C.MODEL.BACKBONE.FREEZE_CONV_BODY_AT = 2
-_C.MODEL.BACKBONE.OUT_CHANNELS = 256 * 4
+_C.MODEL.BACKBONE.OUT_CHANNELS = 128
 
 
 # ---------------------------------------------------------------------------- #
@@ -116,10 +116,10 @@ _C.MODEL.RPN = CN()
 
 
 #_C.MODEL.RPN.ANCHOR3D_SIZES = (1,0.5,4, 3,0.5,4, 7,0.5,4)
-_C.MODEL.RPN.ANCHOR_SIZES_3D = [[0.2,1,3], [0.4,2,3], [0.8,4,3]] # along yxz
-_C.MODEL.RPN.YAWS = (0, -1.57)
+_C.MODEL.RPN.ANCHOR_SIZES_3D = [[0.1,0.3,3], [0.2,0.6,3], [0.4,1.2,3], [0.8,2.4,3]]# along yxz
+_C.MODEL.RPN.YAWS = (0, -1.57, -0.785, 0.785)
 
-_C.MODEL.RPN.USE_FPN = False
+_C.MODEL.RPN.USE_FPN = True
 ## Base RPN anchor sizes given in absolute pixels w.r.t. the scaled network input
 ##_C.MODEL.RPN.ANCHOR_SIZES = (32, 64, 128, 256, 512)
 ## Stride of the feature map that RPN is attached.
@@ -146,11 +146,11 @@ _C.MODEL.RPN.BATCH_SIZE_PER_IMAGE = 256
 _C.MODEL.RPN.POSITIVE_FRACTION = 0.5
 # Number of top scoring RPN proposals to keep before applying NMS
 # When FPN is used, this is *per FPN level* (not total)
-_C.MODEL.RPN.PRE_NMS_TOP_N_TRAIN = 12000
-_C.MODEL.RPN.PRE_NMS_TOP_N_TEST = 6000
+_C.MODEL.RPN.PRE_NMS_TOP_N_TRAIN = 1000 # 12000
+_C.MODEL.RPN.PRE_NMS_TOP_N_TEST = 600 # 6000
 # Number of top scoring RPN proposals to keep after applying NMS
-_C.MODEL.RPN.POST_NMS_TOP_N_TRAIN = 2000
-_C.MODEL.RPN.POST_NMS_TOP_N_TEST = 1000
+_C.MODEL.RPN.POST_NMS_TOP_N_TRAIN = 1000 #  2000
+_C.MODEL.RPN.POST_NMS_TOP_N_TEST = 600 # 1000
 # NMS threshold used on RPN proposals
 _C.MODEL.RPN.NMS_THRESH = 0.7
 # Proposal height and width both need to be greater than RPN_MIN_SIZE
@@ -159,13 +159,13 @@ _C.MODEL.RPN.MIN_SIZE = 0
 # Number of top scoring RPN proposals to keep after combining proposals from
 # all FPN levels
 _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN = 2000
-_C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 2000
+_C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 1000 #  2000
 # Custom rpn head, empty to use default conv or separable conv
-_C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead"
+_C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"
 
 
 # xyz add
-_C.MODEL.FPN_SCALES_FROM_TOP = [4,5]
+_C.MODEL.FPN_SCALES_FROM_TOP =  [4,3,2,1]
 
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options
@@ -205,9 +205,9 @@ _C.MODEL.ROI_HEADS.DETECTIONS_PER_IMG = 100
 _C.MODEL.ROI_BOX_HEAD = CN()
 _C.MODEL.ROI_BOX_HEAD.FEATURE_EXTRACTOR = "FPN2MLPFeatureExtractor"
 _C.MODEL.ROI_BOX_HEAD.PREDICTOR = "FPNPredictor"
-_C.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = 14
+_C.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = 7 #14
 _C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 2
-_C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (1.0 / 16,)
+_C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (0.5,0.25, 0.125)  # (1.0 / 16,)
 _C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
 # Hidden layer dimension when using an MLP for the RoI box head
 _C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 1024
