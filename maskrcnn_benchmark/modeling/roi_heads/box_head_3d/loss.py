@@ -12,7 +12,7 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
-DEBUG = True
+DEBUG = False
 SHOW_ROI_CLASSFICATION = DEBUG and True
 CHECK_IOU = False
 
