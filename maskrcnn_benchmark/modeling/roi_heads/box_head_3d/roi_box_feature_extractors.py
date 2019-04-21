@@ -5,6 +5,7 @@ from torch.nn import functional as F
 from maskrcnn_benchmark.modeling import registry
 from maskrcnn_benchmark.modeling.backbone import resnet
 from maskrcnn_benchmark.modeling.poolers_3d import Pooler
+import math
 
 DEBUG = False
 
@@ -80,6 +81,8 @@ class FPN2MLPFeatureExtractor(nn.Module):
     def convert_metric_to_pixel(self, proposals):
       for prop in proposals:
         prop.bbox3d[:,0:6] *= self.voxel_scale
+        # rad to degree
+        prop.bbox3d[:,6] *= 180.0/math.pi
 
     def forward(self, x0, proposals):
         self.convert_metric_to_pixel(proposals)
