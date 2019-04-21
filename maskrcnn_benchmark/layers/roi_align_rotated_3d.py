@@ -64,13 +64,13 @@ class ROIAlignRotated3D(nn.Module):
         self.spatial_scale = spatial_scale # 0.25
         self.sampling_ratio = sampling_ratio # 2
 
-    def forward(self, input, rois):
+    def forward(self, input0, rois):
         '''
         input: [batch_size, feature, w, h]
         rois: [n,5] [batch_ind, center_w, center_h, roi_width, roi_height, theta]
             theta unit: degree, anti-clock wise is positive
         '''
-        input = sparse_3d_to_dense_2d(input)
+        input = sparse_3d_to_dense_2d(input0)
         rois = rois[:,[0,1,2,4,5,7]]
         assert rois.shape[1] == 6
         # the positive of boxes from RPN is clock-wise, need to change sign

@@ -211,6 +211,7 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 -> second.pytorch.core.box_torch_ops.rotate_nms & multiclass_nms + second.core.non_max_suppression.nms_gpu/rotate_iou_gpu_eval
 ```
 5. roi: 
+** process **
 ```
 (1) modeling/detector/sparse_rcnn.py/SparseRCNN: 
         x, result, detector_losses = self.roi_heads(features, proposals, targets)
@@ -218,15 +219,25 @@ make_rpn_postprocessor -> RPNPostProcessor -> structures.boxlist3d_ops.boxlist_n
 (3) roi_heads/box_head_3d/roi_box_feature_extractors.py
 (4) modeling/poolers.py 
 ```
+** POOLER_SCALES_SPATIAL **
 ```
-POOLER_SCALES: roi_box_feature_extractors.py -> poolers_3d.py/LevelMapper -> layers/roi_align_rotated_3d.py/ROIAlignRotated3D
+Automatically calculated in train_net_sparse3d.py/check_roi_parameters by strides
+roi_box_feature_extractors.py -> poolers_3d.py/LevelMapper_3d -> layers/roi_align_rotated_3d.py/ROIAlignRotated3D
 
-LevelMapper in poolers_3d.py:
-level = canonical_level + log2(size / canonical_size)
+rate = size / canonical_size
+just find the closest level of feature map with rate
 * size: (1) The square root of predicted box area. Used in MaskRCNN 
         (2) The maximum of width and length. USed in this project.
 * canonical_size: the canonical size of object in the full size feature map (original point cloud). For example, 4 meters when pcl size is 8 meters.
 ```
+** POOLER Unit **
+```
+(1) The original proposal box unit is meter. Convert to pixel before feed into ROIALIGN:
+roi_box_feature_extractors.py/convert_metric_to_pixel
+(2) The features froom backbone is sparse3d. Convert to dense in roi_align_rotated_3d.py/ROIAlignRotated3D/sparse_3d_to_dense_2d
+```
+
+
 ## matcher
 1. rpn/loss_3d.py/make_rpn_loss_evaluator
 ```

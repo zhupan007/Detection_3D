@@ -55,6 +55,8 @@ class FPN2MLPFeatureExtractor(nn.Module):
         scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL
         sampling_ratio = cfg.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO
         canonical_size = cfg.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE
+        voxel_scale = cfg.SPARSE3D.VOXEL_SCALE
+
         pooler = Pooler(
             output_size=(resolution, resolution),
             scales=scales,
@@ -65,6 +67,7 @@ class FPN2MLPFeatureExtractor(nn.Module):
         input_size = cfg.MODEL.BACKBONE.OUT_CHANNELS * resolution ** 2
         representation_size = cfg.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM
         self.pooler = pooler
+        self.voxel_scale = voxel_scale
         self.fc6 = nn.Linear(input_size, representation_size)
         self.fc7 = nn.Linear(representation_size, representation_size)
 
@@ -74,7 +77,12 @@ class FPN2MLPFeatureExtractor(nn.Module):
             nn.init.kaiming_uniform_(l.weight, a=1)
             nn.init.constant_(l.bias, 0)
 
+    def convert_metric_to_pixel(self, proposals):
+      for prop in proposals:
+        prop.bbox3d[:,0:6] *= self.voxel_scale
+
     def forward(self, x0, proposals):
+        self.convert_metric_to_pixel(proposals)
         x1 = self.pooler(x0, proposals)
 
         x2 = x1.view(x1.size(0), -1)
