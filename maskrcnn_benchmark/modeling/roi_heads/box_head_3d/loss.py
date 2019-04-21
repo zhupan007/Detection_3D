@@ -12,7 +12,7 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
-DEBUG = False
+DEBUG = True
 SHOW_ROI_CLASSFICATION = DEBUG and True
 CHECK_IOU = False
 
@@ -254,7 +254,7 @@ class FastRCNNLossComputation(object):
                 print(f"roi_class_pred_:\n{roi_class_pred_}")
 
                 if eval_type == 'FP':
-                  #pro_.show_together(targets)
+                  pro_.show_together(targets)
                   pass
 
                 if eval_type == 'FN' or eval_type == 'TP':
