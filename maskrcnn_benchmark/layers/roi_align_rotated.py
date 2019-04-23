@@ -5,6 +5,7 @@ from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 from torch.nn.modules.utils import _pair
 
+import numpy as np
 import _C
 
 class _ROIAlignRotated(Function):
@@ -65,7 +66,7 @@ class ROIAlignRotated(nn.Module):
 
     def forward(self, input, rois):
         '''
-        input: [batch_size, feature, w, h]
+        input: [batch_size, feature, h, w]
         rois: [n,5] [batch_ind, center_w, center_h, roi_width, roi_height, theta]
             theta unit: degree, anti-clock wise is positive
         '''
@@ -73,6 +74,7 @@ class ROIAlignRotated(nn.Module):
         return roi_align(
             input, rois, self.output_size, self.spatial_scale, self.sampling_ratio
         )
+
 
     def __repr__(self):
         tmpstr = self.__class__.__name__ + "("
@@ -84,10 +86,7 @@ class ROIAlignRotated(nn.Module):
 
 
 
-if __name__ == '__main__':
-    # note: output_size: [h,w],  rois: [w,h]
-    # order is different
-
+def test1():
     align_roi = ROIAlignRotated((1, 3), 1, 2)
     feat = torch.arange(64).view(1, 1, 8, 8).float()
     # Note: first element is batch_idx
@@ -122,4 +121,79 @@ if __name__ == '__main__':
         print(feat.grad)
     else:
         print('You device have not a GPU')
+
+def test2():
+  '''
+  image: [h_size,w_size]
+  rois: [n,5] [batch_ind, center_w, center_h, roi_width, roi_height, theta]
+  the order of w and h is different
+  anti-clock wise is right
+  '''
+  import matplotlib.pyplot as plt
+  from skimage import data, color
+  from skimage.transform import rescale, resize, downscale_local_mean
+  from skimage.io import imread
+
+  image0 = imread('./y.jpg')
+  image0 = color.rgb2gray(image0)
+  image1 = rescale(image0, scale=1/16.0, mode='reflect', multichannel=True)
+  print(f"0: {image0.shape}")
+  print(f"1: {image1.shape}")
+
+  align_roi_0 = ROIAlignRotated((100,300), 1, 1)
+  feat = torch.tensor(image0).to(torch.float32)
+  feat = feat.unsqueeze(0).unsqueeze(0)
+  print(f"f:{feat.shape}")
+
+  # Note: first element is batch_idx
+  rois_0 = torch.tensor([
+        [0, 786,220, 300, 100, 0],
+        [0, 786,220, 300, 100, 90],
+        [0, 786,220, 300, 100, -45],
+        [0, 786,220, 300, 100, -90],
+        ], dtype=torch.float32).view(-1, 6)
+
+  assert torch.cuda.is_available()
+  print('------------test on gpu------------')
+  feat = feat.detach().cuda()
+  feat.requires_grad = True
+  rois_0 = rois_0.cuda()
+  out_0 = align_roi_0(feat, rois_0)
+  temp = out_0.sum()
+  temp.backward()
+  #print(feat.grad)
+
+  roi_image_0 = out_0[0,0].cpu().data.numpy()
+  roi_image_1 = out_0[1,0].cpu().data.numpy()
+  roi_image_2 = out_0[2,0].cpu().data.numpy()
+  roi_image_3 = out_0[3,0].cpu().data.numpy()
+
+
+  bi, cw,ch, sw,sh, yaw = rois_0[0].cpu().data.numpy().astype(np.int32)
+  h0 = int(ch-sh/2)
+  h1 = int(ch+sh/2)
+  w0 = int(cw-sw/2)
+  w1 = int(cw+sw/2)
+
+  c0 = image0[h0:h1, w0:w1]
+  print(f"crop: {h0}:{h1}, {w0}:{w1} -> {c0.shape}")
+
+  fig, ax = plt.subplots(3, 2, figsize=(16, 10))
+
+  ax[0,0].imshow(image0)
+  ax[1,1].imshow(roi_image_0)
+  ax[0,1].imshow(c0)
+  ax[1,0].imshow(roi_image_1)
+  ax[2,0].imshow(roi_image_2)
+  ax[2,1].imshow(roi_image_3)
+  plt.show()
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  return
+
+
+if __name__ == '__main__':
+    # note: output_size: [h,w],  rois: [w,h]
+    # order is different
+    #test1()
+    test2()
 

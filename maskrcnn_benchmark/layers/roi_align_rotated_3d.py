@@ -1,5 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-import torch
+import torch, math
 from torch import nn
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
@@ -64,17 +64,22 @@ class ROIAlignRotated3D(nn.Module):
         self.spatial_scale = spatial_scale # 0.25
         self.sampling_ratio = sampling_ratio # 2
 
-    def forward(self, input0, rois):
+    def forward(self, input0, rois0):
         '''
-        input: [batch_size, feature, w, h]
+        input0: sparse 3d tensor
+        rois0: 3d box, xyz order is same as input0,
+                yaw unit is rad, anti-clock wise is positive
+
+        input: [batch_size, feature, h, w]
         rois: [n,5] [batch_ind, center_w, center_h, roi_width, roi_height, theta]
-            theta unit: degree, anti-clock wise is positive
+        theta unit: degree, anti-clock wise is positive
+
+        Note: the order of w and h inside of input and rois is different.
         '''
         input = sparse_3d_to_dense_2d(input0)
-        rois = rois[:,[0,1,2,4,5,7]]
+        rois = rois0[:,[0, 2,1, 5,4,7]] # reverse the order of x and y
+        rois[:,-1]  *= 180.0/math.pi
         assert rois.shape[1] == 6
-        # the positive of boxes from RPN is clock-wise, need to change sign
-        rois[:,-1] = -rois[:,-1]
         output = roi_align_rotated_3d(
             input, rois, self.output_size, self.spatial_scale, self.sampling_ratio
         )
@@ -87,45 +92,4 @@ class ROIAlignRotated3D(nn.Module):
         tmpstr += ", sampling_ratio=" + str(self.sampling_ratio)
         tmpstr += ")"
         return tmpstr
-
-
-
-if __name__ == '__main__':
-    # note: output_size: [h,w],  rois: [w,h]
-    # order is different
-
-    align_roi = ROIAlignRotated3D((1, 3), 1, 2)
-    feat = torch.arange(64).view(1, 1, 8, 8).float()
-    # Note: first element is batch_idx
-    rois = torch.tensor([
-          [0, 3,3, 3,1, 0],
-          [0, 3,3, 3,1, 90],
-          [0, 3,3, 3,1, -90],
-          [0, 3,3, 3,1, 30],
-          [0, 3,3, 3,1, 60],
-          ], dtype=torch.float32).view(-1, 6)
-
-    print(f'feat:\n{feat}\nrois:\n{rois}')
-
-    print('------------test on cpu------------')
-    feat.requires_grad = False
-    if False:
-      out = align_roi(feat, rois)
-      print(out)
-      print('cpu version do not support backward')
-    #out.sum().backward()
-    #print(feat.grad)
-
-    if torch.cuda.is_available():
-        print('------------test on gpu------------')
-        feat = feat.detach().cuda()
-        rois = rois.cuda()
-        feat.requires_grad = True
-        out = align_roi(feat, rois)
-        print(out)
-        temp = out.sum()
-        temp.backward()
-        print(feat.grad)
-    else:
-        print('You device have not a GPU')
 
