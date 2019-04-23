@@ -41,8 +41,13 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
 
   def trainMerge(data_ls):
     locs = torch.cat( [data['x'][0] for data in data_ls], 0 )
+    pns = [data['x'][0].shape[0] for data in data_ls]
+    batch_size = len(data_ls)
+    batch_ids = torch.cat([torch.LongTensor(pns[i],1).fill_(i) for i in range(batch_size)], 0)
+    locs = torch.cat([locs, batch_ids], 1)
+
     feats = torch.cat( [data['x'][1] for data in data_ls], 0 )
-    labels = cat_boxlist_3d( [data['y'] for data in data_ls], per_example=True)
+    labels = [data['y'] for data in data_ls]
     ids = [data['id'] for data in data_ls]
     data = {'x': [locs,feats], 'y': labels, 'id': ids}
     return data

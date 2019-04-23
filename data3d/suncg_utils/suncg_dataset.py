@@ -120,7 +120,8 @@ class SUNCGDataset(torch.utils.data.Dataset):
         b=b[idxs]
         #c=c[idxs]
         a=torch.from_numpy(a).long()
-        locs = torch.cat([a,torch.LongTensor(a.shape[0],1).fill_(index)],1)
+        #locs = torch.cat([a,torch.LongTensor(a.shape[0],1).fill_(index)],1)
+        locs = a
         feats = torch.from_numpy(b)
 
         #---------------------------------------------------------------------
