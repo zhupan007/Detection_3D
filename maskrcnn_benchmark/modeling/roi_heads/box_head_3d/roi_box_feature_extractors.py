@@ -83,8 +83,6 @@ class FPN2MLPFeatureExtractor(nn.Module):
       proposals = [p.copy() for p in proposals0]
       for prop in proposals:
         prop.bbox3d[:,0:6] *= self.voxel_scale
-        # rad to degree
-        #prop.bbox3d[:,6] *= 180.0/math.pi
       #print(proposals0[0].bbox3d[:,0])
       return proposals
 
