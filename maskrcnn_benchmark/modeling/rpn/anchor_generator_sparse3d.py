@@ -6,7 +6,6 @@ import torch
 from torch import nn
 
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
-from data3d.data import locations_to_position
 from utils3d.geometric_torch import OBJ_DEF
 
 DEBUG = True

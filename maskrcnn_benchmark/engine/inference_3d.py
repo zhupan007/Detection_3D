@@ -7,7 +7,7 @@ import os
 import torch
 from tqdm import tqdm
 
-from maskrcnn_benchmark.data.datasets.evaluation import evaluate
+from data3d.evaluation import evaluate
 from ..utils.comm import is_main_process
 from ..utils.comm import scatter_gather
 from ..utils.comm import synchronize

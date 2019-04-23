@@ -47,4 +47,4 @@ SOLVER:
   WARMUP_ITERS: 40
 OUTPUT_DIR: "results_bs1_fpn3_l1_rpn"
 TEST:
-  IMS_PER_BATCH: 1
+  IMS_PER_BATCH: 2
