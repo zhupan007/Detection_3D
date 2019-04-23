@@ -35,7 +35,6 @@ def cat_boxlist_3d(bboxes_ls, per_example, use_constants0=False):
       for bbox3d in bboxes_ls:
         #is_size_close =  torch.abs(bbox3d.size3d - size3d).max() < 0.01
         #if not is_size_close:
-        print(bbox3d.size3d)
         if not torch.isclose( bbox3d.size3d, size3d ).all():
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
