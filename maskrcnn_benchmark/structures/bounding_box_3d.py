@@ -330,12 +330,12 @@ class BoxList3D(object):
         return area
 
     def copy_with_fields(self, fields):
-        bbox3d = BoxList3D(self.bbox3d.clone(), self.size3d.clone(), self.mode, self.examples_idxscope.clone(), self.constants)
+        bbox3d_list = BoxList3D(self.bbox3d.clone(), self.size3d.clone(), self.mode, self.examples_idxscope.clone(), self.constants)
         if not isinstance(fields, (list, tuple)):
             fields = [fields]
         for field in fields:
-            bbox3d.add_field(field, self.get_field(field))
-        return bbox3d
+            bbox3d_list.add_field(field, self.get_field(field))
+        return bbox3d_list
 
     def copy(self):
       return self.copy_with_fields(self.fields())

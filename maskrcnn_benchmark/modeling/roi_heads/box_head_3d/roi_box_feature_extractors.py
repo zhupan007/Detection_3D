@@ -78,14 +78,18 @@ class FPN2MLPFeatureExtractor(nn.Module):
             nn.init.kaiming_uniform_(l.weight, a=1)
             nn.init.constant_(l.bias, 0)
 
-    def convert_metric_to_pixel(self, proposals):
+    def convert_metric_to_pixel(self, proposals0):
+      #print(proposals0[0].bbox3d[:,0])
+      proposals = [p.copy() for p in proposals0]
       for prop in proposals:
         prop.bbox3d[:,0:6] *= self.voxel_scale
         # rad to degree
         prop.bbox3d[:,6] *= 180.0/math.pi
+      #print(proposals0[0].bbox3d[:,0])
+      return proposals
 
     def forward(self, x0, proposals):
-        self.convert_metric_to_pixel(proposals)
+        proposals = self.convert_metric_to_pixel(proposals)
         x1 = self.pooler(x0, proposals)
 
         x2 = x1.view(x1.size(0), -1)
