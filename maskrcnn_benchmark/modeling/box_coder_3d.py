@@ -41,6 +41,20 @@ class BoxCoder3D(object):
             rel_codes (Tensor): encoded boxes
             boxes (Tensor): reference boxes.
         """
+        assert box_encodings.shape[0] == anchors.shape[0]
+        assert anchors.shape[1] == 7
+        num_classes = int(box_encodings.shape[1]/7)
+        if num_classes != 1:
+          num_loc = box_encodings.shape[0]
+          box_encodings = box_encodings.view(-1, 7)
+          anchors = anchors.view(num_loc,1,7)
+          anchors = anchors.repeat(1,num_classes,1).view(-1,7)
+
         box_encodings = box_encodings / self.weights.to(box_encodings.device)
         box_encodings[:,3:6] = torch.clamp(box_encodings[:,3:6], max=self.bbox_xform_clip)
-        return second_box_decode(box_encodings, anchors, smooth_dim=self.smooth_dim)
+        boxes_decoded = second_box_decode(box_encodings, anchors, smooth_dim=self.smooth_dim)
+
+        if num_classes != 1:
+          boxes_decoded = boxes_decoded.view(-1,num_classes*7)
+
+        return boxes_decoded

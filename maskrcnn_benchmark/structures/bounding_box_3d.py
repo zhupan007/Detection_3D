@@ -303,7 +303,6 @@ class BoxList3D(object):
         return
         raise NotImplementedError
         TO_REMOVE = 1
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         self.bbox3d[:, 0].clamp_(min=0, max=self.size[0] - TO_REMOVE)
         self.bbox3d[:, 1].clamp_(min=0, max=self.size[1] - TO_REMOVE)
         self.bbox3d[:, 2].clamp_(min=0, max=self.size[0] - TO_REMOVE)

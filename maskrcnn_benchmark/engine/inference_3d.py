@@ -27,8 +27,7 @@ def compute_on_dataset(model, data_loader, device):
         #images = images.to(device)
         with torch.no_grad():
             output = model(pcl, targets)
-            output = output.to(cpu_device)
-        output = output.seperate_examples()
+            output =[o.to(cpu_device) for o in output]
         results_dict.update(
             {img_id: result for img_id, result in zip(pcl_ids, output)}
         )

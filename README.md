@@ -2,6 +2,7 @@
 
 
 # on going process
+- clip_to_pcl in bounding_box_3d.py not implemented
 - considering aug both proposal and targets in match_targets_to_proposals in roi_heads/box_head_3d/loss.py
 - \_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE
 - sparseconvnet/tools_3d_2d.py when not dense, 0 used, if this is ok?

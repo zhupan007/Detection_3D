@@ -46,16 +46,16 @@ class PostProcessor(nn.Module):
             results (list[BoxList3D]): one BoxList3D for each image, containing
                 the extra fields labels and scores
         """
-        class_logits, box_regression = x
+        class_logits, box_regression = x # [100*batch_size,num_class] [100*batch_size, num_classes*7]
         class_prob = F.softmax(class_logits, -1)
 
         # TODO think about a representation of batch of boxes
-        image_shapes = [box.size for box in boxes]
+        size3ds = [box.size3d for box in boxes]
         boxes_per_image = [len(box) for box in boxes]
-        concat_boxes = torch.cat([a.bbox for a in boxes], dim=0)
+        concat_boxes = torch.cat([a.bbox3d for a in boxes], dim=0)
 
         proposals = self.box_coder.decode(
-            box_regression.view(sum(boxes_per_image), -1), concat_boxes
+            box_regression, concat_boxes
         )
 
         num_classes = class_prob.shape[1]
@@ -64,16 +64,16 @@ class PostProcessor(nn.Module):
         class_prob = class_prob.split(boxes_per_image, dim=0)
 
         results = []
-        for prob, boxes_per_img, image_shape in zip(
-            class_prob, proposals, image_shapes
+        for prob, boxes_per_img, size3d in zip(
+            class_prob, proposals, size3ds
         ):
-            boxlist = self.prepare_boxlist(boxes_per_img, prob, image_shape)
-            boxlist = boxlist.clip_to_image(remove_empty=False)
+            boxlist = self.prepare_boxlist(boxes_per_img, prob, size3d)
+            #boxlist = boxlist.clip_to_pcl(remove_empty=False)
             boxlist = self.filter_results(boxlist, num_classes)
             results.append(boxlist)
         return results
 
-    def prepare_boxlist(self, boxes, scores, image_shape):
+    def prepare_boxlist(self, boxes, scores, size3d):
         """
         Returns BoxList3D from `boxes` and adds probability scores information
         as an extra field
@@ -86,9 +86,10 @@ class PostProcessor(nn.Module):
         dataset (including the background class). `scores[i, j]`` corresponds to the
         box at `boxes[i, j * 4:(j + 1) * 4]`.
         """
-        boxes = boxes.reshape(-1, 4)
+        boxes = boxes.reshape(-1, 7)
         scores = scores.reshape(-1)
-        boxlist = BoxList3D(boxes, image_shape, mode="xyxy")
+        boxlist = BoxList3D(boxes, size3d, mode="yx_zb", examples_idxscope=None,
+          constants={'prediction': True})
         boxlist.add_field("scores", scores)
         return boxlist
 
@@ -98,7 +99,7 @@ class PostProcessor(nn.Module):
         """
         # unwrap the boxlist to avoid additional overhead.
         # if we had multi-class NMS, we could perform this directly on the boxlist
-        boxes = boxlist.bbox.reshape(-1, num_classes * 4)
+        boxes = boxlist.bbox3d.reshape(-1, num_classes * 7)
         scores = boxlist.get_field("scores").reshape(-1, num_classes)
 
         device = scores.device
@@ -109,8 +110,9 @@ class PostProcessor(nn.Module):
         for j in range(1, num_classes):
             inds = inds_all[:, j].nonzero().squeeze(1)
             scores_j = scores[inds, j]
-            boxes_j = boxes[inds, j * 4 : (j + 1) * 4]
-            boxlist_for_class = BoxList3D(boxes_j, boxlist.size, mode="xyxy")
+            boxes_j = boxes[inds, j * 7 : (j + 1) * 7]
+            boxlist_for_class = BoxList3D(boxes_j, boxlist.size3d, mode="yx_zb",
+              examples_idxscope=None, constants={'prediction':True})
             boxlist_for_class.add_field("scores", scores_j)
             boxlist_for_class = boxlist_nms_3d(
                 boxlist_for_class, self.nms, score_field="scores"
@@ -121,11 +123,12 @@ class PostProcessor(nn.Module):
             )
             result.append(boxlist_for_class)
 
-        result = cat_boxlist_3d(result)
+        result = cat_boxlist_3d(result, per_example=False)
         number_of_detections = len(result)
 
         # Limit to max_per_image detections **over all classes**
         if number_of_detections > self.detections_per_img > 0:
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             cls_scores = result.get_field("scores")
             image_thresh, _ = torch.kthvalue(
                 cls_scores.cpu(), number_of_detections - self.detections_per_img + 1
@@ -140,8 +143,7 @@ def make_roi_box_post_processor(cfg):
     use_fpn = cfg.MODEL.ROI_HEADS.USE_FPN
 
     bbox_reg_weights = cfg.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS
-    box_coder = BoxCoder3D()
-    #box_coder = BoxCoder3D(weights=bbox_reg_weights)
+    box_coder = BoxCoder3D(weights=bbox_reg_weights)
 
     score_thresh = cfg.MODEL.ROI_HEADS.SCORE_THRESH
     nms_thresh = cfg.MODEL.ROI_HEADS.NMS
