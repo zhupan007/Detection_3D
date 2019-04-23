@@ -138,8 +138,8 @@ class SUNCGDataset(torch.utils.data.Dataset):
 
   def get_groundtruth(self, index):
     data = self[index]
-    labels = data['y']
-    return labels
+    gt_boxes = data['y']
+    return gt_boxes
 
   def __len__(self):
     return len(self.files)

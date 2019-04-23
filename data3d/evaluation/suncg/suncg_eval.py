@@ -78,12 +78,14 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
     n_pos = defaultdict(int)
     score = defaultdict(list)
     match = defaultdict(list)
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     for gt_boxlist, pred_boxlist in zip(gt_boxlists, pred_boxlists):
-        pred_bbox = pred_boxlist.bbox.numpy()
+        pred_bbox = pred_boxlist.bbox3d.numpy()
         pred_label = pred_boxlist.get_field("labels").numpy()
         pred_score = pred_boxlist.get_field("scores").numpy()
-        gt_bbox = gt_boxlist.bbox.numpy()
+        gt_bbox = gt_boxlist.bbox3d.numpy()
         gt_label = gt_boxlist.get_field("labels").numpy()
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         gt_difficult = gt_boxlist.get_field("difficult").numpy()
 
         for l in np.unique(np.concatenate((pred_label, gt_label)).astype(int)):
