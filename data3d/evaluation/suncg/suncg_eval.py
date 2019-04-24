@@ -8,6 +8,8 @@ import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 
+DEBUG = False
+SHOW_IOU = DEBUG and True
 
 def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     # TODO need to make the use_07_metric format available
@@ -32,7 +34,6 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
         iou_thresh=0.5,
         use_07_metric=True,
     )
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     result_str = "mAP: {:.4f}\n".format(result["map"])
     for i, ap in enumerate(result["ap"]):
         if i == 0:  # skip background
@@ -63,7 +64,6 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh=0.5, use_07_metr
     prec, rec = calc_detection_suncg_prec_rec(
         pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh
     )
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     ap = calc_detection_suncg_ap(prec, rec, use_07_metric=use_07_metric)
     return {"ap": ap, "map": np.nanmean(ap)}
 
@@ -80,12 +80,10 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
     match = defaultdict(list)
     for gt_boxlist, pred_boxlist in zip(gt_boxlists, pred_boxlists):
         pred_bbox = pred_boxlist.bbox3d.numpy()
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         pred_label = pred_boxlist.get_field("labels").numpy()
-        pred_score = pred_boxlist.get_field("objectness").numpy()
+        pred_score = pred_boxlist.get_field("scores").numpy()
         gt_bbox = gt_boxlist.bbox3d.numpy()
         gt_label = gt_boxlist.get_field("labels").numpy()
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         gt_difficult = gt_boxlist.get_field("difficult").numpy()
 
         for l in np.unique(np.concatenate((pred_label, gt_label)).astype(int)):
@@ -110,18 +108,20 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
                 match[l].extend((0,) * pred_bbox_l.shape[0])
                 continue
 
-            # VOC evaluation follows integer typed bounding boxes.
             pred_bbox_l = pred_bbox_l.copy()
-            pred_bbox_l[:, 2:] += 1
             gt_bbox_l = gt_bbox_l.copy()
-            gt_bbox_l[:, 2:] += 1
             iou = boxlist_iou_3d(
-                BoxList3D(pred_bbox_l, gt_boxlist.size),
-                BoxList3D(gt_bbox_l, gt_boxlist.size),
+                BoxList3D(pred_bbox_l, pred_boxlist.size3d, pred_boxlist.mode, None, pred_boxlist.constants),
+                BoxList3D(gt_bbox_l, gt_boxlist.size3d, gt_boxlist.mode, None, gt_boxlist.constants),
+                aug_wall_target_thickness = 0
             ).numpy()
+
             gt_index = iou.argmax(axis=1)
             # set -1 if there is no matching ground truth
             gt_index[iou.max(axis=1) < iou_thresh] = -1
+
+            if SHOW_IOU:
+              show_ious(pred_boxlist, gt_boxlist, iou, gt_index)
             del iou
 
             selec = np.zeros(gt_bbox_l.shape[0], dtype=bool)
@@ -161,6 +161,11 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
 
     return prec, rec
 
+
+def show_ious(pred_boxlist, gt_boxlist, iou, gt_index):
+  print(f"iou: {iou.max(1)}")
+  print(f"gt_index: {gt_index}")
+  pred_boxlist.show_together(gt_boxlist)
 
 def calc_detection_suncg_ap(prec, rec, use_07_metric=False):
     """Calculate average precisions based on evaluation code of PASCAL VOC.

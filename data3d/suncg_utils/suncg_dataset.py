@@ -6,7 +6,7 @@ import numpy as np
 
 import os, glob
 
-DEBUG = True
+DEBUG = False
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
@@ -51,7 +51,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
         distortion = False and is_train
         origin_offset = False and is_train
         feature_with_xyz = True
-        norm_noise = 0.01 * int(is_train)
+        norm_noise = 0.01 * int(is_train) * 0
 
         fn = self.files[index]
         pcl_i, bboxes_dic_i_0 = torch.load(fn)
@@ -140,15 +140,23 @@ class SUNCGDataset(torch.utils.data.Dataset):
   def get_groundtruth(self, index):
     data = self[index]
     gt_boxes = data['y']
+
+    n = len(gt_boxes)
+    difficult = torch.zeros(n)
+    gt_boxes.add_field('difficult', difficult)
     return gt_boxes
 
   def __len__(self):
     return len(self.files)
+  def map_class_id_to_class_name(self, class_id):
+    class_name = SUNCG_META.label_2_class[class_id]
+    return class_name
 
 #Elastic distortion
 blur0=np.ones((3,1,1)).astype('float32')/3
 blur1=np.ones((1,3,1)).astype('float32')/3
 blur2=np.ones((1,1,3)).astype('float32')/3
+
 def elastic(x,gran,mag):
     bb=np.abs(x).max(0).astype(np.int32)//gran+3
     noise=[np.random.randn(bb[0],bb[1],bb[2]).astype('float32') for _ in range(3)]
@@ -182,6 +190,7 @@ def bbox_dic_to_BoxList3D(bbox_dic, size3d):
   bboxlist3d.add_field('labels', labels)
   return bboxlist3d
 
+
 def batch_scopes(location, voxel_scale):
   batch_size = torch.max(location[:,3])+1
   s = 0
@@ -204,6 +213,7 @@ def show_pcl_boxes(pcl, boxes):
   from utils3d.bbox3d_ops import Bbox3D
   Bbox3D.draw_points_bboxes(pcl[:,0:3], boxes, 'Z', is_yx_zb=True)
   pass
+
 
 def show_pcl_boxdic(pcl, bboxes_dic):
   from utils3d.bbox3d_ops import Bbox3D
