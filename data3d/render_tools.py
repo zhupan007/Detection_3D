@@ -11,6 +11,9 @@ SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 
+CLASSES = ['wall', 'window', 'door']
+CLASSES = [ 'window']
+
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
   for i in range(n):
@@ -43,10 +46,13 @@ def down_sample_points(points, keep_rate=0.3):
   return points_d
 
 def render_parsed_house_walls(parsed_dir, show_pcl=False):
-  bbox_fn = f'{parsed_dir}/object_bbox/wall.txt'
-  bboxes = np.loadtxt(bbox_fn).reshape([-1,7])
+  bboxes = []
+  for obj in CLASSES:
+    bbox_fn_ = f'{parsed_dir}/object_bbox/{obj}.txt'
+    bboxes_  = np.loadtxt(bbox_fn_).reshape([-1,7])
+    bboxes.append(bboxes_)
+  bboxes = np.concatenate(bboxes, 0)
 
-  print('\nThe parsed walls\n')
   #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False)
   Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
 
@@ -68,11 +74,15 @@ def render_splited_house_walls(pth_fn):
   points = pcl[:,0:3]
   points = cut_points_roof(points)
 
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  classes = [k for k in bboxes.keys()]
+  print(f'\nclasses: {classes}\n\n')
 
-  walls = bboxes['wall']
-  #Bbox3D.draw_points_bboxes(points, walls, up_axis='Z', is_yx_zb=False)
-  Bbox3D.draw_points_bboxes_mesh(points, walls, up_axis='Z', is_yx_zb=False)
+  for clas in bboxes.keys():
+    if clas not in ['window']:
+      continue
+    boxes = bboxes[clas]
+    Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
+    #Bbox3D.draw_points_bboxes_mesh(points, boxes, up_axis='Z', is_yx_zb=False)
 
 def render_suncg_raw_house_walls(house_fn):
     from suncg import split_room_parts, Suncg
@@ -148,4 +158,4 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
 
 if __name__ == '__main__':
-  render_houses(r_cam=False, r_whole=False, r_splited=True)
+  render_houses(r_cam=False, r_whole=True, r_splited=False)

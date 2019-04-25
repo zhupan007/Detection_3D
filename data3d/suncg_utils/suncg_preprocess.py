@@ -8,12 +8,13 @@ import open3d
 from collections import defaultdict
 from indoor_data_util import random_sample_pcl
 
-from wall_preprocessing import preprocess_walls
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)
+ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
+sys.path.append(BASE_DIR)
 sys.path.append(ROOT_DIR)
 USER_DIR = os.path.dirname(os.path.dirname(ROOT_DIR))
+from wall_preprocessing import preprocess_walls
 from utils3d.bbox3d_ops import Bbox3D
 
 

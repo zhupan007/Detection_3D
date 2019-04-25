@@ -13,7 +13,7 @@ from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 
 DEBUG = True
 
-FRAME_SHOW = 0
+FRAME_SHOW = 1
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree

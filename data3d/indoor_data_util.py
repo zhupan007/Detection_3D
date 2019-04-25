@@ -12,7 +12,7 @@ from utils3d.geometric_util import cam2world_box, cam2world_pcl
 #BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 #ROOT_DIR = os.path.dirname(BASE_DIR)
 #sys.path.append(ROOT_DIR)
-from wall_preprocessing import show_walls_1by1, show_walls_offsetz
+from suncg_utils.wall_preprocessing import show_walls_1by1, show_walls_offsetz
 
 DEBUG = True
 if DEBUG:
@@ -84,7 +84,7 @@ class IndoorData():
 
   @staticmethod
   def split_scene(scene_dir, splited_path):
-    from suncg import check_house_intact, read_summary, write_summary
+    from suncg_utils.suncg_preprocess import check_house_intact, read_summary, write_summary
     scene_name = os.path.basename(scene_dir)
     splited_path = os.path.join(splited_path, scene_name)
     summary_0 = read_summary(splited_path)
