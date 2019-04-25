@@ -229,7 +229,6 @@ class BoxList3D(object):
 
 
     # Tensor-like methods
-
     def to(self, device):
         bbox3d = BoxList3D(self.bbox3d.to(device), self.size3d.to(device), self.mode, self.examples_idxscope, self.constants)
 
@@ -239,6 +238,10 @@ class BoxList3D(object):
             bbox3d.add_field(k, v)
         return bbox3d
 
+    def detach(self):
+      self.bbox3d = self.bbox3d.detach()
+      for k in self.extra_fields:
+        self.extra_fields[k] = self.extra_fields[k].detach()
     def example(self, idx):
         assert idx < self.batch_size()
         se = self.examples_idxscope[idx]

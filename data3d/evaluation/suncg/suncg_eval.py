@@ -17,6 +17,8 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     pred_boxlists = predictions
     gt_boxlists = []
     for image_id, prediction in enumerate(predictions):
+          if 'data_id' in prediction.constants:
+            image_id = prediction.constants['data_id']
           img_info = dataset.get_img_info(image_id)
           #if len(prediction) == 0:
           #    continue
@@ -122,6 +124,8 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
 
             if SHOW_IOU:
               show_ious(pred_boxlist, gt_boxlist, iou, gt_index)
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
             del iou
 
             selec = np.zeros(gt_bbox_l.shape[0], dtype=bool)

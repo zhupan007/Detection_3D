@@ -74,7 +74,9 @@ def train(cfg, local_rank, distributed, loop, only_test):
           device,
           checkpoint_period,
           arguments,
-          e + loop * epochs_between_test
+          e + loop * epochs_between_test,
+          cfg.DEBUG.eval_in_train,
+          output_dir
       )
 
     return model

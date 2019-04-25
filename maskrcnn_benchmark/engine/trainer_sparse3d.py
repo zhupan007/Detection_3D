@@ -1,5 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-import datetime
+import datetime, os
 import logging
 import time
 
@@ -8,6 +8,7 @@ import torch.distributed as dist
 
 from maskrcnn_benchmark.utils.comm import get_world_size
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
+from data3d.evaluation import evaluate
 
 
 def reduce_loss_dict(loss_dict):
@@ -45,6 +46,8 @@ def do_train(
     checkpoint_period,
     arguments,
     epoch_id,
+    eval_in_train,
+    output_dir
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info(f"Start training {epoch_id}")
@@ -54,6 +57,7 @@ def do_train(
     model.train()
     start_training_time = time.time()
     end = time.time()
+    predictions_all = []
     for iteration, batch in enumerate(data_loader, start_iter):
         data_time = time.time() - end
         iteration = iteration + 1
@@ -64,9 +68,18 @@ def do_train(
         batch['x'][1] = batch['x'][1].to(device)
         batch['y'] = [b.to(device) for b in batch['y']]
 
-        loss_dict = model(batch['x'], batch['y'])
+        loss_dict, predictions_i = model(batch['x'], batch['y'])
 
         losses = sum(loss for loss in loss_dict.values())
+
+        if eval_in_train:
+          data_id = batch['id']
+          for k in range(len(data_id)):
+            predictions_i[k].constants['data_id'] = data_id[k]
+
+          predictions_i = [p.to(torch.device('cpu')) for p in predictions_i]
+          [p.detach() for p in predictions_i]
+          predictions_all += predictions_i
 
         # reduce losses over all GPUs for logging purposes
         loss_dict_reduced = reduce_loss_dict(loss_dict)
@@ -110,7 +123,12 @@ def do_train(
     total_training_time = time.time() - start_training_time
     total_time_str = str(datetime.timedelta(seconds=total_training_time))
     logger.info(
-        "Total training time: {} ({:.4f} s / it)".format(
+        "Total training time: {} ({:.4f} s / it)\n".format(
             total_time_str, total_training_time / (max_iter)
         )
     )
+
+    if eval_in_train:
+      eval_out_dir = output_dir
+      eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all, output_folder=eval_out_dir, box_only=False)
+

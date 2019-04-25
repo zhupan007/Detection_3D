@@ -98,9 +98,9 @@ def inference_3d(
 
     extra_args = dict(
         box_only=box_only,
-        iou_types=iou_types,
-        expected_results=expected_results,
-        expected_results_sigma_tol=expected_results_sigma_tol,
+        #iou_types=iou_types,
+        #expected_results=expected_results,
+        #expected_results_sigma_tol=expected_results_sigma_tol,
     )
 
     return evaluate(dataset=dataset,

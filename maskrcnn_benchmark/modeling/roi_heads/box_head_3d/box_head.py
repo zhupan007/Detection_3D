@@ -21,6 +21,7 @@ class ROIBoxHead3D(torch.nn.Module):
         self.predictor = make_roi_box_predictor(cfg)
         self.post_processor = make_roi_box_post_processor(cfg)
         self.loss_evaluator = make_roi_box_loss_evaluator(cfg)
+        self.eval_in_train = cfg.DEBUG.eval_in_train
 
     def forward(self, features, proposals, targets=None):
         """
@@ -63,6 +64,8 @@ class ROIBoxHead3D(torch.nn.Module):
         if not self.training:
             result = self.post_processor((class_logits, box_regression), proposals)
             return x, result, {}
+        if self.eval_in_train:
+            proposals = self.post_processor((class_logits, box_regression), proposals)
 
         loss_classifier, loss_box_reg = self.loss_evaluator(
             [class_logits], [box_regression], targets
