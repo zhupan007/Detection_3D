@@ -352,9 +352,9 @@ class Suncg():
     scene_ids = os.listdir(root_path+'/house')
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
     if SAGE:
-      self.house_fns = house_fns[10:1500]
+      self.house_fns = house_fns[100:1500]
     else:
-      self.house_fns = house_fns[0:10]
+      self.house_fns = house_fns[0:100]
       #self.house_fns = house_fns[0:1500]
     house_fns.sort()
 
@@ -379,7 +379,7 @@ class Suncg():
 
   def parse_houses_pool(self):
     import multiprocessing as mp
-    threads = 8 if SAGE else 4
+    threads = 4 if SAGE else 4
     p = mp.Pool(processes=threads)
     p.map(parse_house_onef, self.house_fns)
     p.close()
@@ -891,7 +891,10 @@ def add_exta_cam_locations(cam_fn, show=False):
           extra_cams.append(cam_new)
 
   back_cam = np.array([0,1,0, cam_pos[0,-3], cam_pos[0,-2], 10])
-  extra_cams = np.concatenate(extra_cams, 0)
+  if len(extra_cams)>0:
+    extra_cams = np.concatenate(extra_cams, 0)
+  else:
+    extra_cams = np.array([])
   cam_pos_new = []
   for loc in extra_cams:
     cam_forwards = [ [1,0,0], [-1,0,0], [0,0,1], [0,0,-1] ]
