@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 import open3d
 from collections import defaultdict
-from indoor_data_util import random_sample_pcl
+from data3d.indoor_data_util import random_sample_pcl
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,6 +15,7 @@ sys.path.append(BASE_DIR)
 sys.path.append(ROOT_DIR)
 USER_DIR = os.path.dirname(os.path.dirname(ROOT_DIR))
 from wall_preprocessing import preprocess_walls
+from window_preprocessing import preprocess_windows
 from utils3d.bbox3d_ops import Bbox3D
 
 
@@ -368,7 +369,7 @@ class Suncg():
       scene_id8 = '7411df25770eaf8d656cac2be42a9af0' # walls
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-      scene_id = scene_id8
+      scene_id = scene_id2
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -394,7 +395,7 @@ def parse_house_onef( house_fn):
     2. point cloud for each depth image
     3. Merge point clouds
     '''
-    is_gen_house_obj = 0
+    is_gen_house_obj = 1
     is_gen_bbox = 1
     is_gen_cam = 1
     is_gen_pcl = 1
@@ -412,7 +413,7 @@ def parse_house_onef( house_fn):
 
     if is_gen_cam:
       gen_cam_images(house_fn)
-    if is_gen_pcl:
+    if is_gen_pcl and not Debug:
       gen_pcl(house_fn)
     print(f'house ok: {house_fn}')
 
@@ -466,7 +467,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = False
+    always_gen_bbox = Debug
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -514,6 +515,7 @@ def gen_bbox(house_fn):
     level_num = len(house['levels'])
     if level_num == 1:
       bboxes['wall'] = preprocess_walls(bboxes['wall'])
+      bboxes['window'] = preprocess_windows(bboxes['window'], bboxes['wall'])
 
     # save bbox in ply and txt
     object_bbox_dir = os.path.join(parsed_dir, 'object_bbox')
@@ -525,22 +527,25 @@ def gen_bbox(house_fn):
       boxes = np.array(bboxes[category])
       np.savetxt(boxes_fn, boxes)
 
-    bboxes_num = {}
-    for category in bboxes.keys():
-      bboxes_num[category] = len(bboxes[category])
-      for i,bbox in enumerate(bboxes[category]):
-        box_dir = os.path.join(object_bbox_dir,'{}'.format(category))
-        if not os.path.exists(box_dir):
-          os.makedirs(box_dir)
+    save_ply = True
+    if save_ply:
+      bboxes_num = {}
+      for category in bboxes.keys():
+        bboxes_num[category] = len(bboxes[category])
+        for i,bbox in enumerate(bboxes[category]):
+          box_dir = os.path.join(object_bbox_dir,'{}'.format(category))
+          if not os.path.exists(box_dir):
+            os.makedirs(box_dir)
 
-        box_fn = os.path.join(box_dir, '%d.ply'%(i))
-        bbox_cam = world2cam_box(bbox.reshape([1,7]))[0]
-        Bbox3D.draw_bbox_open3d(bbox_cam, 'Y', plyfn=box_fn)
+          box_fn = os.path.join(box_dir, '%d.ply'%(i))
+          bbox_cam = world2cam_box(bbox.reshape([1,7]))[0]
+          Bbox3D.draw_bbox_open3d(bbox_cam, 'Y', plyfn=box_fn)
 
-    #######################
-    print(f'parsed_dir: {parsed_dir}')
-    write_summary(parsed_dir, 'level_num', level_num, 'w')
-    write_summary(parsed_dir, 'wall_num', bboxes_num['wall'], 'a')
+      #######################
+      print(f'parsed_dir: {parsed_dir}')
+      write_summary(parsed_dir, 'level_num', level_num, 'w')
+      for obj in ['room', 'wall', 'window', 'door', 'floor', 'ceiling']:
+        write_summary(parsed_dir, f'{obj}_num', bboxes_num[obj], 'a')
 
 def split_room_parts(house_fn, modelId):
     tmp = house_fn.split('/')

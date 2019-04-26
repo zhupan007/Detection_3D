@@ -105,9 +105,13 @@ def angle_of_2lines(line0, line1, scope_id=0):
 
 def limit_period(val, offset, period):
   '''
-   [0, pi]: offset=0, period=pi
+    [0, pi]: offset=0, period=pi
     [-pi/2, pi/2]: offset=0.5, period=pi
     [-pi, 0]: offset=1, period=pi
+
+    [0, pi/2]: offset=0, period=pi/2
+    [-pi/4, pi/4]: offset=0.5, period=pi/2
+    [-pi/2, 0]: offset=1, period=pi/2
   '''
   return val - np.floor(val / period + offset) * period
 

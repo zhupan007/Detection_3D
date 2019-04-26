@@ -501,7 +501,7 @@ class Bbox3D():
 
 
   @staticmethod
-  def define_walls_direction(boxes, up_axis, yx_zb):
+  def define_walls_direction(boxes, up_axis, yx_zb, check_thickness=False):
     show = False
     if show:
       box_ls0 = np.concatenate([bx.reshape([-1,7]) for bx in boxes], 0)
@@ -510,7 +510,7 @@ class Bbox3D():
 
     bn = len(boxes)
     for i in range(bn):
-      boxes[i] = Bbox3D.define_wall_direction(boxes[i], up_axis, yx_zb)
+      boxes[i] = Bbox3D.define_wall_direction(boxes[i], up_axis, yx_zb, check_thickness)
       boxes[i][-1] = OBJ_DEF.limit_yaw(boxes[i][-1], yx_zb)
 
     if show:
@@ -524,7 +524,7 @@ class Bbox3D():
     return boxes
 
   @staticmethod
-  def define_wall_direction(box, up_axis, yx_zb):
+  def define_wall_direction(box, up_axis, yx_zb, check_thickness):
     '''
       bbox standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
 
@@ -555,7 +555,8 @@ class Bbox3D():
       pass
 
     assert box[3] > box[_up]
-    assert box[_up] < 0.3 # normally thickness is small
+    if check_thickness:
+      assert box[_up] < 0.3 # normally thickness is small
     return box
 
 

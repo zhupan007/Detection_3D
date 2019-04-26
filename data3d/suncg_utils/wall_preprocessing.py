@@ -14,7 +14,7 @@ def preprocess_walls(wall_bboxes):
   '''
   #show_walls_offsetz(wall_bboxes)
   #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
-  wall_bboxes = Bbox3D.define_walls_direction(wall_bboxes, 'Z', yx_zb=False)
+  wall_bboxes = Bbox3D.define_walls_direction(wall_bboxes, 'Z', yx_zb=False, check_thickness=True)
 
 
   wall_bboxes = merge_pieces_of_same_walls_alongY(wall_bboxes)
