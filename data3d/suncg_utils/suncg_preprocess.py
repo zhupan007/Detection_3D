@@ -369,8 +369,9 @@ class Suncg():
       scene_id7 = '31a69e882e51c7c5dfdc0da464c3c02d' # 68 walls
       scene_id8 = '7411df25770eaf8d656cac2be42a9af0' # walls
 
+
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-      scene_id = scene_id1
+      scene_id = scene_id7
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -468,7 +469,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug
+    always_gen_bbox = False
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
