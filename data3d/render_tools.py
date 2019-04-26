@@ -75,14 +75,18 @@ def render_splited_house_walls(pth_fn):
   points = cut_points_roof(points)
 
   classes = [k for k in bboxes.keys()]
-  print(f'\nclasses: {classes}\n\n')
+  num_classes = {k:bboxes[k].shape[0] for k in bboxes.keys()}
+  print(f'\nclasses: {num_classes}\n\n')
 
-  for clas in bboxes.keys():
-    if clas not in ['window']:
-      continue
-    boxes = bboxes[clas]
-    Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
-    #Bbox3D.draw_points_bboxes_mesh(points, boxes, up_axis='Z', is_yx_zb=False)
+  all_bboxes = np.concatenate([boxes for boxes in bboxes.values()], 0)
+  Bbox3D.draw_points_bboxes(points, all_bboxes, up_axis='Z', is_yx_zb=False)
+
+  #for clas in bboxes.keys():
+  #  if clas not in CLASSES:
+  #    continue
+  #  boxes = bboxes[clas]
+  #  Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
+  #  #Bbox3D.draw_points_bboxes_mesh(points, boxes, up_axis='Z', is_yx_zb=False)
 
 def render_suncg_raw_house_walls(house_fn):
     from suncg import split_room_parts, Suncg
@@ -136,7 +140,7 @@ def render_cam_positions(parsed_dir):
 def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = os.listdir(PARSED_DIR)
   house_names = ['8c033357d15373f4079b1cecef0e065a']
-  house_names = ['28297783bce682aac7fb35a1f35f68fa']
+  #house_names = ['28297783bce682aac7fb35a1f35f68fa']
   for house_name in house_names:
     print(f'{house_name}')
     raw_house_fn = f'{SUNCG_V1_DIR}/house/{house_name}/house.json'
@@ -154,9 +158,10 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
     pth_fns = glob.glob(splited_boxfn)
     if r_splited:
       for pth_fn in pth_fns:
-        print('The splited walls')
+        print('The splited scene')
         render_splited_house_walls(pth_fn)
 
 
 if __name__ == '__main__':
-  render_houses(r_cam=False, r_whole=True, r_splited=False)
+  render_houses(r_cam=False, r_whole=False, r_splited=True)
+
