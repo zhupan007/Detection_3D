@@ -12,7 +12,7 @@ PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 
 CLASSES = ['wall', 'window', 'door']
-CLASSES = [ 'window']
+#CLASSES = ['door']
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -31,7 +31,7 @@ def show_walls_offsetz(wall_bboxes):
   Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
 
 
-def cut_points_roof(points, keep_rate=0.85):
+def cut_points_roof(points, keep_rate=0.95):
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate
@@ -62,7 +62,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
     points = np.asarray(pcd.points)
     points = cam2world_pcl(points)
     #points = down_sample_points(points, 0.03)
-    points = cut_points_roof(points, 0.7)
+    points = cut_points_roof(points)
 
     bboxes[:,2] += 0.1
     points = cut_points_roof(points)
@@ -136,6 +136,7 @@ def render_cam_positions(parsed_dir):
 def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = os.listdir(PARSED_DIR)
   house_names = ['8c033357d15373f4079b1cecef0e065a']
+  house_names = ['28297783bce682aac7fb35a1f35f68fa']
   for house_name in house_names:
     print(f'{house_name}')
     raw_house_fn = f'{SUNCG_V1_DIR}/house/{house_name}/house.json'

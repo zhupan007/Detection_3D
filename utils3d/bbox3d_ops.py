@@ -1235,23 +1235,6 @@ class Bbox3D():
     return new_boxes
 
 
-  #@staticmethod
-  #def clean_same_walls(wall_bboxes):
-  #  '''
-  #    [n,7]
-  #  '''
-  #  n = wall_bboxes.shape[0]
-  #  for i in range(n-1):
-  #    dif = wall_bboxes[i:i+1] - wall_bboxes[i+1:]
-  #    dif = np.linalg.norm(dif, axis=1)
-  #    mask = dif < 0.1
-  #    if np.any(mask):
-  #      idx = np.where(mask)[0]
-  #      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-  #      pass
-  #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
-  #  pass
-
 def review_bbox_format():
   # bbox standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
   # x_size > y_size,

@@ -16,6 +16,7 @@ sys.path.append(ROOT_DIR)
 USER_DIR = os.path.dirname(os.path.dirname(ROOT_DIR))
 from wall_preprocessing import preprocess_walls
 from window_preprocessing import preprocess_windows
+from door_preprocessing import preprocess_doors
 from utils3d.bbox3d_ops import Bbox3D
 
 
@@ -369,7 +370,7 @@ class Suncg():
       scene_id8 = '7411df25770eaf8d656cac2be42a9af0' # walls
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-      scene_id = scene_id2
+      scene_id = scene_id1
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -413,7 +414,7 @@ def parse_house_onef( house_fn):
 
     if is_gen_cam:
       gen_cam_images(house_fn)
-    if is_gen_pcl and not Debug:
+    if is_gen_pcl:
       gen_pcl(house_fn)
     print(f'house ok: {house_fn}')
 
@@ -516,6 +517,7 @@ def gen_bbox(house_fn):
     if level_num == 1:
       bboxes['wall'] = preprocess_walls(bboxes['wall'])
       bboxes['window'] = preprocess_windows(bboxes['window'], bboxes['wall'])
+      bboxes['door'] = preprocess_doors(bboxes['door'], bboxes['wall'])
 
     # save bbox in ply and txt
     object_bbox_dir = os.path.join(parsed_dir, 'object_bbox')

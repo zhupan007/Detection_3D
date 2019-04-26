@@ -5,7 +5,7 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import limit_period, vertical_dis_1point_lines, angle_of_2lines, vertical_dis_points_lines, ave_angles
 from render_tools import show_walls_offsetz, show_walls_1by1
 
-DEBUG = True
+DEBUG = False
 
 def preprocess_windows(windows0, walls):
   '''
