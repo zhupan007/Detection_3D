@@ -8,7 +8,7 @@
 import torch, numpy as np, glob, math, torch.utils.data, scipy.ndimage, multiprocessing as mp
 from .suncg_utils.suncg_dataset import SUNCGDataset
 
-DEBUG = True
+DEBUG = False
 
 
 

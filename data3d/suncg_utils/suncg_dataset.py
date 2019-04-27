@@ -18,7 +18,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
     full_scale=cfg.SPARSE3D.VOXEL_FULL_SCALE
     val_reps = cfg.SPARSE3D.VAL_REPS
     batch_size = cfg.SOLVER.IMS_PER_BATCH if is_train else cfg.TEST.IMS_PER_BATCH
-    self.objects_to_detect = cfg.INPUT.OBJECTS
+    self.objects_to_detect = cfg.INPUT.CLASSES
     dimension=3
 
     self.full_scale = np.array(full_scale)
@@ -60,7 +60,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
         b = pcl_i
         bboxes_dic_i = {}
         for obj in objects_to_detect:
-          assert obj in bboxes_dic_i_0 or obj=='all'
+          assert obj in bboxes_dic_i_0 or obj=='background', f"unknow class {obj}"
         for obj in bboxes_dic_i_0:
           if ('all' in objects_to_detect) or (obj in objects_to_detect):
             bboxes_dic_i[obj] = Bbox3D.convert_to_yx_zb_boxes(bboxes_dic_i_0[obj])

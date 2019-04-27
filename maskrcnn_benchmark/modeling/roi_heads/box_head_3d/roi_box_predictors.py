@@ -33,7 +33,8 @@ class FastRCNNPredictor(nn.Module):
 class FPNPredictor(nn.Module):
     def __init__(self, cfg):
         super(FPNPredictor, self).__init__()
-        num_classes = cfg.MODEL.ROI_BOX_HEAD.NUM_CLASSES
+        classes_names = cfg.INPUT.CLASSES
+        num_classes = len(classes_names)
         representation_size = cfg.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM
 
         self.cls_score = nn.Linear(representation_size, num_classes)

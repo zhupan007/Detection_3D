@@ -1023,7 +1023,7 @@ class Bbox3D():
 
 
   @staticmethod
-  def cenline_intersection_2boxes(box0, box1):
+  def cenline_intersection_2boxes(box0, box1, check_same_height):
     '''
       [7] [7]
       detect the intersection of two boxes along xy plane, by centroid lines
@@ -1036,12 +1036,6 @@ class Bbox3D():
     cenline0 = Bbox3D.bboxes_centroid_lines(box0.reshape([1,7]), cen_axis='X', up_axis='Z')[0]
     cenline1 = Bbox3D.bboxes_centroid_lines(box1.reshape([1,7]), cen_axis='X', up_axis='Z')[0]
 
-    if cenline0[0,2] != cenline1[1,2]:
-      boxes = np.concatenate([box0.reshape([1,7]), box1.reshape([1,7])], 0)
-      Bbox3D.draw_bboxes(boxes, 'Z', False)
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      pass
-    assert cenline0[0,2] == cenline1[1,2]
     intersec_2d = Bbox3D.line_intersection_2d(cenline0[:,0:2], cenline1[:,0:2], True, True,
                                   min_angle = 10. * np.pi/180)
     if not np.isnan(intersec_2d[0]):
@@ -1053,6 +1047,12 @@ class Bbox3D():
     else:
       on_box_corners = np.array([[-1, -1]])
     intersec_3d = np.concatenate([intersec_2d, cenline0[0,2:3]], 0).reshape([1,3])
+
+    if check_same_height and cenline0[0,2] != cenline1[1,2] and not np.isnan(intersec_3d[0,1]):
+      boxes = np.concatenate([box0.reshape([1,7]), box1.reshape([1,7])], 0)
+      Bbox3D.draw_bboxes(boxes, 'Z', False)
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      assert False, "merge two walls with different height is not implemented"
 
     show = False
     if show:
@@ -1066,7 +1066,7 @@ class Bbox3D():
     return intersec_3d, on_box_corners
 
   @staticmethod
-  def cenline_intersection(box0, boxes_other):
+  def cenline_intersection(box0, boxes_other, check_same_height):
     '''
       [7]  [n,7]
     '''
@@ -1076,7 +1076,7 @@ class Bbox3D():
     intersections = []
     on_box_corners = []
     for i in range(n):
-      intersection_i, on_box_corners_i =  Bbox3D.cenline_intersection_2boxes(box0, boxes_other[i])
+      intersection_i, on_box_corners_i =  Bbox3D.cenline_intersection_2boxes(box0, boxes_other[i], check_same_height)
       intersections.append(intersection_i)
       on_box_corners.append(on_box_corners_i)
     intersections = np.concatenate(intersections, 0)
@@ -1084,7 +1084,7 @@ class Bbox3D():
     return intersections, on_box_corners
 
   @staticmethod
-  def all_intersections_by_cenline(boxes, not_on_corners=False, only_on_corners=False, x_size_expand=0.08, show_res=False):
+  def all_intersections_by_cenline(boxes, check_same_height, not_on_corners=False, only_on_corners=False, x_size_expand=0.08,  show_res=False):
     '''
       [n,7]
     '''
@@ -1097,7 +1097,7 @@ class Bbox3D():
     on_box_corners = [np.zeros(shape=(0), dtype=np.int32)] * n
     another_box_ids = [np.zeros(shape=(0), dtype=np.int32)] * n
     for i in range(n-1):
-      intersections_i, on_box_corners_i = Bbox3D.cenline_intersection(boxes[i], boxes[i+1:])
+      intersections_i, on_box_corners_i = Bbox3D.cenline_intersection(boxes[i], boxes[i+1:], check_same_height)
 
       # extract the valid intersections
       mask_i = np.logical_not( np.isnan(intersections_i[:,0]) )

@@ -128,7 +128,6 @@ class PostProcessor(nn.Module):
 
         # Limit to max_per_image detections **over all classes**
         if number_of_detections > self.detections_per_img > 0:
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             cls_scores = result.get_field("scores")
             image_thresh, _ = torch.kthvalue(
                 cls_scores.cpu(), number_of_detections - self.detections_per_img + 1

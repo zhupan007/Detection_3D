@@ -106,7 +106,11 @@ class AnchorGenerator(nn.Module):
           for s in range(scales_num):
             xyz_max = anchors[s][:,0:2].max(0)[0]
             er = (xyz_max / self.scene_size[0:2]).min()
-            assert er > 0.9, "CHECK_ANCHOR_STRIDES ERROR"
+            scope_min = 0.85 if s==0 else 0.75
+            if er < scope_min:
+              print( "CHECK_ANCHOR_STRIDES ERROR")
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              assert False
             #xyz_min = anchors[s][:,0:2].min(0)[0]
             #print(f"xyz_min:{xyz_min}\t xyz_max:{xyz_max}")
 

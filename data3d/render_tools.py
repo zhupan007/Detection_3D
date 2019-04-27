@@ -140,7 +140,11 @@ def render_cam_positions(parsed_dir):
 def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = os.listdir(PARSED_DIR)
   house_names = ['8c033357d15373f4079b1cecef0e065a']
+  house_names = ['7411df25770eaf8d656cac2be42a9af0']
   #house_names = ['28297783bce682aac7fb35a1f35f68fa']
+  house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
+  #house_names = ['e7b3e2566e174b6fbb2864de76b50334']
+  #house_names = ['aaa535ef80b7d34f57f5d3274eec0daf']
   for house_name in house_names:
     print(f'{house_name}')
     raw_house_fn = f'{SUNCG_V1_DIR}/house/{house_name}/house.json'
@@ -163,5 +167,5 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
 
 if __name__ == '__main__':
-  render_houses(r_cam=False, r_whole=False, r_splited=True)
+  render_houses(r_cam=False, r_whole=True, r_splited=False)
 

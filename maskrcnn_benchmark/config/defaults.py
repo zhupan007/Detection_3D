@@ -70,7 +70,7 @@ _C.INPUT.PIXEL_STD = [1., 1., 1.]
 _C.INPUT.TO_BGR255 = True
 
 _C.INPUT.ELEMENTS = ['xyz', 'normal']
-_C.INPUT.OBJECTS = ['wall']
+_C.INPUT.CLASSES = ['background', 'wall', 'door', 'window']
 # -----------------------------------------------------------------------------
 # Dataset
 # -----------------------------------------------------------------------------
@@ -208,7 +208,7 @@ _C.MODEL.ROI_BOX_HEAD.PREDICTOR = "FPNPredictor"
 _C.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = 7 #14
 _C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 2
 #_C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (0.5,0.25, 0.125)  # (1.0 / 16,)
-_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
+#_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
 # Hidden layer dimension when using an MLP for the RoI box head
 _C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 1024
 _C.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE = 8.0
