@@ -354,11 +354,11 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[100:1500]
     else:
-      self.house_fns = house_fns[0:100]
+      self.house_fns = house_fns[0:20]
       #self.house_fns = house_fns[0:1500]
     house_fns.sort()
 
-    if Debug and True:
+    if Debug and False:
       scene_id0 = 'ffe929c9ed4dc7dab9a09ade502ac444' # single room
       scene_id1 = '8c033357d15373f4079b1cecef0e065a' # one level, with yaw!=0, one wall left and right has angle (31 final walls)
       scene_id2 = '28297783bce682aac7fb35a1f35f68fa' # one level, with yaw!=0 (22 final walls)
@@ -470,7 +470,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug
+    always_gen_bbox = False
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)

@@ -183,7 +183,7 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
     2) Merge along Y
   '''
   from utils3d.geometric_util import angle_with_x, vertical_dis_points_lines
-  show = True
+  show = False
   if show:
     wall_bboxes0 = wall_bboxes.copy()
     wall_bboxes0[:,2] -= 1
