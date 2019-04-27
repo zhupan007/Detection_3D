@@ -90,6 +90,8 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
     if not overlap_mask1:
       return None
 
+  assert bbox0[:,-1] == bbox1[:,-1], "Merge two walls with different z is not implemented"
+
   centroid_lines1 = Bbox3D.bboxes_centroid_lines(bbox1, 'X' if dim == 1 else 'Y', 'Z')
   cen_dis = vertical_dis_1point_lines(bbox0[0,0:3], centroid_lines1)[0]
 
@@ -129,7 +131,7 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
     1) Find all the walls with not both corners intersected
     2) Merge all the walls can be merged
   '''
-  intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, only_on_corners=True)
+  intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, check_same_height=False, only_on_corners=True)
   num_inters = np.array([it.shape[0] for it in intersections])
   mask = num_inters < 2
   candidate_ids = np.where(mask)[0]
@@ -518,7 +520,7 @@ def crop_walls(wall_bboxes):
   '''
   #show_walls_1by1(wall_bboxes)
 
-  intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, not_on_corners=True)
+  intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, check_same_height=False, not_on_corners=True)
   n = wall_bboxes.shape[0]
   new_walls = []
   keep_mask = np.array([True] * n)
