@@ -1,7 +1,8 @@
 # Feb 2019
 import numpy as np
 from utils3d.bbox3d_ops import Bbox3D
-from utils3d.geometric_util import limit_period, vertical_dis_1point_lines, angle_of_2lines, vertical_dis_points_lines, ave_angles
+from utils3d.geometric_util import limit_period, vertical_dis_1point_lines, \
+             vertical_dis_points_lines, ave_angles
 from render_tools import show_walls_offsetz, show_walls_1by1
 
 def preprocess_walls(wall_bboxes):
@@ -48,62 +49,6 @@ def preprocess_walls(wall_bboxes):
   return wall_bboxes
 
 
-def Unused_merge_2pieces_of_1wall_X(bbox0, bbox1):
-  '''
-    [1,7] [1,7]
-    two box can merge, when:
-    z, size_y, size_z same
-    yaw0 = yaw1 = angle of c0_c1
-    out: [1,7]
-  '''
-  from utils3d.geometric_util import angle_with_x
-  bbox0 = bbox0.reshape([1,7])
-  bbox1 = bbox1.reshape([1,7])
-
-  dif = bbox1 - bbox0
-
-  z_same = np.abs(dif[0,2]) < 0.01
-  sy_same = np.abs(dif[0,3+1]) < 0.01
-  sz_same = np.abs(dif[0,3+2]) < 0.01
-  yaw_same = np.abs(dif[0,-1]) < 0.01
-  if not (z_same and sy_same and sz_same and yaw_same):
-    return None
-
-  cen_direc = dif[:,0:2]
-  cen_angle = angle_with_x(cen_direc)[0]
-  cen_angle = Bbox3D.limit_period(cen_angle, 0.5, np.pi)
-  angle_same = np.abs(cen_angle - bbox0[0,-1]) < 0.03
-  if not angle_same:
-    return None
-
-  cen_dis = np.linalg.norm(cen_direc)
-
-  sx0 = bbox0[0,3]
-  sx1 = bbox1[0,3]
-
-  is_box0_covered_by_1 = sx1*0.5 > cen_dis + sx0*0.5
-  is_box1_covered_by_0 = sx0*0.5 > cen_dis + sx1*0.5
-  if is_box0_covered_by_1:
-    merged = bbox1
-  elif is_box1_covered_by_0:
-    merged = bbox0
-  else:
-    k = sx1 / (sx0 + sx1)
-    new_centroid = bbox0[0,0:3] + (bbox1[0,0:3] - bbox0[0,0:3]) * k
-    new_size_x = (sx0 + sx1) / 2 + cen_dis
-
-    merged = (bbox0 + bbox1) / 2
-    merged[0,0:3] = new_centroid
-    merged[0,3] = new_size_x
-
-  #
-  show = False
-  if show:
-    box_show = np.concatenate([bbox0, bbox1, merged], 0)
-    #box_show[2,2] += 0.1
-    Bbox3D.draw_bboxes(box_show, 'Z', False)
-  return merged
-
 def merge_2pieces_of_1wall(bbox0, bbox1, dim):
   '''
     [1,7] [1,7]
@@ -145,13 +90,6 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
     if not overlap_mask1:
       return None
 
-    #cen_line1 = Bbox3D.bboxes_centroid_lines(bbox1, 'X', 'Z')
-    #angle_dif = np.abs( angle_of_2lines(cen_line0[:,1] - cen_line0[:,0], cen_line1[:,1]-cen_line0[:,0], 1))
-
-    #angle_same = angle_dif < 0.03
-    #if not angle_same:
-    #  return None
-
   centroid_lines1 = Bbox3D.bboxes_centroid_lines(bbox1, 'X' if dim == 1 else 'Y', 'Z')
   cen_dis = vertical_dis_1point_lines(bbox0[0,0:3], centroid_lines1)[0]
 
@@ -170,6 +108,7 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
     new_size_dim = (size_dim0 + size_dim1) / 2 + cen_dis
 
     merged = (bbox0 + bbox1) / 2
+    merged[:,-1] = ave_angles(bbox0[:,-1], bbox1[:,-1], scope_id=1)
     if np.abs(bbox1[0,-1]-bbox0[0,-1]) > np.pi * 0.5:
       merged[0,-1] =  ( np.abs(bbox0[0,-1]) + np.abs(bbox1[0,-1]) )/2.0
     merged[0,0:3] = new_centroid
@@ -244,7 +183,7 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
     2) Merge along Y
   '''
   from utils3d.geometric_util import angle_with_x, vertical_dis_points_lines
-  show = False
+  show = True
   if show:
     wall_bboxes0 = wall_bboxes.copy()
     wall_bboxes0[:,2] -= 1
@@ -316,7 +255,7 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
             merge_y_num += 1
             box_merge = merge_2pieces_of_1wall(wall_bboxes[i], wall_bboxes[idx], 'Y')
 
-            if show and True:
+            if show and False:
               show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
               if box_merge is not None:
                 show_boxes = np.concatenate([show_boxes, box_merge], 0)
@@ -327,7 +266,11 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
               show_boxes = np.concatenate([show_boxes, wall_bboxes0], 0)
               Bbox3D.draw_bboxes(show_boxes, 'Z', False)
               pass
-            wall_bboxes[idx] = box_merge.reshape([7])
+            try:
+              wall_bboxes[idx] = box_merge.reshape([7])
+            except:
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
             remain_mask[i] = False
 
           else:
@@ -358,7 +301,7 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
 
             box_merge = merge_2pieces_of_1wall(wall_bboxes[short_idx], splited_boxes[merge_id], 'Y')
 
-            if show and True:
+            if show and False:
             #if box_merge is None:
               show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
               Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), show_boxes, 'Z', False)
@@ -407,7 +350,7 @@ def merge_2close_walls(bbox0, bbox1):
     '''
     bboxes = np.concatenate([bbox0.reshape([-1,1,7]), bbox1.reshape([-1,1,7])], 1)
     bboxes_new = bboxes.mean(axis=1)
-    bboxes_new[:,-1] = ave_angles(bboxes[:,:,-1], scope_id=0)
+    bboxes_new[:,-1] = ave_angles(bboxes[:,0,-1], bboxes[:,1,-1], scope_id=1)
     bboxes_new[:,3:6] = bboxes[:,:,3:6].max(axis=1)
 
     show = False
@@ -502,6 +445,7 @@ def is_close_walls(wall0, walls1):
   wallss:[n,7]
   '''
   pass
+
 
 
 def clean_close_walls(wall_bboxes):

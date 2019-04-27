@@ -358,7 +358,7 @@ class Suncg():
       #self.house_fns = house_fns[0:1500]
     house_fns.sort()
 
-    if Debug and False:
+    if Debug and True:
       scene_id0 = 'ffe929c9ed4dc7dab9a09ade502ac444' # single room
       scene_id1 = '8c033357d15373f4079b1cecef0e065a' # one level, with yaw!=0, one wall left and right has angle (31 final walls)
       scene_id2 = '28297783bce682aac7fb35a1f35f68fa' # one level, with yaw!=0 (22 final walls)
@@ -368,10 +368,11 @@ class Suncg():
       scene_id6 = 'c3802ae080bc1d5f4ada2f75448f7b49' # 71 final walls
       scene_id7 = '31a69e882e51c7c5dfdc0da464c3c02d' # 68 walls
       scene_id8 = '7411df25770eaf8d656cac2be42a9af0' # walls
+      scene_id9 = '0a83d94e9df3a8d07c71f0fe125f4b57'
 
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-      scene_id = scene_id7
+      scene_id = scene_id9
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -469,7 +470,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = False
+    always_gen_bbox = Debug
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -511,7 +512,10 @@ def gen_bbox(house_fn):
     mesh_frame = open3d.create_mesh_coordinate_frame(size = 0.6, origin = centroid)
 
     for obj in bboxes:
-      bboxes[obj] = np.concatenate([b.reshape([1,7]) for b in bboxes[obj]], 0)
+      if len(bboxes[obj])>0:
+        bboxes[obj] = np.concatenate([b.reshape([1,7]) for b in bboxes[obj]], 0)
+      else:
+        bboxes[obj] = np.array(bboxes[obj]).reshape([-1,7])
       bboxes[obj] = cam2world_box(bboxes[obj])
 
     level_num = len(house['levels'])
@@ -893,33 +897,33 @@ def add_exta_cam_locations(cam_fn, show=False):
   back_cam = np.array([0,1,0, cam_pos[0,-3], cam_pos[0,-2], 10])
   if len(extra_cams)>0:
     extra_cams = np.concatenate(extra_cams, 0)
+    cam_pos_new = []
+    for loc in extra_cams:
+      cam_forwards = [ [1,0,0], [-1,0,0], [0,0,1], [0,0,-1] ]
+      for i in range(4):
+        #if i==0:
+        #  valid = loc[0] < walls_min[0]
+        #elif i==1:
+        #  valid = loc[0] > walls_max[0]
+        #elif i==2:
+        #  valid = loc[2] > walls_min[2]
+        #elif i==3:
+        #  valid = loc[2] > walls_max[2]
+
+        valid = True
+        if valid:
+          forward = np.array(cam_forwards[i])
+          cam_new_i = np.concatenate([loc, forward, back_cam],0 ).reshape([1,12])
+          cam_pos_new.append( cam_new_i )
+
+    cam_pos_new = np.concatenate(cam_pos_new, 0)
+    cam_pos_new = np.concatenate([cam_pos_new, cam_pos], 0)
   else:
-    extra_cams = np.array([])
-  cam_pos_new = []
-  for loc in extra_cams:
-    cam_forwards = [ [1,0,0], [-1,0,0], [0,0,1], [0,0,-1] ]
-    for i in range(4):
-      #if i==0:
-      #  valid = loc[0] < walls_min[0]
-      #elif i==1:
-      #  valid = loc[0] > walls_max[0]
-      #elif i==2:
-      #  valid = loc[2] > walls_min[2]
-      #elif i==3:
-      #  valid = loc[2] > walls_max[2]
-
-      valid = True
-      if valid:
-        forward = np.array(cam_forwards[i])
-        cam_new_i = np.concatenate([loc, forward, back_cam],0 ).reshape([1,12])
-        cam_pos_new.append( cam_new_i )
-
-  cam_pos_new = np.concatenate(cam_pos_new, 0)
-  cam_pos_new = np.concatenate([cam_pos_new, cam_pos], 0)
+    cam_pos_new = cam_pos
 
   cam_fn_new = os.path.dirname(cam_fn) +'/cam'
   np.savetxt(cam_fn_new, cam_pos_new, fmt='%.5f')
-  print(f'add_exta_cam_locations org cam num: {cam_num}, new cam num: {extra_cams.shape[0]} \n{cam_fn}')
+  print(f'add_exta_cam_locations org cam num: {cam_num}, new cam num: {len(extra_cams)} \n{cam_fn}')
   save_cam_ply(cam_fn, show)
   save_cam_ply(cam_fn_new, show)
   return cam_fn_new
@@ -1067,4 +1071,5 @@ if __name__ == '__main__':
   #add_extra_cam_orientations(cam_fn, True)
   #gen_a_house_obj()
   pass
+
 

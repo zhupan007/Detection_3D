@@ -115,26 +115,30 @@ def limit_period(val, offset, period):
   '''
   return val - np.floor(val / period + offset) * period
 
-def ave_angles(angles, scope_id=0):
+def ave_angles(angles0, angles1, scope_id=0):
   '''
-    angles: [n,2]
+    angles0: any shape
+    angles1: same as angles0
     scope_id = 0: [-pi/2, pi/2]
+    scope_id = 1: [0, pi]
+    scope_id defines the scope of both input angles and averaged.
     period = np.pi
 
     make the angle between the average and both are below half period
 
     out: [n]
   '''
-  assert angles.ndim == 2
-  assert angles.shape[1] == 2
+  assert angles0.shape == angles1.shape
 
   period = np.pi
-  dif = angles[:,1] - angles[:,0]
+  dif = angles1 - angles0
   mask = np.abs(dif) > period * 0.5
-  angles[:,1] += - period * mask * np.sign(dif)
-  ave = angles.mean(axis=1)
+  angles1 += - period * mask * np.sign(dif)
+  ave = (angles0 + angles1) / 2.0
   if scope_id==0:
     ave = limit_period(ave, 0.5, period)
+  elif scope_id==1:
+    ave = limit_period(ave, 0, period)
   else:
     raise NotImplementedError
   return ave
