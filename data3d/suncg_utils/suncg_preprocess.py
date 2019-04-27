@@ -31,7 +31,12 @@ ONLY_LEVEL_1 = True
 if not SAGE:
   SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
-
+def show_pcl(pcl):
+    pcd = open3d.PointCloud()
+    pcd.points = open3d.Vector3dVector(pcl[:,0:3])
+    if pcl.shape[1] == 6:
+      pcd.colors = open3d.Vector3dVector(pcl[:,3:6])
+    open3d.draw_geometries([pcd])
 def camPos2Extrinsics(cam_pos):
   '''
   cam:
@@ -579,7 +584,7 @@ def split_room_parts(house_fn, modelId):
     return room_bboxes
 
 def gen_pcl(house_fn):
-    always_gen_pcl = False
+    always_gen_pcl = Debug
     check_points_out_of_house = False
 
     parsed_dir = get_pcl_path(house_fn)
@@ -616,7 +621,7 @@ def gen_pcl(house_fn):
       pcl_path = parsed_dir + '/pcls'
       if not os.path.exists(pcl_path):
         os.makedirs(pcl_path)
-    xyzs_all = []
+    pcls_all = []
 
     max_point_num = 2e7
     cam_num = cam_pos.shape[0] * 1.0
@@ -624,28 +629,28 @@ def gen_pcl(house_fn):
     print(f'pre_downsample_num: {pre_downsample_num}')
 
     for i,depth_fn in enumerate(depth_fns):
-      xyz_i = depth_2_pcl(depth_fn, cam_pos[i])
+      pcl_i = depth_2_pcl(depth_fn, cam_pos[i])
 
       if check_points_out_of_house:
         # check if the points are out of house scope
         # do not know why this happens sometims, just use this ineligant way to
         # solve it temperally
-        if xyz_i.shape[0] > 1000:
-          ids = np.sort(np.random.choice(xyz_i.shape[0], 1000, False))
+        if pcl_i.shape[0] > 1000:
+          ids = np.sort(np.random.choice(pcl_i.shape[0], 1000, False))
         else:
-          ids = np.arange(xyz_i.shape[0])
-        mask = Bbox3D.points_in_bbox(xyz_i[ids], house_box.reshape([1,7]))
+          ids = np.arange(pcl_i.shape[0])
+        mask = Bbox3D.points_in_bbox(pcl_i[ids,0:3], house_box.reshape([1,7]))
         if not mask.all():
           print(f'some points are out of box in image {i}')
           continue
 
-      if pre_downsample_num < xyz_i.shape[0]:
-        xyz_i = random_sample_pcl(xyz_i, pre_downsample_num)
-      xyzs_all.append(xyz_i)
+      if pre_downsample_num < pcl_i.shape[0]:
+        pcl_i = random_sample_pcl(pcl_i, pre_downsample_num)
+      pcls_all.append(pcl_i)
 
       if gen_ply_each_image:
         pcd = open3d.PointCloud()
-        pcd.points = open3d.Vector3dVector(xyz_i)
+        pcd.points = open3d.Vector3dVector(pcl_i)
         base_name = os.path.basename(depth_fns[i]).replace('depth.png','pcl.ply')
         pcl_fn = os.path.join(pcl_path, base_name)
         open3d.write_point_cloud(pcl_fn, pcd)
@@ -653,9 +658,9 @@ def gen_pcl(house_fn):
         import pdb; pdb.set_trace()  # XXX BREAKPOINT
         pass
 
-    xyzs_all = np.concatenate(xyzs_all, 0)
-    org_num = xyzs_all.shape[0]
-    print(f'org point num: {xyzs_all.shape[0]/1000} K')
+    pcls_all = np.concatenate(pcls_all, 0)
+    org_num = pcls_all.shape[0]
+    print(f'org point num: {pcls_all.shape[0]/1000} K')
     if org_num < MIN_POINT_NUM:
       print(f'only {org_num} points, del cams and re-generate later\n del {parsed_dir}')
       import shutil
@@ -663,11 +668,12 @@ def gen_pcl(house_fn):
       return False
 
     #if org_num > 1e7:
-    #    xyzs_all = random_sample_pcl(xyzs_all, int(max(1e7, org_num/10)) )
-    #    print(f'random sampling to point num: {xyzs_all.shape[0]/1000} K')
+    #    pcls_all = random_sample_pcl(pcls_all, int(max(1e7, org_num/10)) )
+    #    print(f'random sampling to point num: {pcls_all.shape[0]/1000} K')
 
     pcd = open3d.PointCloud()
-    pcd.points = open3d.Vector3dVector(xyzs_all)
+    pcd.points = open3d.Vector3dVector(pcls_all[:,0:3])
+    pcd.colors = open3d.Vector3dVector(pcls_all[:,3:6])
     pcd = open3d.voxel_down_sample(pcd, voxel_size=0.02)
     new_num = np.asarray(pcd.points).shape[0]
     print(f'new point num: {new_num/1000.0} K')
@@ -675,6 +681,7 @@ def gen_pcl(house_fn):
     #open3d.draw_geometries([pcd])
 
     write_summary(parsed_dir, 'points_num', new_num, 'a')
+    #open3d.draw_geometries([pcd])
     return True
 
 def read_cam_pos(cam_fn):
@@ -685,9 +692,9 @@ def read_cam_pos(cam_fn):
 
 def depth_2_pcl(depth_fn, cam_pos):
     extrinsics = camPos2Extrinsics(cam_pos)
-    depth = Image.open(depth_fn)
+    depth0 = Image.open(depth_fn)
     # mm to m
-    depth = np.array(depth).astype(np.float) / 1000.0
+    depth = np.array(depth0).astype(np.float) / 1000.0
     fc = camFocus(cam_pos, depth.shape)
     uni_depth = depth / fc
 
@@ -715,7 +722,17 @@ def depth_2_pcl(depth_fn, cam_pos):
     xyz = np.transpose(xyz)
     xyz = np.matmul( extrinsics, xyz )
     xyz = xyz.transpose()
-    return xyz
+
+    color_fn = depth_fn.replace('depth.png', 'color.jpg')
+    color0 = Image.open(color_fn)
+    color0 = np.array(color0) # uint8
+    color = np.transpose(color0, [1,0,2])
+    color = color.reshape(-1,3)
+    color = color[mask] / 256.
+
+    pcl = np.concatenate([xyz, color], 1).astype(np.float32)
+    #show_pcl(pcl)
+    return pcl
 
 def get_pcl_path(house_fn):
     parsed_dir = 'parsed'
