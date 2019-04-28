@@ -356,12 +356,12 @@ class Suncg():
 
     scene_ids = os.listdir(root_path+'/house')
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
+    house_fns.sort()
     if SAGE:
       self.house_fns = house_fns[100:1500]
     else:
-      self.house_fns = house_fns[0:50]
+      self.house_fns = house_fns[0:3]
       #self.house_fns = house_fns[0:1500]
-    house_fns.sort()
 
     if Debug and False:
       scene_id0 = 'ffe929c9ed4dc7dab9a09ade502ac444' # single room
@@ -374,10 +374,11 @@ class Suncg():
       scene_id7 = '31a69e882e51c7c5dfdc0da464c3c02d' # 68 walls
       scene_id8 = '7411df25770eaf8d656cac2be42a9af0' # walls
       scene_id9 = '0a83d94e9df3a8d07c71f0fe125f4b57'
+      scene_id10 =  'b021ab18bb170a167d569dcfcaf58cd4'
 
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-      scene_id = scene_id9
+      scene_id = scene_id10
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -584,7 +585,7 @@ def split_room_parts(house_fn, modelId):
     return room_bboxes
 
 def gen_pcl(house_fn):
-    always_gen_pcl = Debug
+    always_gen_pcl = False
     check_points_out_of_house = False
 
     parsed_dir = get_pcl_path(house_fn)

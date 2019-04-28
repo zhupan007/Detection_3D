@@ -256,14 +256,17 @@ class IndoorData():
   def split_pcl_plyf(pcl_fn):
     assert os.path.exists(pcl_fn)
     pcd = open3d.read_point_cloud(pcl_fn)
+    colors = np.asarray(pcd.colors)
     points = np.asarray(pcd.points)
     points = cam2world_pcl(points)
     pcd.points = open3d.Vector3dVector(points)
+
+    points = np.concatenate([points, colors], -1)
     is_add_norm = True
     if is_add_norm:
       add_norm(pcd)
       normals = np.asarray(pcd.normals)
-      points = np.concatenate([points, normals], -1)
+      points = np.concatenate([points,  normals], -1)
     #open3d.draw_geometries([pcd])
     points_splited = IndoorData.points_splited(points)
     return points_splited
@@ -478,7 +481,7 @@ def get_sung_info(data_path, house_names0):
       infos.append(info)
   return infos
 
-def creat_indoor_info_file(data_path=SPLITED_DIR,
+def Unused_creat_indoor_info_file(data_path=SPLITED_DIR,
                            save_path=None,
                            create_trainval=False,
                            relative_path=True):
@@ -507,7 +510,7 @@ def creat_indoor_info_file(data_path=SPLITED_DIR,
       with open(filename, 'wb') as f:
           pickle.dump(sung_infos, f)
 
-def read_indoor_info():
+def unused_read_indoor_info():
   info_path = f'{SPLITED_DIR}/sung_infos_train.pkl'
   with open(info_path, 'rb') as f:
     infos = pickle.load(f)
@@ -579,8 +582,6 @@ def gen_train_list():
 
 if __name__ == '__main__':
   creat_splited_pcl_box()
-  #creat_indoor_info_file()
-  #read_indoor_info()
   #gen_train_list()
   pass
 

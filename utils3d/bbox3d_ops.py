@@ -151,10 +151,14 @@ class Bbox3D():
 
   @staticmethod
   def draw_points_open3d(points, color=[0,1,1], show=False):
-    points = points[:,0:3]
     pcl = open3d.PointCloud()
     pcl.points = open3d.Vector3dVector(points[:,0:3])
-    pcl.paint_uniform_color(color)
+    if points.shape[1] >= 6:
+      pcl.colors = open3d.Vector3dVector(points[:,3:6])
+    else:
+      pcl.paint_uniform_color(color)
+    if points.shape[1] >= 9:
+      pcl.normals = open3d.Vector3dVector(points[:,6:9])
     if show:
       open3d.draw_geometries([pcl])
     return pcl

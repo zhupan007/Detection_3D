@@ -53,33 +53,36 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
     bboxes.append(bboxes_)
   bboxes = np.concatenate(bboxes, 0)
 
-  #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False)
-  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+  if not show_pcl:
+    #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False)
+    Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
 
   if show_pcl:
     pcl_fn = f'{parsed_dir}/pcl_camref.ply'
     pcd = open3d.read_point_cloud(pcl_fn)
     points = np.asarray(pcd.points)
     points = cam2world_pcl(points)
-    #points = down_sample_points(points, 0.03)
-    points = cut_points_roof(points)
+    colors = np.asarray(pcd.colors)
+    pcl = np.concatenate([points, colors], 1)
+    pcl = cut_points_roof(pcl)
 
     bboxes[:,2] += 0.1
-    points = cut_points_roof(points)
-    Bbox3D.draw_points_bboxes(points, bboxes, up_axis='Z', is_yx_zb=False)
-    Bbox3D.draw_points_bboxes_mesh(points, bboxes, up_axis='Z', is_yx_zb=False)
+    Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False)
+    #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
 
 def render_splited_house_walls(pth_fn):
   pcl, bboxes = torch.load(pth_fn)
-  points = pcl[:,0:3]
-  points = cut_points_roof(points)
+  pcl = cut_points_roof(pcl)
+  #points = pcl[:,0:3]
+  #colors = pcl[:,3:6]
+  #normals = pcl[:,6:9]
 
   classes = [k for k in bboxes.keys()]
   num_classes = {k:bboxes[k].shape[0] for k in bboxes.keys()}
   print(f'\nclasses: {num_classes}\n\n')
 
   all_bboxes = np.concatenate([boxes for boxes in bboxes.values()], 0)
-  Bbox3D.draw_points_bboxes(points, all_bboxes, up_axis='Z', is_yx_zb=False)
+  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False)
 
   #for clas in bboxes.keys():
   #  if clas not in CLASSES:
@@ -138,16 +141,17 @@ def render_cam_positions(parsed_dir):
 
 
 def render_houses(r_cam=True, r_whole=True, r_splited=True):
-  #house_names = os.listdir(PARSED_DIR)
   house_names = ['8c033357d15373f4079b1cecef0e065a']
   house_names = ['7411df25770eaf8d656cac2be42a9af0']
-  #house_names = ['28297783bce682aac7fb35a1f35f68fa']
+  house_names = ['28297783bce682aac7fb35a1f35f68fa']
   #house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   #house_names = ['e7b3e2566e174b6fbb2864de76b50334']
   #house_names = ['aaa535ef80b7d34f57f5d3274eec0daf']
-  house_names = ['0a83d94e9df3a8d07c71f0fe125f4b57']
-  for house_name in house_names:
-    print(f'{house_name}')
+  #house_names = ['0a83d94e9df3a8d07c71f0fe125f4b57']
+  house_names = os.listdir(PARSED_DIR)
+  house_names.sort()
+  for k,house_name in enumerate( house_names ):
+    print(f'\n{k}: {house_name}')
     raw_house_fn = f'{SUNCG_V1_DIR}/house/{house_name}/house.json'
     #render_suncg_raw_house_walls(raw_house_fn)
 
@@ -162,11 +166,15 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
     splited_boxfn = f'{SPLITED_DIR}/houses/{house_name}/*.pth'
     pth_fns = glob.glob(splited_boxfn)
     if r_splited:
-      for pth_fn in pth_fns:
-        print('The splited scene')
+      for i,pth_fn in enumerate( pth_fns ):
+        print(f'\nThe {i}-th splited scene')
         render_splited_house_walls(pth_fn)
 
 
 if __name__ == '__main__':
-  render_houses(r_cam=False, r_whole=True, r_splited=False)
+  render_houses(
+        r_cam=False,
+        r_whole = False,
+        r_splited = True
+  )
 

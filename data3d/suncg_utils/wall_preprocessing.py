@@ -90,7 +90,12 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
     if not overlap_mask1:
       return None
 
-  assert bbox0[:,-1] == bbox1[:,-1], "Merge two walls with different z is not implemented"
+  if (bbox0[:,[2,5]] != bbox1[:,[2,5]]).any():
+    print("Merge two walls with different z is not implemented")
+    show_box = np.concatenate([bbox0, bbox1], 0)
+    Bbox3D.draw_bboxes(show_box, 'Z', False)
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
 
   centroid_lines1 = Bbox3D.bboxes_centroid_lines(bbox1, 'X' if dim == 1 else 'Y', 'Z')
   cen_dis = vertical_dis_1point_lines(bbox0[0,0:3], centroid_lines1)[0]
