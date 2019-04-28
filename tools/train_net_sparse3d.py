@@ -9,7 +9,7 @@ import open3d
 from maskrcnn_benchmark.utils.env import setup_environment  # noqa F401 isort:skip
 
 import argparse
-import os
+import os, shutil
 import numpy as np
 
 import torch
@@ -162,6 +162,10 @@ def main():
     output_dir = cfg.OUTPUT_DIR
     if output_dir:
         mkdir(output_dir)
+        cfn = os.path.basename(args.config_file)
+        shutil.copyfile(args.config_file, f"{output_dir}/{cfn}")
+        default_cfn = 'maskrcnn_benchmark/config/defaults.py'
+        shutil.copyfile(default_cfn, f"{output_dir}/default.py")
 
     logger = setup_logger("maskrcnn_benchmark", output_dir, get_rank())
     logger.info("Using {} GPUs".format(num_gpus))
