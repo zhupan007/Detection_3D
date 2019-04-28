@@ -10,12 +10,11 @@
         (2)  modeling/roi_heads/box_head_3d/box_head.py: self.loss_evaluator.subsample(proposals, targets)
 - add yaw loss
 - rethink how to improve acc for long wall: add yaw loss
-- add window
 - crop gt box with anchor
 - multi scale: feature concate
-- rpn acc
 - IOU: area_inter / (area2 + max(0,area1*0.5 - area_inter))   
    second/core/non_max_suppression/nms_gpu.py devRotateIoUEval
+- ** Decormable net/cnn ** avoid rectangle conv kernel and fixed net. use adaptive formable net. use deformable cnn. 
 
 # Geometric
 

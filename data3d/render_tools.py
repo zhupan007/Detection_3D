@@ -12,7 +12,8 @@ PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 
 CLASSES = ['wall', 'window', 'door']
-#CLASSES = ['door']
+#CLASSES += ['ceiling', 'floor']
+CLASSES += ['room']
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -53,8 +54,8 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
     bboxes.append(bboxes_)
   bboxes = np.concatenate(bboxes, 0)
 
+  Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False)
   if not show_pcl:
-    #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False)
     Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
 
   if show_pcl:
@@ -142,13 +143,12 @@ def render_cam_positions(parsed_dir):
 
 def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['8c033357d15373f4079b1cecef0e065a']
-  house_names = ['7411df25770eaf8d656cac2be42a9af0']
-  house_names = ['28297783bce682aac7fb35a1f35f68fa']
+  #house_names = ['7411df25770eaf8d656cac2be42a9af0']
   #house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   #house_names = ['e7b3e2566e174b6fbb2864de76b50334']
   #house_names = ['aaa535ef80b7d34f57f5d3274eec0daf']
   #house_names = ['0a83d94e9df3a8d07c71f0fe125f4b57']
-  house_names = os.listdir(PARSED_DIR)
+  #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -174,7 +174,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 if __name__ == '__main__':
   render_houses(
         r_cam=False,
-        r_whole = False,
-        r_splited = True
+        r_whole = 1,
+        r_splited = False
   )
 
