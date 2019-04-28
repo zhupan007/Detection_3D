@@ -69,7 +69,7 @@ _C.INPUT.PIXEL_STD = [1., 1., 1.]
 # Convert image to BGR format (for Caffe2 models), in range 0-255
 _C.INPUT.TO_BGR255 = True
 
-_C.INPUT.ELEMENTS = ['xyz', 'normal']
+_C.INPUT.ELEMENTS = ['xyz', 'color', 'normal']
 _C.INPUT.CLASSES = ['background', 'wall', 'door', 'window']
 # -----------------------------------------------------------------------------
 # Dataset

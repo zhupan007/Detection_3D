@@ -28,7 +28,7 @@ class FPN_Net(torch.nn.Module):
         assert all([len(ss)==3 for ss in self.down_strides])
         self._merge = 'add'  # 'cat' or 'add'
 
-        ele_channels = {'xyz':3, 'normal':3, 'color':3}
+        ele_channels = {'xyz':3, 'color':3, 'normal':3}
         in_channels = sum([ele_channels[e] for e in raw_elements])
 
         self.layers_in = scn.Sequential(
