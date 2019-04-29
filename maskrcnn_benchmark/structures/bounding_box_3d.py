@@ -360,7 +360,11 @@ class BoxList3D(object):
         centroids = boxes.copy()
         centroids[:,3:6] = 0.02
       if max_num > 0 and max_num < boxes.shape[0]:
-        ids = np.random.choice(boxes.shape[0], max_num, replace=False)
+        step = 4
+        ids0 = np.random.choice(boxes.shape[0]//step-1, max_num, replace=False).reshape(-1,1)*step
+        tmp = np.arange(step).reshape(1,step)
+        ids = (ids0 + tmp).reshape(-1)
+        print(ids)
         boxes = boxes[ids]
       if with_centroids:
         boxes = np.concatenate([boxes, centroids], 0)

@@ -154,12 +154,12 @@ class AnchorGenerator(nn.Module):
               print(f'anchor ctr min: {min_xyz}')
               print(f'anchor ctr mean: {mean_xyz}')
               print(f'anchor ctr max: {max_xyz}')
-              points = points_sparse[1][:,0:3].cpu().data.numpy()
+              points = points_sparse[1][:,0:6].cpu().data.numpy()
               print(f'points ctr min: {points.min(0)}')
               print(f'points ctr mean: {points.mean(0)}')
               print(f'points ctr max: {points.max(0)}')
 
-              anchors[scale_i].show(200, points, with_centroids=True)
+              anchors[scale_i].show(2, points, with_centroids=True)
               #anchors[scale_i].show_centroids(-1, points)
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
