@@ -59,6 +59,7 @@ class ROIBoxHead3D(torch.nn.Module):
         # feature_extractor generally corresponds to the pooler + heads
         x = self.feature_extractor(features, proposals)
         # final classifier that converts the features into predictions
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         class_logits, box_regression = self.predictor(x)
 
         if not self.training:

@@ -64,10 +64,10 @@ class ROIAlignRotated3D(nn.Module):
         self.spatial_scale = spatial_scale # 0.25
         self.sampling_ratio = sampling_ratio # 2
 
-    def forward(self, input0, rois0):
+    def forward(self, input_s3d, rois_3d):
         '''
         input0: sparse 3d tensor
-        rois0: 3d box, xyz order is same as input0,
+        rois_3d: 3d box, xyz order is same as input0,
                 yaw unit is rad, anti-clock wise is positive
 
         input: [batch_size, feature, h, w]
@@ -76,13 +76,18 @@ class ROIAlignRotated3D(nn.Module):
 
         Note: the order of w and h inside of input and rois is different.
         '''
-        input = sparse_3d_to_dense_2d(input0)
-        rois = rois0[:,[0, 2,1, 5,4,7]] # reverse the order of x and y
-        rois[:,-1]  *= 180.0/math.pi
-        assert rois.shape[1] == 6
+        input_d3d = sparse_3d_to_dense_2d(input_s3d)
+        batch_size, channel0, xs,ys,zs = input_d3d.shape
+        input_d3d = input_d3d.permute(0, 1, 4, 2, 3)
+        input_d3d = input_d3d.reshape(batch_size, channel0*zs, xs, ys)
+        rois_2d = rois_3d[:,[0, 2,1, 5,4,7]] # reverse the order of x and y
+        rois_2d[:,-1]  *= 180.0/math.pi
         output = roi_align_rotated_3d(
-            input, rois, self.output_size, self.spatial_scale, self.sampling_ratio
+            input_d3d, rois_2d, self.output_size, self.spatial_scale, self.sampling_ratio
         )
+        pro_n,c,xo,yo = output.shape
+        output = output.reshape(pro_n, channel0, zs, xo,yo).permute(0,1,3,4,2)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return output
 
     def __repr__(self):

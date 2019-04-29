@@ -358,7 +358,7 @@ class BoxList3D(object):
       boxes = self.bbox3d.cpu().data.numpy()
       if with_centroids:
         centroids = boxes.copy()
-        centroids[:,3:6] = 0.02
+        centroids[:,3:6] = 0.03
       if max_num > 0 and max_num < boxes.shape[0]:
         step = 4
         ids0 = np.random.choice(boxes.shape[0]//step-1, max_num, replace=False).reshape(-1,1)*step
