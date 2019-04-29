@@ -454,7 +454,8 @@ class BoxList3D(object):
       import numpy as np
       from maskrcnn_benchmark.layers.smooth_l1_loss import get_yaw_loss
 
-      objectness = self.get_field('objectness').cpu().data.numpy()
+      obj_sco = 'objectness' if 'objectness' in self.extra_fields else 'scores'
+      objectness = self.get_field(obj_sco).cpu().data.numpy()
 
       # the top objectness
       if below:
@@ -495,7 +496,10 @@ class BoxList3D(object):
       # the max remaining objectness of (top objectness)
       mask_bottom = objectness <= threshold
       objectness_bottom = objectness[mask_bottom]
-      max_bottom_objectness = objectness_bottom.max()
+      if len(objectness_bottom)==0:
+        max_bottom_objectness = 0
+      else:
+        max_bottom_objectness = objectness_bottom.max()
       print(f"\nmax objectness of bottom: {max_bottom_objectness}")
       max_bot_mask = objectness == max_bottom_objectness
       max_bot_ids = np.where(max_bot_mask)[0]
@@ -504,6 +508,19 @@ class BoxList3D(object):
 
       gap = min_top_objectness - max_bottom_objectness
       print(f'\nobjectness quality by objectness: {gap}\n')
+
+    def remove_low(self,field, threshold):
+      values = self.get_field(field).cpu().data.numpy()
+      mask = values > threshold
+      ids = np.where(mask)[0]
+      tops = self[ids]
+      return tops
+
+      # the top objectness
+      if below:
+        mask = objectness <= threshold
+      else:
+        mask = objectness > threshold
 
     def same_loc_anchors(self,items):
       '''

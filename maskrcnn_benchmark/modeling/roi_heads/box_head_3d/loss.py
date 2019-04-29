@@ -287,42 +287,6 @@ class FastRCNNLossComputation(object):
           return
 
 
-          err = pred_logits - labels
-          err_inds = torch.nonzero(err).view(-1)
-
-          props_err = proposals[err_inds]
-          objectness_err = props_err.get_field('objectness')
-
-          # err classification
-          print(f"err_inds:\n{err_inds}")
-          if err_inds.shape[0]>0:
-            print(f"err labels:\n{labels[err_inds]}")
-            print(f"err logits:\n{class_logits[err_inds]}")
-            print(f"err objectness:\n {objectness_err}")
-            props_err.show_together(targets)
-
-          neg_inds = torch.nonzero(labels-1).view(-1)
-          objectness_neg = proposals[neg_inds].get_field('objectness')
-          max_obj_neg = objectness_neg.max()
-          print('\nmax_obj_neg: {max_obj_neg}')
-
-          # positive proposals
-          pos_inds = torch.nonzero(labels).view(-1)
-          gt_num = len(targets)
-          rpn_nms_num = len(proposals)
-          pos_inds = pos_inds[0:-gt_num] # remove gt in proposals
-          pos_rpn_num = pos_inds.shape[0]
-
-          props_pos = proposals[pos_inds]
-          objectness_pos = props_pos.get_field('objectness')
-          pos_logits = class_logits[pos_inds]
-          print(f"\ngt_num: {gt_num}\n objectness of pos: {objectness_pos}")
-          print(f"\npos_logits:\n{pos_logits.cpu().data}")
-          props_pos.show_together(targets)
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
-          pass
-
-
 def make_roi_box_loss_evaluator(cfg):
     matcher = Matcher(
         cfg.MODEL.ROI_HEADS.FG_IOU_THRESHOLD,

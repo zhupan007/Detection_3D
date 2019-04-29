@@ -6,6 +6,7 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
 import torch
 from collections import defaultdict
+from suncg_utils.suncg_meta import SUNCG_META
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
@@ -13,7 +14,8 @@ SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 
 CLASSES = ['wall', 'window', 'door']
 #CLASSES += ['ceiling', 'floor']
-CLASSES += ['room']
+#CLASSES += ['floor']
+#CLASSES += ['room']
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -32,7 +34,7 @@ def show_walls_offsetz(wall_bboxes):
   Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
 
 
-def cut_points_roof(points, keep_rate=0.95):
+def cut_points_roof(points, keep_rate=0.55):
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate
@@ -48,15 +50,20 @@ def down_sample_points(points, keep_rate=0.3):
 
 def render_parsed_house_walls(parsed_dir, show_pcl=False):
   bboxes = []
+  labels = []
   for obj in CLASSES:
     bbox_fn_ = f'{parsed_dir}/object_bbox/{obj}.txt'
     bboxes_  = np.loadtxt(bbox_fn_).reshape([-1,7])
     bboxes.append(bboxes_)
+    label = SUNCG_META.class_2_label[obj]
+    labels += [label] * bboxes_.shape[0]
   bboxes = np.concatenate(bboxes, 0)
+  labels = np.array(labels).astype(np.int8)
 
-  Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False)
-  if not show_pcl:
-    Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+  #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  #if not show_pcl:
+  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
 
   if show_pcl:
     pcl_fn = f'{parsed_dir}/pcl_camref.ply'
@@ -69,7 +76,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
 
     bboxes[:,2] += 0.1
     Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False)
-    #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
+    Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
 
 def render_splited_house_walls(pth_fn):
   pcl, bboxes = torch.load(pth_fn)
@@ -144,7 +151,7 @@ def render_cam_positions(parsed_dir):
 def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['8c033357d15373f4079b1cecef0e065a']
   #house_names = ['7411df25770eaf8d656cac2be42a9af0']
-  #house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
+  house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   #house_names = ['e7b3e2566e174b6fbb2864de76b50334']
   #house_names = ['aaa535ef80b7d34f57f5d3274eec0daf']
   #house_names = ['0a83d94e9df3a8d07c71f0fe125f4b57']

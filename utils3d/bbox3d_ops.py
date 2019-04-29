@@ -14,6 +14,7 @@ from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 DEBUG = True
 
 FRAME_SHOW = 1
+POINTS_KEEP_RATE = 0.8
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
@@ -67,6 +68,14 @@ def corners4_to_mesh2(corners, color=[255,0,0]):
   mesh.paint_uniform_color(color)
   return mesh
 
+
+def cut_points_roof(points, keep_rate=0.55):
+  z_min = np.min(points[:,2])
+  z_max = np.max(points[:,2])
+  threshold = z_min + (z_max - z_min) * keep_rate
+  mask = points[:,2] < threshold
+  points_cutted = points[mask]
+  return points_cutted
 
 class Bbox3D():
   '''
@@ -151,6 +160,7 @@ class Bbox3D():
 
   @staticmethod
   def draw_points_open3d(points, color=[0,1,1], show=False):
+    points = cut_points_roof(points, POINTS_KEEP_RATE)
     pcl = open3d.PointCloud()
     pcl.points = open3d.Vector3dVector(points[:,0:3])
     if points.shape[1] >= 6:
@@ -208,17 +218,14 @@ class Bbox3D():
 
     bbox_meshes = []
     for i in range(bn):
-      box = gt_boxes1[i]
-      if random_color:
-        color = COLOR_LIST[i]
-      else:
-        color = [1,0,0]
-      if labels is not None:
-        if labels[i]==1:
-          color = [0,1,0]
-        if labels[i]==2:
-          color = [1,1,0]
-      bbox_meshes.append( Bbox3D.draw_bbox_open3d(box, up_axis, color=color) )
+        box = gt_boxes1[i]
+        if random_color:
+          color = COLOR_LIST[i]
+        else:
+          color = [1,0,0]
+        if labels is not None:
+            color = COLOR_LIST[labels[i]]
+        bbox_meshes.append( Bbox3D.draw_bbox_open3d(box, up_axis, color=color) )
 
     if bn > 0:
       bboxes_lineset = bbox_meshes[0]
@@ -253,7 +260,10 @@ class Bbox3D():
     faces_corners = np.take(corners, Bbox3D._face_vidxs, axis=1)
     n = boxes0.shape[0]
     mesh = []
-    colors = COLOR_LIST[0:n]
+    if labels is None:
+        colors = COLOR_LIST[0:n]
+    else:
+        colors = COLOR_LIST[labels]
     for i in range(n):
       mesh_i = corners4_to_mesh2(faces_corners[i].reshape([-1,4,3]), colors[i])
       mesh.append( mesh_i)

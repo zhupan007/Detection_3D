@@ -47,7 +47,8 @@ def do_train(
     arguments,
     epoch_id,
     eval_in_train,
-    output_dir
+    eval_out_dir,
+    eval_in_train_per_iter
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info(f"Start training {epoch_id}")
@@ -80,6 +81,9 @@ def do_train(
           predictions_i = [p.to(torch.device('cpu')) for p in predictions_i]
           [p.detach() for p in predictions_i]
           predictions_all += predictions_i
+
+          if eval_in_train_per_iter:
+            eval_res_i = evaluate(dataset=data_loader.dataset, predictions=predictions_i, output_folder=eval_out_dir, box_only=False)
 
         # reduce losses over all GPUs for logging purposes
         loss_dict_reduced = reduce_loss_dict(loss_dict)
@@ -129,6 +133,5 @@ def do_train(
     )
 
     if eval_in_train:
-      eval_out_dir = output_dir
       eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all, output_folder=eval_out_dir, box_only=False)
 

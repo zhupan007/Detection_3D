@@ -76,7 +76,8 @@ def train(cfg, local_rank, distributed, loop, only_test):
           arguments,
           e + loop * epochs_between_test,
           cfg.DEBUG.eval_in_train,
-          output_dir
+          output_dir,
+          cfg.DEBUG.eval_in_train_per_iter,
       )
 
     return model

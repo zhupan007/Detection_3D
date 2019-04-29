@@ -8,27 +8,27 @@ import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 
-DEBUG = False
-SHOW_IOU = DEBUG and True
+DEBUG = True
+SHOW_IOU = DEBUG and False
+SHOW_GOOD_PRED = DEBUG and False
 
 def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     # TODO need to make the use_07_metric format available
     # for the user to choose
     pred_boxlists = predictions
     gt_boxlists = []
-    for image_id, prediction in enumerate(predictions):
-          if 'data_id' in prediction.constants:
-            image_id = prediction.constants['data_id']
-          img_info = dataset.get_img_info(image_id)
-          #if len(prediction) == 0:
-          #    continue
-          #image_width = img_info["width"]
-          #image_height = img_info["height"]
-          #prediction = prediction.resize((image_width, image_height))
-          #pred_boxlists.append(prediction)
+    image_ids = []
+    for i, prediction in enumerate(predictions):
+        image_id = prediction.constants['data_id']
+        image_ids.append(image_id)
+        img_info = dataset.get_img_info(image_id)
+        gt_boxlist = dataset.get_groundtruth(image_id)
+        gt_boxlists.append(gt_boxlist)
 
-          gt_boxlist = dataset.get_groundtruth(image_id)
-          gt_boxlists.append(gt_boxlist)
+    gt_num_totally = sum([len(g) for g in gt_boxlists])
+    if gt_num_totally == 0:
+        print(f'gt_num_totally=0, abort evalution')
+        return
 
     result = eval_detection_suncg(
         pred_boxlists=pred_boxlists,
@@ -47,6 +47,18 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     if output_folder:
         with open(os.path.join(output_folder, "result.txt"), "w") as fid:
             fid.write(result_str)
+
+    if SHOW_GOOD_PRED:
+        print('SHOW_GOOD_PRED')
+        ap = result['ap'][1:]
+        if np.isnan(ap).any():
+            return result
+        for i in range(len(pred_boxlists)):
+            pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
+            tops = pred_boxlists[i].remove_low('scores', 0.5)
+            tops.show_together(gt_boxlists[i], points=pcl_i)
+
+            #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     return result
 
 
