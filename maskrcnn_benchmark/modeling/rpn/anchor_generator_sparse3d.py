@@ -8,8 +8,8 @@ from torch import nn
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from utils3d.geometric_torch import OBJ_DEF
 
-DEBUG = False
-SHOW_ANCHOR_EACH_SCALE = DEBUG and True
+DEBUG = True
+SHOW_ANCHOR_EACH_SCALE = DEBUG and False
 CHECK_ANCHOR_STRIDES = True
 if DEBUG:
   from utils3d.bbox3d_ops import Bbox3D
@@ -50,6 +50,7 @@ class AnchorGenerator(nn.Module):
         yaws=(0, -1.57),
         anchor_strides=[[8,8,729], [16,16,729], [32,32,729]],
         scene_size=[8,8,5],
+        project_to_2d = ['Z'],
         straddle_thresh=0,
     ):
         super(AnchorGenerator, self).__init__()
@@ -66,6 +67,12 @@ class AnchorGenerator(nn.Module):
         assert sizes_3d.shape[0] == anchor_strides.shape[0]
         yaws = np.array(yaws, dtype=np.float32).reshape([-1,1])
 
+        if 'Z' in project_to_2d:
+            # and projected to 2d anchors cell
+            sizes_2d = sizes_3d.copy()
+            sizes_2d[:,-1] = sizes_3d[:,-1].max()
+            sizes_3d = np.concatenate([sizes_3d, sizes_2d], 0)
+            anchor_strides = np.concatenate([anchor_strides, anchor_strides], 0)
         cell_anchors = [ generate_anchors_3d(size, yaws).float()
                         for size in sizes_3d]
         [OBJ_DEF.check_bboxes(ca, yx_zb=True) for ca in cell_anchors]
@@ -78,9 +85,11 @@ class AnchorGenerator(nn.Module):
         self.straddle_thresh = straddle_thresh
         self.anchor_mode = 'yx_zb'
         self.scene_size = torch.tensor(scene_size, dtype=torch.float)
+        self.project_to_2d = project_to_2d
 
     def num_anchors_per_location(self):
-        return [len(cell_anchors) for cell_anchors in self.cell_anchors]
+        return self.anchor_num_per_loc
+        #return [len(cell_anchors) for cell_anchors in self.cell_anchors]
 
     def grid_anchors(self, locations):
         anchors = []
@@ -102,11 +111,11 @@ class AnchorGenerator(nn.Module):
 
         # CHECK_ANCHOR_STRIDES:
         if CHECK_ANCHOR_STRIDES:
-          scales_num = len(anchors)
+          scales_num = len(anchors) // (int('Z' in self.project_to_2d)+1)
           for s in range(scales_num):
             xyz_max = anchors[s][:,0:2].max(0)[0]
             er = (xyz_max / self.scene_size[0:2]).min()
-            scope_min = 0.85 if s==0 else 0.75
+            scope_min = 0.8 if s==0 else 0.7
             if er < scope_min:
               print( "CHECK_ANCHOR_STRIDES ERROR")
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -205,6 +214,7 @@ def make_anchor_generator(config):
     voxel_scale = config.SPARSE3D.VOXEL_SCALE
     voxel_full_scale = config.SPARSE3D.VOXEL_FULL_SCALE
     scene_size = config.SPARSE3D.SCENE_SIZE
+    project_to_2d = config.MODEL.RPN.PROJECT_TO_2D
 
     if config.MODEL.RPN.USE_FPN:
         assert len(anchor_stride) == len(
@@ -213,7 +223,7 @@ def make_anchor_generator(config):
     else:
         assert len(anchor_stride) == 1, "Non-FPN should have a single ANCHOR_STRIDE"
     anchor_generator = AnchorGenerator(
-        voxel_scale, anchor_sizes_3d, yaws, anchor_stride, scene_size, straddle_thresh
+        voxel_scale, anchor_sizes_3d, yaws, anchor_stride, scene_size, project_to_2d, straddle_thresh
     )
     return anchor_generator
 

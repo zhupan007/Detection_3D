@@ -166,7 +166,7 @@ _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 1000 #  2000
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"
 
 _C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2,1]
-
+_C.MODEL.RPN.PROJECT_TO_2D = ['Z']
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options
 # ---------------------------------------------------------------------------- #

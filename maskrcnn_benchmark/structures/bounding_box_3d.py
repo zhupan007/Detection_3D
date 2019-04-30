@@ -358,6 +358,8 @@ class BoxList3D(object):
       boxes = self.bbox3d.cpu().data.numpy()
       if with_centroids:
         centroids = boxes.copy()
+        if self.mode == 'yx_zb':
+            centroids[:,2] += centroids[:,5]*0.5
         centroids[:,3:6] = 0.03
       if max_num > 0 and max_num < boxes.shape[0]:
         step = 4

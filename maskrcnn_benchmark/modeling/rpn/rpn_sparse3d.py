@@ -142,7 +142,7 @@ class RPNModule(torch.nn.Module):
         in_channels = cfg.MODEL.BACKBONE.OUT_CHANNELS
         rpn_head = registry.RPN_HEADS[cfg.MODEL.RPN.RPN_HEAD]
         head = rpn_head(
-            cfg, in_channels, anchor_generator.num_anchors_per_location()[0]
+            cfg, in_channels, anchor_generator.num_anchors_per_location()
         )
 
         rpn_box_coder = BoxCoder3D()
