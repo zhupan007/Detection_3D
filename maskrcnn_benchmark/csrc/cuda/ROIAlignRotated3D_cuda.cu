@@ -162,7 +162,7 @@ __global__ void RoIAlignRotated3DForward(
           // Rotate by theta around the center and translate
           T x = xx * cosTheta + yy * sinTheta + roi_center_w;
           T y = yy * cosTheta - xx * sinTheta + roi_center_h;
-          T z = z + roi_center_z;
+          T z = zz + roi_center_z;
 
           T val = bilinear_interpolate(
               offset_bottom_data, height, width, zsize, y, x, z, index);
@@ -342,10 +342,10 @@ __global__ void RoIAlignRotated3DBackwardFeature(
             atomicAdd(offset_bottom_diff + y_low  * width * zsize + x_high * zsize + z_low,  static_cast<T>(g2));
             atomicAdd(offset_bottom_diff + y_high * width * zsize + x_low  * zsize + z_low,  static_cast<T>(g3));
             atomicAdd(offset_bottom_diff + y_high * width * zsize + x_high * zsize + z_low,  static_cast<T>(g4));
-            atomicAdd(offset_bottom_diff + y_low  * width * zsize + x_low  * zsize + z_high, static_cast<T>(g1));
-            atomicAdd(offset_bottom_diff + y_low  * width * zsize + x_high * zsize + z_high, static_cast<T>(g2));
-            atomicAdd(offset_bottom_diff + y_high * width * zsize + x_low  * zsize + z_high, static_cast<T>(g3));
-            atomicAdd(offset_bottom_diff + y_high * width * zsize + x_high * zsize + z_high, static_cast<T>(g4));
+            atomicAdd(offset_bottom_diff + y_low  * width * zsize + x_low  * zsize + z_high, static_cast<T>(g5));
+            atomicAdd(offset_bottom_diff + y_low  * width * zsize + x_high * zsize + z_high, static_cast<T>(g6));
+            atomicAdd(offset_bottom_diff + y_high * width * zsize + x_low  * zsize + z_high, static_cast<T>(g7));
+            atomicAdd(offset_bottom_diff + y_high * width * zsize + x_high * zsize + z_high, static_cast<T>(g8));
           } // if
         }
       } // ix
