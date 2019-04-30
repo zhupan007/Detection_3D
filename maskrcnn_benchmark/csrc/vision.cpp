@@ -4,6 +4,7 @@
 #include "ROIPool.h"
 #include "SigmoidFocalLoss.h"
 #include "ROIAlignRotated.h"
+#include "ROIAlignRotated3D.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("nms", &nms, "non-maximum suppression");
@@ -15,4 +16,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("sigmoid_focalloss_backward", &SigmoidFocalLoss_backward, "SigmoidFocalLoss_backward");
   m.def("roi_align_rotated_forward", &ROIAlignRotated_forward, "ROIAlignRotated_forward");
   m.def("roi_align_rotated_backward", &ROIAlignRotated_backward, "ROIAlignRotated_backward");
+  m.def("roi_align_rotated_3d_forward", &ROIAlignRotated3D_forward, "ROIAlignRotated3D_forward");
+  m.def("roi_align_rotated_3d_backward", &ROIAlignRotated3D_backward, "ROIAlignRotated3D_backward");
 }
