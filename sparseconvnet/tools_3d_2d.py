@@ -19,7 +19,7 @@ def sparse_3d_to_dense_2d(feat_s3d):
   #assert z_size == 1, "dim z has to be compressed to 1"
   total_n = feat_s3d.features.shape[0]
   sparse_rate = total_n*1.0/max_map_size.prod().to(torch.float)
-  print(f'sparse_rate:{sparse_rate}')
+  #print(f'sparse_rate:{sparse_rate}')
 
   nPlane0 = feat_s3d.features.shape[1]
   to_dense_layer =  scn.sparseToDense.SparseToDense(dimension=4, nPlanes=nPlane0)

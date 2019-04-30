@@ -16,13 +16,13 @@ class _ROIAlignRotated3D(Function):
         ctx.spatial_scale = spatial_scale
         ctx.sampling_ratio = sampling_ratio
         ctx.input_shape = input.size()
-        # input: [4, 256, 304, 200]
-        # roi: [171, 5]
+        # input: [4, 256, 304, 200, 7]
+        # roi: [171, 8]
         # spatial_scale: 0.25
-        # output_size: [7,7]
+        # output_size: [7,7,7]
         # sampling_ratio: 2
-        output = _C.roi_align_rotated_forward(
-            input, roi, spatial_scale, output_size[0], output_size[1], sampling_ratio
+        output = _C.roi_align_rotated_3d_forward(
+            input, roi, spatial_scale, output_size[0], output_size[1], output_size[2], sampling_ratio
         ) # [171, 256, 7, 7]
         return output
 
@@ -33,17 +33,19 @@ class _ROIAlignRotated3D(Function):
         output_size = ctx.output_size
         spatial_scale = ctx.spatial_scale
         sampling_ratio = ctx.sampling_ratio
-        bs, ch, h, w = ctx.input_shape
-        grad_input = _C.roi_align_rotated_backward(
+        bs, ch, h, w, zsize = ctx.input_shape
+        grad_input = _C.roi_align_rotated_3d_backward(
             grad_output,
             rois,
             spatial_scale,
             output_size[0],
             output_size[1],
+            output_size[2],
             bs,
             ch,
             h,
             w,
+            zsize,
             sampling_ratio,
         )
         return grad_input, None, None, None, None
@@ -60,7 +62,7 @@ class ROIAlignRotated3D(nn.Module):
         sampling_ratio: how many points to use for bilinear_interpolate
         '''
         super(ROIAlignRotated3D, self).__init__()
-        self.output_size = output_size # (7,7)
+        self.output_size = output_size # (7,7,7)
         self.spatial_scale = spatial_scale # 0.25
         self.sampling_ratio = sampling_ratio # 2
 
@@ -77,17 +79,9 @@ class ROIAlignRotated3D(nn.Module):
         Note: the order of w and h inside of input and rois is different.
         '''
         input_d3d = sparse_3d_to_dense_2d(input_s3d)
-        batch_size, channel0, xs,ys,zs = input_d3d.shape
-        input_d3d = input_d3d.permute(0, 1, 4, 2, 3)
-        input_d3d = input_d3d.reshape(batch_size, channel0*zs, xs, ys)
-        rois_2d = rois_3d[:,[0, 2,1, 5,4,7]] # reverse the order of x and y
-        rois_2d[:,-1]  *= 180.0/math.pi
         output = roi_align_rotated_3d(
-            input_d3d, rois_2d, self.output_size, self.spatial_scale, self.sampling_ratio
+            input_d3d, rois_3d, self.output_size, self.spatial_scale, self.sampling_ratio
         )
-        pro_n,c,xo,yo = output.shape
-        output = output.reshape(pro_n, channel0, zs, xo,yo).permute(0,1,3,4,2)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return output
 
     def __repr__(self):
