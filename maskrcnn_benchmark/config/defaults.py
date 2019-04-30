@@ -165,8 +165,7 @@ _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 1000 #  2000
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"
 
-
-_C.MODEL.RPN_SCALES_FROM_TOP =  [4,3,2,1]
+_C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2,1]
 
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options

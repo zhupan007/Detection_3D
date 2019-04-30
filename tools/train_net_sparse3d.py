@@ -189,7 +189,7 @@ def main():
 
 
 def intact_cfg(cfg):
-  fpn_scalse = cfg.MODEL.RPN_SCALES_FROM_TOP
+  fpn_scalse = cfg.MODEL.RPN.RPN_SCALES_FROM_TOP
   strides = cfg.SPARSE3D.STRIDE
   nPlanesFront = cfg.SPARSE3D.nPlanesFront
   scale_num = len(nPlanesFront)
@@ -218,6 +218,7 @@ def intact_cfg(cfg):
 
   check_roi_parameters(cfg)
 
+
 def check_roi_parameters(cfg):
   #spatial_scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL
   #canonical_size = cfg.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE
@@ -233,6 +234,13 @@ def check_roi_parameters(cfg):
   roi_spatial_scales_xy = roi_spatial_scales[:,0].tolist()
 
   cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL = roi_spatial_scales_xy
+
+  strides_ = np.flip(strides, 0)
+  rpn_strides = strides_[cfg.MODEL.RPN.RPN_SCALES_FROM_TOP]
+  full_scale = cfg.SPARSE3D.VOXEL_FULL_SCALE
+  rpn_map_sizes = (np.array(full_scale).reshape(1,-1) / rpn_strides).astype(np.int32)
+
+  cfg.MODEL.RPN.RPN_MAP_SIZES = rpn_map_sizes.tolist()
 
   show = True
   if show:
