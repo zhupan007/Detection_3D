@@ -17,21 +17,18 @@ __device__ T bilinear_interpolate(
         const T* bottom_data,
         const int height, 
         const int width,
-        const int zsize,
         T y, 
         T x,
-        T z,
         const int index /* index for debug only*/) {
 
   // deal with cases that inverse elements are out of feature map boundary
-  if (y < -1.0 || y > height || x < -1.0 || x > width || z < -1.0 || zsize> zsize) {
+  if (y < -1.0 || y > height || x < -1.0 || x > width) {
     //empty
     return 0;
   }
 
   if (y <= 0) y = 0;
   if (x <= 0) x = 0;
-  if (z <= 0) z = 0;
 
   int y_low = (int) y;
   int x_low = (int) x;
@@ -54,12 +51,12 @@ __device__ T bilinear_interpolate(
 
   T ly = y - y_low;
   T lx = x - x_low;
-  T hy = 1. - ly, hx = 1. - lx, hz = 1. - lz;
+  T hy = 1. - ly, hx = 1. - lx;
   // do bilinear interpolation
-  T v1 = bottom_data[y_low  * width * zsize + x_low  * zsize + z];
-  T v2 = bottom_data[y_low  * width * zsize + x_high * zsize + z];
-  T v3 = bottom_data[y_high * width * zsize + x_low  * zsize + z];
-  T v4 = bottom_data[y_high * width * zsize + x_high * zsize + z];
+  T v1 = bottom_data[y_low * width + x_low];
+  T v2 = bottom_data[y_low * width + x_high];
+  T v3 = bottom_data[y_high * width + x_low];
+  T v4 = bottom_data[y_high * width + x_high];
   T w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
 
   T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
@@ -77,80 +74,71 @@ __global__ void RoIAlignRotatedForward(
     const int channels,
     const int height,
     const int width,
-    const int zsize,
     const int pooled_height,
     const int pooled_width,
-    const int pooled_zsize,
     const int sampling_ratio,
     const T* bottom_rois,
     T* top_data) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
-    // (n, c, ph, pw, pz) is an element in the pooled output
-    int pz = index % pooled_zsize
-    int pw = (index / pooled_zsize) % pooled_width;
-    int ph = (index  / pooled_zsize/ pooled_width) % pooled_height;
-    int c = (index  / pooled_zsize/ pooled_width / pooled_height) % channels;
-    int n = index  / pooled_zsize/ pooled_width / pooled_height / channels;
+    // (n, c, ph, pw) is an element in the pooled output
+    int pw = index % pooled_width;
+    int ph = (index / pooled_width) % pooled_height;
+    int c = (index / pooled_width / pooled_height) % channels;
+    int n = index / pooled_width / pooled_height / channels;
 
-    const T* offset_bottom_rois = bottom_rois + n * 8;
+    const T* offset_bottom_rois = bottom_rois + n * 6;
     int roi_batch_ind = offset_bottom_rois[0];
 
     // Do not round
     T roi_center_w = offset_bottom_rois[1] * spatial_scale;
     T roi_center_h = offset_bottom_rois[2] * spatial_scale;
-    T roi_center_z = offset_bottom_rois[3] * spatial_scale;
-    T roi_width = offset_bottom_rois[4] * spatial_scale;
-    T roi_height = offset_bottom_rois[5] * spatial_scale;
-    T roi_zsize = offset_bottom_rois[6] * spatial_scale;
-    T theta = offset_bottom_rois[7] * M_PI / 180.0;
+    T roi_width = offset_bottom_rois[3] * spatial_scale;
+    T roi_height = offset_bottom_rois[4] * spatial_scale;
+    T theta = offset_bottom_rois[5] * M_PI / 180.0;
 
     // Force malformed ROIs to be 1x1
     roi_width = max(roi_width, (T)1.);
     roi_height = max(roi_height, (T)1.);
-    roi_zsize = max(roi_zsize, (T)1.);
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
-    T bin_size_z = static_cast<T>(roi_zsize) / static_cast<T>(pooled_zsize);
 
     const T* offset_bottom_data =
-        bottom_data + (roi_batch_ind * channels + c) * height * width * zsize;
+        bottom_data + (roi_batch_ind * channels + c) * height * width;
 
     // We use roi_bin_grid to sample the grid and mimic integral
     int roi_bin_grid_h = 
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_height / pooled_height); // e.g., = 2
     int roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
-    int roi_bin_grid_z =
-        (sampling_ratio > 0) ? sampling_ratio : ceil(roi_zsize / pooled_zsize);
 
     // roi_start_h and roi_start_w are computed wrt the center of RoI (x, y).
     // Appropriate translation needs to be applied after.
     T roi_start_h = -roi_height / 2.0;
     T roi_start_w = -roi_width / 2.0;
-    T roi_start_z = -roi_zsize / 2.0;
     T cosTheta = cos(theta);
     T sinTheta = sin(theta);
 
     // We do average (integral) pooling inside a bin
-    const T count = roi_bin_grid_h * roi_bin_grid_w * roi_bin_grid_z; // e.g. = 4
+    const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
 
     T output_val = 0.;
     for (int iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
     {
-      const T yy = roi_start_h + ph * bin_size_h + static_cast<T>(iy + .5f) * bin_size_h / static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
+      const T yy = roi_start_h + ph * bin_size_h +
+          static_cast<T>(iy + .5f) * bin_size_h /
+              static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
       for (int ix = 0; ix < roi_bin_grid_w; ix++) {
-        const T xx = roi_start_w + pw * bin_size_w + static_cast<T>(ix + .5f) * bin_size_w / static_cast<T>(roi_bin_grid_w);
-        for (int iz = 0; iz < roi_bin_grid_w; iz++) {
-          const T zz = roi_start_z + pz * bin_size_z + static_cast<T>(iz + .5f) * bin_size_z / static_cast<T>(roi_bin_grid_z);
+        const T xx = roi_start_w + pw * bin_size_w +
+            static_cast<T>(ix + .5f) * bin_size_w /
+                static_cast<T>(roi_bin_grid_w);
 
-          // Rotate by theta around the center and translate
-          T x = xx * cosTheta + yy * sinTheta + roi_center_w;
-          T y = yy * cosTheta - xx * sinTheta + roi_center_h;
-          T z = z + roi_center_z
+        // Rotate by theta around the center and translate
+        T x = xx * cosTheta + yy * sinTheta + roi_center_w;
+        T y = yy * cosTheta - xx * sinTheta + roi_center_h;
 
-          T val = bilinear_interpolate(
-              offset_bottom_data, height, width, zsize y, x, z, index);
-          output_val += val;
+        T val = bilinear_interpolate(
+            offset_bottom_data, height, width, y, x, index);
+        output_val += val;
       }
     }
     output_val /= count;
@@ -320,7 +308,6 @@ at::Tensor ROIAlignRotated_forward_cuda(const at::Tensor& input,
                                  const float spatial_scale,
                                  const int pooled_height,
                                  const int pooled_width,
-                                 const int pooled_zsize,
                                  const int sampling_ratio) {
   AT_ASSERTM(input.type().is_cuda(), "input must be a CUDA tensor");
   AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
@@ -329,7 +316,6 @@ at::Tensor ROIAlignRotated_forward_cuda(const at::Tensor& input,
   auto channels = input.size(1);
   auto height = input.size(2);
   auto width = input.size(3);
-  auto zsize = input.size(4);
 
   auto output = at::empty({num_rois, channels, pooled_height, pooled_width}, input.options());
   auto output_size = num_rois * pooled_height * pooled_width * channels;
@@ -351,10 +337,8 @@ at::Tensor ROIAlignRotated_forward_cuda(const at::Tensor& input,
          channels,
          height,
          width,
-         zsize,
          pooled_height,
          pooled_width,
-         pooled_zsize,
          sampling_ratio,
          rois.contiguous().data<scalar_t>(),
          output.data<scalar_t>());

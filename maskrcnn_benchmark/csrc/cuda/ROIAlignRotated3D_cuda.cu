@@ -85,9 +85,8 @@ __device__ T bilinear_interpolate(
 }
 
 //**********************************************************************************************
-
-template <typename T>
-__global__ void RoIAlignRotatedForward(
+template <typename T> 
+__global__ void RoIAlignRotated3DForward( 
     const int nthreads,
     const T* bottom_data,
     const T spatial_scale,
@@ -100,10 +99,10 @@ __global__ void RoIAlignRotatedForward(
     const int pooled_zsize,
     const int sampling_ratio,
     const T* bottom_rois,
-    T* top_data) {
+    T* top_data ) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw, pz) is an element in the pooled output
-    int pz = index % pooled_zsize
+    int pz = index % pooled_zsize;
     int pw = (index / pooled_zsize) % pooled_width;
     int ph = (index  / pooled_zsize/ pooled_width) % pooled_height;
     int c = (index  / pooled_zsize/ pooled_width / pooled_height) % channels;
@@ -163,11 +162,12 @@ __global__ void RoIAlignRotatedForward(
           // Rotate by theta around the center and translate
           T x = xx * cosTheta + yy * sinTheta + roi_center_w;
           T y = yy * cosTheta - xx * sinTheta + roi_center_h;
-          T z = z + roi_center_z
+          T z = z + roi_center_z;
 
           T val = bilinear_interpolate(
-              offset_bottom_data, height, width, zsize y, x, z, index);
+              offset_bottom_data, height, width, zsize, y, x, z, index);
           output_val += val;
+        }
       }
     }
     output_val /= count;
@@ -235,7 +235,7 @@ __device__ void bilinear_interpolate_gradient(
 }
 
 template <typename T>
-__global__ void RoIAlignRotatedBackwardFeature(
+__global__ void RoIAlignRotated3DBackwardFeature(
     const int nthreads, 
     const T* top_diff,
     const int num_rois, 
@@ -252,7 +252,7 @@ __global__ void RoIAlignRotatedBackwardFeature(
     const T* bottom_rois) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw, pz) is an element in the pooled output
-    int pz = index % pooled_zsize
+    int pz = index % pooled_zsize;
     int pw = (index / pooled_zsize) % pooled_width;
     int ph = (index  / pooled_zsize/ pooled_width) % pooled_height;
     int c = (index  / pooled_zsize/ pooled_width / pooled_height) % channels;
@@ -347,13 +347,14 @@ __global__ void RoIAlignRotatedBackwardFeature(
             atomicAdd(offset_bottom_diff + y_high * width * zsize + x_low  * zsize + z_high, static_cast<T>(g3));
             atomicAdd(offset_bottom_diff + y_high * width * zsize + x_high * zsize + z_high, static_cast<T>(g4));
           } // if
+        }
       } // ix
     } // iy
   } // CUDA_1D_KERNEL_LOOP
 } // RoIAlignBackward
 
 
-at::Tensor ROIAlignRotated_forward_cuda(const at::Tensor& input,
+at::Tensor ROIAlignRotated3D_forward_cuda(const at::Tensor& input,
                                  const at::Tensor& rois,
                                  const float spatial_scale,
                                  const int pooled_height,
@@ -381,8 +382,8 @@ at::Tensor ROIAlignRotated_forward_cuda(const at::Tensor& input,
     return output;
   }
 
-  AT_DISPATCH_FLOATING_TYPES(input.type(), "ROIAlignRotated_forward", [&] {
-    RoIAlignRotatedForward<scalar_t><<<grid, block, 0, stream>>>(
+  AT_DISPATCH_FLOATING_TYPES(input.type(), "ROIAlignRotated3D_forward", [&] {
+    RoIAlignRotated3DForward<scalar_t><<<grid, block, 0, stream>>>(
          output_size,
          input.contiguous().data<scalar_t>(),
          spatial_scale,
@@ -402,7 +403,7 @@ at::Tensor ROIAlignRotated_forward_cuda(const at::Tensor& input,
 }
 
 // TODO remove the dependency on input and use instead its sizes -> save memory
-at::Tensor ROIAlignRotated_backward_cuda(const at::Tensor& grad,
+at::Tensor ROIAlignRotated3D_backward_cuda(const at::Tensor& grad,
                                   const at::Tensor& rois,
                                   const float spatial_scale,
                                   const int pooled_height,
@@ -431,8 +432,8 @@ at::Tensor ROIAlignRotated_backward_cuda(const at::Tensor& grad,
     return grad_input;
   }
 
-  AT_DISPATCH_FLOATING_TYPES(grad.type(), "ROIAlignRotated_backward", [&] {
-    RoIAlignRotatedBackwardFeature<scalar_t><<<grid, block, 0, stream>>>(
+  AT_DISPATCH_FLOATING_TYPES(grad.type(), "ROIAlignRotated3D_backward", [&] {
+    RoIAlignRotated3DBackwardFeature<scalar_t><<<grid, block, 0, stream>>>(
          grad.numel(),
          grad.contiguous().data<scalar_t>(),
          num_rois,
