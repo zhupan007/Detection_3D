@@ -50,7 +50,7 @@ def build_sparse_resnet_fpn_backbone(cfg):
   roi_scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_FROM_TOP
   voxel_scale = cfg.SPARSE3D.VOXEL_SCALE
   rpn_map_sizes = cfg.MODEL.RPN.RPN_MAP_SIZES
-  project_to_2d = cfg.MODEL.RPN.PROJECT_TO_2D
+  rpn_3d_2d_selector = cfg.MODEL.RPN.RPN_3D_2D_SELECTOR
 
   fpn = scn.FPN_Net(full_scale, dimension, raw_elements, block_reps, nPlanesF,
                     nPlaneM = nPlaneM,
@@ -60,7 +60,7 @@ def build_sparse_resnet_fpn_backbone(cfg):
                     downsample = downsample,
                     rpn_map_sizes = rpn_map_sizes,
                     voxel_scale = voxel_scale,
-                    project_to_2d = project_to_2d,
+                    rpn_3d_2d_selector = rpn_3d_2d_selector,
                     )
   return fpn
 

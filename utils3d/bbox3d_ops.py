@@ -15,6 +15,7 @@ DEBUG = True
 
 FRAME_SHOW = 1
 POINTS_KEEP_RATE = 1.0
+BOX_XSURFACE_COLOR_DIF = False
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
@@ -312,8 +313,9 @@ class Bbox3D():
     assert bbox.shape == (7,)
     corners = Bbox3D.bbox_corners(bbox, up_axis)
     colors = [color for i in range(len(Bbox3D._lines_vids))]
-    for i in Bbox3D._x_pos_lines:
-      colors[i] = [0,0,1]
+    if BOX_XSURFACE_COLOR_DIF:
+        for i in Bbox3D._x_pos_lines:
+            colors[i] = [0,0,1]
     line_set = open3d.LineSet()
     line_set.points = open3d.Vector3dVector(corners)
     line_set.lines = open3d.Vector2iVector(Bbox3D._lines_vids)

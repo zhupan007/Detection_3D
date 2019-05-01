@@ -13,6 +13,7 @@ from ..utils import cat
 from maskrcnn_benchmark.layers import smooth_l1_loss
 from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d, cat_boxlist_3d
+import numpy as np
 
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
@@ -24,8 +25,15 @@ SHOW_POS_NEG_ANCHORS = DEBUG and False
 SHOW_PRED_POS_ANCHORS = DEBUG and False
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
+  from data3d.suncg_utils.suncg_meta import SUNCG_META
   num_gt = target.bbox3d.shape[0]
+  labels = target.get_field('labels').cpu().data.numpy().astype(np.int)
+  classes = [SUNCG_META.label_2_class[l] for l in labels]
   for j in range(num_gt):
+    if classes[j] not in ['window', 'door']:
+        continue
+    target.show_highlight([j])
+
     ious_j = match_quality_matrix[j]
     mathched_inds_j = torch.nonzero(matched_idxs == j).squeeze(1)
     iou_m_j = ious_j[mathched_inds_j]
@@ -76,7 +84,7 @@ class RPNLossComputation(object):
           #anchor.show_together(target, 200)
           # RPN doesn't need any fields from target
           # for creating the labels, so clear them all
-          target = target.copy_with_fields([])
+          target = target.copy()
           # get the targets corresponding GT for each anchor
           # NB: need to clamp the indices because we can have a single
           # GT in the image, and matched_idxs can be -2, which goes

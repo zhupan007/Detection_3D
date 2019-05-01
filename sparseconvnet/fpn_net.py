@@ -12,7 +12,7 @@ class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
     def __init__(self, full_scale, dimension, raw_elements, reps, nPlanesF, nPlaneM, residual_blocks,
                   fpn_scales_from_top, roi_scales_from_top, downsample, rpn_map_sizes,
-                  leakiness=0, voxel_scale=None, project_to_2d=['Z']):
+                  rpn_3d_2d_selector, leakiness=0, voxel_scale=None, ):
         '''
         downsample:[kernel, stride] :[[2,2,2], [2,2,2]]
         '''
@@ -43,7 +43,7 @@ class FPN_Net(torch.nn.Module):
         self.linear = nn.Linear(nPlanesF[0], 20)
         self.voxel_scale = voxel_scale
         self.rpn_map_sizes = np.array( rpn_map_sizes )
-        self.project_to_2d = project_to_2d
+        self.rpn_3d_2d_selector = rpn_3d_2d_selector
 
         self.convs_pro2d = nn.ModuleList()
         for zsize in self.rpn_map_sizes[:,-1]:
@@ -169,11 +169,10 @@ class FPN_Net(torch.nn.Module):
         ups.append(self.m_mergeds[k](net))
 
       rpn_maps_3d = [ups[i] for i in self.fpn_scales_from_top]
-      if 'Z' in self.project_to_2d:
-        rpn_maps_2d = [ self.convs_pro2d[i](rpn_maps_3d[i]) for i in range(len(rpn_maps_3d))]
-        rpn_maps = rpn_maps_3d + rpn_maps_2d
-      else:
-          rpn_maps = rpn_maps_3d
+      rpn_maps_2d = [ self.convs_pro2d[i](rpn_maps_3d[i]) for i in range(len(rpn_maps_3d)) ]
+      rpn_maps = rpn_maps_3d + rpn_maps_2d
+      rpn_maps = [rpn_maps[i] for i in self.rpn_3d_2d_selector]
+
       roi_maps = [ups[i] for i in self.roi_scales_from_top]
 
       for i in range(len(rpn_maps_3d)):
@@ -233,7 +232,6 @@ class FPN_Net(torch.nn.Module):
             sparse_real_size(t,'\t')
             print('\n')
           print('--------------------------------------------------\n\n')
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
 
       return rpn_maps, roi_maps

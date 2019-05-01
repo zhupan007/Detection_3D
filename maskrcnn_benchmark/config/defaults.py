@@ -135,11 +135,11 @@ _C.MODEL.RPN.STRADDLE_THRESH = 0
 # Minimum overlap required between an anchor and ground-truth box for the
 # (anchor, gt box) pair to be a positive example (IoU >= FG_IOU_THRESHOLD
 # ==> positive RPN example) (->Matcher)
-_C.MODEL.RPN.FG_IOU_THRESHOLD = 0.6 #  0.7
+_C.MODEL.RPN.FG_IOU_THRESHOLD = 0.55 #  0.7
 # Maximum overlap allowed between an anchor and ground-truth box for the
 # (anchor, gt box) pair to be a negative examples (IoU < BG_IOU_THRESHOLD
 # ==> negative RPN example) (->Matcher)
-_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.28 # 0.3
+_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.25 # 0.3
 # Maximum yaw dif for positive anchor (->Matcher)
 _C.MODEL.RPN.YAW_THRESHOLD = 0.7
 # Total number of RPN examples per image (-> BalancedPositiveNegativeSampler)
@@ -165,8 +165,8 @@ _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 1000 #  2000
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"
 
-_C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2,1]
-_C.MODEL.RPN.PROJECT_TO_2D = ['Z']
+_C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2]
+_C.MODEL.RPN.RPN_3D_2D_SELECTOR =  [1,2,3,4,5]
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options
 # ---------------------------------------------------------------------------- #

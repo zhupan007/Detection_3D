@@ -418,6 +418,14 @@ class BoxList3D(object):
           points = points.cpu().data.numpy()
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
+    def show_highlight(self, ids):
+        from utils3d.bbox3d_ops import Bbox3D
+        ids = np.array(ids)
+        n = len(self)
+        labels = np.zeros([n]).astype(np.int)
+        labels[ids] = 1
+        boxes = self.bbox3d.cpu().data.numpy()
+        Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
     def show_by_pos_anchor(self, sampled_pos_inds, sampled_neg_inds, targets=None):
       import numpy as np

@@ -2,6 +2,7 @@
 
 
 # on going process
+- (1) one anchor mathch two objects, (2) For long objects, a low iou is matched, while other close low iou is neg
 - clip_to_pcl in bounding_box_3d.py not implemented
 - considering aug both proposal and targets in match_targets_to_proposals in roi_heads/box_head_3d/loss.py
 - \_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE
@@ -10,7 +11,7 @@
         (2)  modeling/roi_heads/box_head_3d/box_head.py: self.loss_evaluator.subsample(proposals, targets)
 - add yaw loss
 - rethink how to improve acc for long wall: add yaw loss
-- crop gt box with anchor
+- ** Big object is really hard ** crop gt box with anchor
 - multi scale: feature concate
 - IOU: area_inter / (area2 + max(0,area1*0.5 - area_inter))   
    second/core/non_max_suppression/nms_gpu.py devRotateIoUEval

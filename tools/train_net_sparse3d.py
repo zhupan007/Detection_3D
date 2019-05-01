@@ -192,23 +192,28 @@ def intact_cfg(cfg):
   fpn_scalse = cfg.MODEL.RPN.RPN_SCALES_FROM_TOP
   strides = cfg.SPARSE3D.STRIDE
   nPlanesFront = cfg.SPARSE3D.nPlanesFront
+  scales_selector_3d_2d = cfg.MODEL.RPN.RPN_3D_2D_SELECTOR
+
   scale_num = len(nPlanesFront)
   assert scale_num == len(strides) + 1
   ANCHOR_STRIDE = [np.array([1,1,1])]
   for s in range(scale_num-1):
     anchor_stride = ANCHOR_STRIDE[-1] * np.array(strides[s])
     ANCHOR_STRIDE.append(anchor_stride)
-  cfg.MODEL.RPN.ANCHOR_STRIDE = [ANCHOR_STRIDE[-i-1] for i in fpn_scalse]
+  anchor_stride = [ANCHOR_STRIDE[-i-1] for i in fpn_scalse]
+  anchor_stride = anchor_stride + anchor_stride
+  anchor_stride_final = [anchor_stride[i] for i in scales_selector_3d_2d]
+  cfg.MODEL.RPN.ANCHOR_STRIDE = anchor_stride_final
 
   #cfg.MODEL.RPN.ANCHOR_STRIDE = list(reversed([ANCHOR_STRIDE[i] for i in fpn_scalse]))
   #cfg.MODEL.RPN.ANCHOR_SIZES_3D = list(reversed( cfg.MODEL.RPN.ANCHOR_SIZES_3D ))
 
   anchor_size = cfg.MODEL.RPN.ANCHOR_SIZES_3D
-  anchor_stride = cfg.MODEL.RPN.ANCHOR_STRIDE
   ns = len(fpn_scalse)
   na = len(anchor_size)
-  assert ns==na, f"fpn_scalse num {ns} != anchor_size num {na}. The anchor size for each scale should be seperately"
-  for s in range(1,na):
+  #assert ns*2==na, f"fpn_scalse num {ns}*2 != anchor_size num {na}. The anchor size for each scale should be seperately"
+  tmp = [i for i in scales_selector_3d_2d if i <ns]
+  for s in range(1, len(tmp)):
     assert fpn_scalse[s-1] > fpn_scalse[s], "fpn should from level_id large (map large) to level_id small (map small)"
     assert anchor_size[s-1][0] < anchor_size[s][0], "ANCHOR_SIZES_3D should set from small to large, to match scale order of feature map"
     assert anchor_stride[s-1][0] < anchor_stride[s][0]
@@ -228,6 +233,16 @@ def check_roi_parameters(cfg):
 
   strides = np.array(strides)
   strides = np.cumprod(strides, 0)
+
+  # RPN
+  strides_ = np.flip(strides, 0)
+  rpn_strides = strides_[cfg.MODEL.RPN.RPN_SCALES_FROM_TOP]
+  full_scale = cfg.SPARSE3D.VOXEL_FULL_SCALE
+  rpn_map_sizes = (np.array(full_scale).reshape(1,-1) / rpn_strides).astype(np.int32)
+
+  cfg.MODEL.RPN.RPN_MAP_SIZES = rpn_map_sizes.tolist()
+
+  # ROI
   spatial_scales_all = np.flip(1.0 / strides, 0)
   roi_spatial_scales = spatial_scales_all[roi_scales, :]
   assert np.all(roi_spatial_scales[:,0] == roi_spatial_scales[:,1])
@@ -235,12 +250,6 @@ def check_roi_parameters(cfg):
 
   cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL = roi_spatial_scales_xy
 
-  strides_ = np.flip(strides, 0)
-  rpn_strides = strides_[cfg.MODEL.RPN.RPN_SCALES_FROM_TOP]
-  full_scale = cfg.SPARSE3D.VOXEL_FULL_SCALE
-  rpn_map_sizes = (np.array(full_scale).reshape(1,-1) / rpn_strides).astype(np.int32)
-
-  cfg.MODEL.RPN.RPN_MAP_SIZES = rpn_map_sizes.tolist()
 
   show = True
   if show:
