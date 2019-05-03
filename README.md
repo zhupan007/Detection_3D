@@ -2,6 +2,7 @@
 
 
 # on going process
+- 3d box encoding is not right: /home/z/Research/Detection_3D/second/pytorch/core/ box_torch_ops.py
 - (1) one anchor mathch two objects, (2) For long objects, a low iou is matched, while other close low iou is neg
 - clip_to_pcl in bounding_box_3d.py not implemented
 - considering aug both proposal and targets in match_targets_to_proposals in roi_heads/box_head_3d/loss.py
@@ -12,7 +13,7 @@
 - add yaw loss
 - rethink how to improve acc for long wall: add yaw loss
 - ** Big object is really hard ** crop gt box with anchor
-- multi scale: feature concate
+- multi scale: (1) residual (2) feature concate in each scale of pyramid (3) feature concate to one single layer
 - IOU: area_inter / (area2 + max(0,area1*0.5 - area_inter))   
    second/core/non_max_suppression/nms_gpu.py devRotateIoUEval
 - ** Decormable net/cnn ** avoid rectangle conv kernel and fixed net. use adaptive formable net. use deformable cnn. 

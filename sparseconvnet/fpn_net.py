@@ -6,7 +6,7 @@ import sparseconvnet as scn
 from .sparseConvNetTensor import SparseConvNetTensor
 import numpy as np
 
-SHOW_MODEL = False
+SHOW_MODEL = True
 
 class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
@@ -232,6 +232,7 @@ class FPN_Net(torch.nn.Module):
             sparse_real_size(t,'\t')
             print('\n')
           print('--------------------------------------------------\n\n')
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
 
       return rpn_maps, roi_maps
