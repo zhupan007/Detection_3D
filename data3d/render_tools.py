@@ -62,8 +62,8 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
 
   #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #if not show_pcl:
-  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
-  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+  #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
 
   if show_pcl:
     pcl_fn = f'{parsed_dir}/pcl_camref.ply'
@@ -75,7 +75,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
     pcl = cut_points_roof(pcl)
 
     bboxes[:,2] += 0.1
-    Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False)
+    #Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False)
     Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
 
 def render_splited_house_walls(pth_fn):
@@ -149,12 +149,17 @@ def render_cam_positions(parsed_dir):
 
 
 def render_houses(r_cam=True, r_whole=True, r_splited=True):
-  house_names = ['8c033357d15373f4079b1cecef0e065a']
-  #house_names = ['7411df25770eaf8d656cac2be42a9af0']
+  '''
+  angle%90 != 0:
+        72148738e98fe68f38ec17945d5c9730
+        8c033357d15373f4079b1cecef0e065a
+        b021ab18bb170a167d569dcfcaf58cd4
+  complicate architecture:
+      31a69e882e51c7c5dfdc0da464c3c02d *
+  '''
+  house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
-  #house_names = ['e7b3e2566e174b6fbb2864de76b50334']
-  #house_names = ['aaa535ef80b7d34f57f5d3274eec0daf']
-  #house_names = ['0a83d94e9df3a8d07c71f0fe125f4b57']
+
   #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
   for k,house_name in enumerate( house_names ):
@@ -178,10 +183,35 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
         render_splited_house_walls(pth_fn)
 
 
+def render_obj_house():
+    import pymesh
+    folder = '/DS/SUNCG/suncg_v1/parsed/31a69e882e51c7c5dfdc0da464c3c02d'
+    folder = '/home/z/SUNCG/suncg_v1/parsed/31a69e882e51c7c5dfdc0da464c3c02d'
+    fn = f'{folder}/house.obj'
+    mesh = pymesh.load_mesh(fn)
+    new_mesh_fn = f'{folder}/new_house.obj'
+
+    vertices = mesh.vertices
+    faces = mesh.faces
+    attributes = {}
+
+    mask = np.arange(10000)
+    faces = faces[mask]
+    for an in mesh.get_attribute_names():
+        attributes[an] = mesh.get_face_attribute(an)[mask]
+
+    new_mesh = pymesh.form_mesh(vertices, faces)
+    for an in attributes:
+        new_mesh.add_attribute(an)
+        new_mesh.set_attribute(an, attributes[an])
+    pymesh.save_mesh(new_mesh_fn, new_mesh, use_float=True)
+
 if __name__ == '__main__':
-  render_houses(
-        r_cam=False,
-        r_whole = 1,
-        r_splited = False
-  )
+  #render_houses(
+  #      r_cam=False,
+  #      r_whole = 1,
+  #      r_splited = False
+  #)
+
+  render_obj_house()
 

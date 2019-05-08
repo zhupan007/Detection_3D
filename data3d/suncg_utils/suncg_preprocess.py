@@ -360,10 +360,10 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[100:1500]
     else:
-      self.house_fns = house_fns[0:3]
+      self.house_fns = house_fns[0:20]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and True:
+    if Debug and False:
       scene_id0 = 'ffe929c9ed4dc7dab9a09ade502ac444' # single room
       scene_id1 = '8c033357d15373f4079b1cecef0e065a' # one level, with yaw!=0, one wall left and right has angle (31 final walls)
       scene_id2 = '28297783bce682aac7fb35a1f35f68fa' # one level, with yaw!=0 (22 final walls)
@@ -395,6 +395,7 @@ class Suncg():
   def parse_houses(self):
     #house_names_1level = []
     for k,fn in enumerate(self.house_fns):
+      print(f'\nstart {k+1}th house: \n  {fn}\n')
       parse_house_onef(fn)
       print(f'\nfinish {k+1} houses\n')
 
@@ -417,7 +418,7 @@ def parse_house_onef( house_fn):
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
-    if ONLY_LEVEL_1 and summary['level_num'] != 1:
+    if ONLY_LEVEL_1 and 'level_num' in summary and summary['level_num'] != 1:
       return
 
     if is_gen_cam:
@@ -436,7 +437,7 @@ def read_summary(base_dir):
   summary_fn = os.path.join(base_dir, 'summary.txt')
   summary = {}
   if not os.path.exists(summary_fn):
-    return summary, False
+    return summary
   with open(summary_fn, 'r') as f:
     for line in f:
       line = line.strip()
@@ -476,7 +477,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug
+    always_gen_bbox = False
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -540,7 +541,7 @@ def gen_bbox(house_fn):
       boxes = np.array(bboxes[category])
       np.savetxt(boxes_fn, boxes)
 
-    save_ply = True
+    save_ply = False
     if save_ply:
       bboxes_num = {}
       for category in bboxes.keys():
@@ -876,7 +877,11 @@ def read_object_bbox(parsed_dir, category):
 def add_exta_cam_locations(cam_fn, show=False):
   parsed_dir = os.path.dirname(cam_fn)
   walls = read_object_bbox(parsed_dir, 'wall')
-  walls = world2cam_box(walls)
+  try:
+    walls = world2cam_box(walls)
+  except:
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
   #Bbox3D.draw_bboxes(walls, 'Y', False)
   wall_corners = Bbox3D.bboxes_corners(walls, up_axis='Y').reshape([-1,3])
   walls_min = wall_corners.min(0)

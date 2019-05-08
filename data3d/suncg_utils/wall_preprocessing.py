@@ -73,8 +73,33 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
   else:
     so_same = np.abs(dif[0,3+1-dim]) < 0.15
   sz_same = np.abs(dif[0,3+2]) < 0.01
+  z_sames0 = z_same and sz_same
+  if z_sames0:
+      z_sames = z_sames0
+  else:
+      z0_max = bbox0[0,2] + bbox0[0,5] * 0.5
+      z0_min = bbox0[0,2] - bbox0[0,5] * 0.5
+      z1_max = bbox1[0,2] + bbox1[0,5] * 0.5
+      z1_min = bbox1[0,2] - bbox1[0,5] * 0.5
+      zmin_dif = np.abs(z1_min - z0_min)
+      zmax_dif = np.abs(z1_max - z0_max)
+      zmin_same = zmin_dif < 0.01
+      zmax_same = zmax_dif < 0.07
+      z_sames = zmin_same and zmax_same
+
+      if z_sames:
+        zmin_new = min(z0_min, z1_min)
+        zmax_new = max(z0_max, z1_max)
+        z_new = (zmin_new + zmax_new) / 2.0
+        z_size_new = zmax_new - zmin_new
+
+        bbox0[0,2] = z_new
+        bbox0[0,5] = z_size_new
+        bbox1[0,2] = z_new
+        bbox1[0,5] = z_size_new
+
   yaw_same = np.abs(dif[0,-1]) < 0.05
-  if not (z_same and so_same and sz_same and yaw_same):
+  if not (z_sames and so_same and yaw_same):
     return None
 
   cen_direc = dif[:,0:2]
