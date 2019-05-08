@@ -271,7 +271,7 @@ def read_room_obj(obj_fn, room_parts_dir):
   bboxs_roomparts = [part['bbox'] for part in mesh_parts]
   room_name = os.path.splitext(os.path.basename(obj_fn))[0]
 
-  is_save_part = True
+  is_save_part = False
   if is_save_part:
     print(f'save room parts in:\n {room_parts_dir}')
     for i in range(len(mesh_parts)):
@@ -536,16 +536,23 @@ def gen_bbox(house_fn):
     if not os.path.exists(object_bbox_dir):
       os.makedirs(object_bbox_dir)
 
+    bboxes_num = {}
     for category in bboxes.keys():
+      bboxes_num[category] = len(bboxes[category])
       boxes_fn = os.path.join(object_bbox_dir, category+'.txt')
       boxes = np.array(bboxes[category])
       np.savetxt(boxes_fn, boxes)
 
+    #######################
+    print(f'parsed_dir: {parsed_dir}')
+    write_summary(parsed_dir, 'level_num', level_num, 'w')
+    for obj in ['room', 'wall', 'window', 'door', 'floor', 'ceiling']:
+        write_summary(parsed_dir, f'{obj}_num', bboxes_num[obj], 'a')
+
+    #######################
     save_ply = False
     if save_ply:
-      bboxes_num = {}
       for category in bboxes.keys():
-        bboxes_num[category] = len(bboxes[category])
         for i,bbox in enumerate(bboxes[category]):
           box_dir = os.path.join(object_bbox_dir,'{}'.format(category))
           if not os.path.exists(box_dir):
@@ -555,11 +562,6 @@ def gen_bbox(house_fn):
           bbox_cam = world2cam_box(bbox.reshape([1,7]))[0]
           Bbox3D.draw_bbox_open3d(bbox_cam, 'Y', plyfn=box_fn)
 
-      #######################
-      print(f'parsed_dir: {parsed_dir}')
-      write_summary(parsed_dir, 'level_num', level_num, 'w')
-      for obj in ['room', 'wall', 'window', 'door', 'floor', 'ceiling']:
-        write_summary(parsed_dir, f'{obj}_num', bboxes_num[obj], 'a')
 
 def split_room_parts(house_fn, modelId):
     tmp = house_fn.split('/')

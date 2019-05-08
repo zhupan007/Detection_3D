@@ -62,11 +62,14 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
 
   #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #if not show_pcl:
-  #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
-  #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
 
   if show_pcl:
     pcl_fn = f'{parsed_dir}/pcl_camref.ply'
+    if not os.path.exists(pcl_fn):
+        return
+
     pcd = open3d.read_point_cloud(pcl_fn)
     points = np.asarray(pcd.points)
     points = cam2world_pcl(points)
@@ -151,14 +154,17 @@ def render_cam_positions(parsed_dir):
 def render_houses(r_cam=True, r_whole=True, r_splited=True):
   '''
   angle%90 != 0:
-        72148738e98fe68f38ec17945d5c9730
-        8c033357d15373f4079b1cecef0e065a
+        72148738e98fe68f38ec17945d5c9730 *
+        b021ab18bb170a167d569dcfcaf58cd4 *
+        8c033357d15373f4079b1cecef0e065a **
         b021ab18bb170a167d569dcfcaf58cd4
   complicate architecture:
-      31a69e882e51c7c5dfdc0da464c3c02d *
+      31a69e882e51c7c5dfdc0da464c3c02d **
   '''
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
+  house_names = ['72148738e98fe68f38ec17945d5c9730']
+  house_names = ['8c033357d15373f4079b1cecef0e065a']
 
   #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
@@ -207,11 +213,10 @@ def render_obj_house():
     pymesh.save_mesh(new_mesh_fn, new_mesh, use_float=True)
 
 if __name__ == '__main__':
-  #render_houses(
-  #      r_cam=False,
-  #      r_whole = 1,
-  #      r_splited = False
-  #)
+  render_houses(
+        r_cam=False,
+        r_whole = 1,
+        r_splited = False
+  )
 
-  render_obj_house()
 
