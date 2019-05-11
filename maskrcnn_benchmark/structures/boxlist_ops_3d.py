@@ -86,7 +86,7 @@ def iou_one_dim(targets_z, anchors_z):
     iou_z = overlap / common
     return iou_z
 
-def boxlist_iou_3d(targets, anchors, aug_wall_target_thickness):
+def boxlist_iou_3d(targets, anchors, aug_wall_target_thickness, criterion, only_xy=False):
   '''
   about criterion check:
     second.core.non_max_suppression.nms_gpu/devRotateIoUEval
@@ -106,11 +106,14 @@ def boxlist_iou_3d(targets, anchors, aug_wall_target_thickness):
   # aug thickness. When thickness==0, iou is wrong
   targets_2d[:,2] += aug_wall_target_thickness # 0.25
   # criterion=1: use targets_2d as ref
-  iou2d = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=2, device_id=cuda_index)
+  iou2d = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=criterion, device_id=cuda_index)
   iou2d = torch.from_numpy(iou2d)
   iou2d = iou2d.to(targets.bbox3d.device)
 
-  iou3d = iou2d * iouz
+  if only_xy:
+      iou3d = iou2d
+  else:
+      iou3d = iou2d * iouz
 
   if DEBUG:
     mask = iou3d == iou3d.max()

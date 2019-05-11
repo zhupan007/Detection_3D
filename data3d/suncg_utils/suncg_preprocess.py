@@ -24,6 +24,7 @@ Debug = True
 FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
+ENABLE_NO_RECTANGLE = ['Ceiling', 'Floor', 'Room']
 SAGE = False
 
 ONLY_LEVEL_1 = True
@@ -184,7 +185,7 @@ def merge_inside_out(mesh_parts):
             break
   return new_parts
 
-def gen_mesh(vertices, triangle, color=[0,0,0], only_genmesh=False):
+def show_mesh(vertices, triangle, color=[0,0,0], only_genmesh=False):
   mesh = open3d.TriangleMesh()
   mesh.vertices = open3d.Vector3dVector(vertices)
   mesh.triangles = open3d.Vector3iVector(triangle)
@@ -199,15 +200,20 @@ def get_part_bbox(vertices, triangle, triangle_norms, name=''):
   '''
     bbox: [xc, yc, zc, x_size, y_size, z_size, yaw]
   '''
+  #show_mesh(vertices, triangle)
+  class_name = name.split('#')[0]
+
   box_min = np.min( vertices, 0)
   box_max = np.max( vertices, 0)
+
   centroid = (box_min + box_max)  /2.0
   y_size = box_max[1] - box_min[1]
+
 
   ## Find the 8 outside corners
   distances = np.linalg.norm( vertices - np.expand_dims( centroid, 0 ), axis=1)
   max_dis = max(distances)
-  out_corner_mask = (abs(distances-max_dis) < 1e-9)
+  out_corner_mask = (abs(distances-max_dis) < 1e-5)
   n0 = vertices.shape[0]
   #print([i for i in range(n0) if out_corner_mask[i]])
   out_vertices = [vertices[i:i+1,:] for i in range(n0) if out_corner_mask[i]]
@@ -216,11 +222,23 @@ def get_part_bbox(vertices, triangle, triangle_norms, name=''):
     pass
     return None
   out_vertices = np.concatenate(out_vertices, 0)
-  #gen_mesh(vertices, triangle)
+
+
   if out_vertices.shape[0] != 8:
     #Bbox3D.draw_points_open3d(out_vertices, show=True)
-    print(f'\nFailed to find bbox, not rectangle, {out_vertices.shape[0]} vertices\n')
-    return None
+    #Bbox3D.draw_points_open3d(vertices, show=True)
+    #show_mesh(vertices, triangle)
+    if class_name  not in ENABLE_NO_RECTANGLE:
+        print(f'\nFailed to find bbox, not rectangle, {class_name} \n {out_vertices.shape[0]} vertices\n')
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        pass
+        return None
+    else:
+        print(f'\nNot rectangle, use no yaw box, {class_name} \n {out_vertices.shape[0]} vertices\n')
+        min_max = {'min':box_min, 'max':box_max}
+        bbox_noyaw = Bbox3D.bbox_from_minmax( min_max )
+        #Bbox3D.draw_points_bboxes(vertices, bbox_noyaw, 'Y', is_yx_zb=False)
+        return bbox_noyaw
 
   ## Find the 4 corners on one side
   x_right_mask = out_vertices[:,0]-centroid[0] > 0
@@ -261,12 +279,18 @@ def get_part_bbox(vertices, triangle, triangle_norms, name=''):
   ### Check
   if yaw!=0 and False:
     Bbox3D.draw_bboxes(bbox, 'Y', False)
+
+  if False:
+      min_max = {'min':box_min, 'max':box_max}
+      bbox_noyaw = Bbox3D.bbox_from_minmax( min_max )
+      bboxes_show = np.concatenate([bbox.reshape([1,7]), bbox_noyaw.reshape([1,7])], 0)
+      Bbox3D.draw_points_bboxes(vertices, bboxes_show, 'Y', is_yx_zb=False)
   return bbox
 
 
 def read_room_obj(obj_fn, room_parts_dir):
   import pymesh
-  mesh0 = pymesh.load_mesh(obj_fn)
+  #mesh0 = pymesh.load_mesh(obj_fn)
   mesh_parts = read_obj_parts(obj_fn)
   bboxs_roomparts = [part['bbox'] for part in mesh_parts]
   room_name = os.path.splitext(os.path.basename(obj_fn))[0]
@@ -360,7 +384,7 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[100:1500]
     else:
-      self.house_fns = house_fns[0:20]
+      self.house_fns = house_fns[0:100]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
@@ -378,7 +402,8 @@ class Suncg():
 
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-      scene_id = scene_id1
+
+      scene_id = scene_id10
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -477,7 +502,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = False
+    always_gen_bbox = Debug and True
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -588,6 +613,8 @@ def split_room_parts(house_fn, modelId):
     return room_bboxes
 
 def gen_pcl(house_fn):
+    if Debug:
+        return
     always_gen_pcl = False
     check_points_out_of_house = False
 

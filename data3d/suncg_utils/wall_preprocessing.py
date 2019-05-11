@@ -4,6 +4,10 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import limit_period, vertical_dis_1point_lines, \
              vertical_dis_points_lines, ave_angles
 from render_tools import show_walls_offsetz, show_walls_1by1
+from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu, rotate_iou_gpu_eval
+
+MERGE_Z_ANYWAY_XYIOU_THRESHOLD = 0.75
+DEBUG = False
 
 def preprocess_walls(wall_bboxes):
   '''
@@ -14,6 +18,7 @@ def preprocess_walls(wall_bboxes):
     4) Clean repeated walls
   '''
   #show_walls_offsetz(wall_bboxes)
+  #Bbox3D.draw_bboxes_mesh(wall_bboxes, 'Z', False)
   #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
   wall_bboxes = Bbox3D.define_walls_direction(wall_bboxes, 'Z', yx_zb=False, check_thickness=True)
 
@@ -84,8 +89,24 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
       zmin_dif = np.abs(z1_min - z0_min)
       zmax_dif = np.abs(z1_max - z0_max)
       zmin_same = zmin_dif < 0.01
-      zmax_same = zmax_dif < 0.07
+      zmax_same = zmax_dif < 0.03
       z_sames = zmin_same and zmax_same
+
+      if not zmax_same:
+        iou_xy = rotate_iou_gpu(bbox0[:,[0,1,3,4,6]], bbox1[:,[0,1,3,4,6]])
+        #print(f'box0 : {bbox0}')
+        #print(f'box1 : {bbox1}')
+        print(f'zmin_dif:{zmin_dif}, zmax_dif:{zmax_dif}\n iou_xy:{iou_xy}\n')
+        if iou_xy > MERGE_Z_ANYWAY_XYIOU_THRESHOLD:
+            print('Merge even z is different')
+            z_sames = True
+        else:
+            print('abort merging because of z is different')
+        if DEBUG:
+            box_show = np.concatenate([bbox0, bbox1], 0)
+            Bbox3D.draw_bboxes(box_show, 'Z', False)
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
 
       if z_sames:
         zmin_new = min(z0_min, z1_min)
@@ -99,6 +120,8 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
         bbox1[0,5] = z_size_new
 
   yaw_same = np.abs(dif[0,-1]) < 0.05
+
+
   if not (z_sames and so_same and yaw_same):
     return None
 
@@ -115,12 +138,6 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
     if not overlap_mask1:
       return None
 
-  if (bbox0[:,[2,5]] != bbox1[:,[2,5]]).any():
-    print("Merge two walls with different z is not implemented")
-    show_box = np.concatenate([bbox0, bbox1], 0)
-    Bbox3D.draw_bboxes(show_box, 'Z', False)
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    pass
 
   centroid_lines1 = Bbox3D.bboxes_centroid_lines(bbox1, 'X' if dim == 1 else 'Y', 'Z')
   cen_dis = vertical_dis_1point_lines(bbox0[0,0:3], centroid_lines1)[0]
@@ -130,6 +147,8 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
 
   is_box0_covered_by_1 = size_dim1*0.5 > cen_dis + size_dim0*0.5
   is_box1_covered_by_0 = size_dim0*0.5 > cen_dis + size_dim1*0.5
+
+
   if is_box0_covered_by_1:
     merged = bbox1
   elif is_box1_covered_by_0:
@@ -301,6 +320,8 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
             try:
               wall_bboxes[idx] = box_merge.reshape([7])
             except:
+              show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
+              Bbox3D.draw_bboxes(show_boxes, 'Z', False)
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
             remain_mask[i] = False

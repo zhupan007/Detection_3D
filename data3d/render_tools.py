@@ -12,9 +12,10 @@ SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 
+#CLASSES = ['wall', 'ceiling']
 CLASSES = ['wall', 'window', 'door']
-#CLASSES += ['ceiling', 'floor']
-#CLASSES += ['floor']
+#CLASSES = ['ceiling', 'floor']
+CLASSES += ['floor']
 #CLASSES += ['room']
 
 def show_walls_1by1(wall_bboxes):
@@ -29,7 +30,7 @@ def show_walls_1by1(wall_bboxes):
 def show_walls_offsetz(wall_bboxes):
   n = wall_bboxes.shape[0]
   wall_bboxes = wall_bboxes.copy()
-  wall_bboxes[:,2] += np.random.rand(n)*2
+  wall_bboxes[:,2] += np.random.rand(n)*1
   print(f'totally {n} walls')
   Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
 
@@ -63,7 +64,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
   #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #if not show_pcl:
   Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
-  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
 
   if show_pcl:
     pcl_fn = f'{parsed_dir}/pcl_camref.ply'
@@ -79,7 +80,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
 
     bboxes[:,2] += 0.1
     #Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False)
-    Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
+    #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
 
 def render_splited_house_walls(pth_fn):
   pcl, bboxes = torch.load(pth_fn)
@@ -157,16 +158,16 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
         72148738e98fe68f38ec17945d5c9730 *
         b021ab18bb170a167d569dcfcaf58cd4 *
         8c033357d15373f4079b1cecef0e065a **
-        b021ab18bb170a167d569dcfcaf58cd4
+        b021ab18bb170a167d569dcfcaf58cd4 ** small angle
   complicate architecture:
       31a69e882e51c7c5dfdc0da464c3c02d **
   '''
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
-  house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
-  house_names = ['72148738e98fe68f38ec17945d5c9730']
-  house_names = ['8c033357d15373f4079b1cecef0e065a']
+  #house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
+  #house_names = ['72148738e98fe68f38ec17945d5c9730']
+  #house_names = ['8c033357d15373f4079b1cecef0e065a']
 
-  #house_names = os.listdir(PARSED_DIR)
+  house_names = os.listdir(PARSED_DIR)
   house_names.sort()
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
