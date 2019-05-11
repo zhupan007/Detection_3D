@@ -18,6 +18,7 @@ from wall_preprocessing import preprocess_walls
 from window_preprocessing import preprocess_windows
 from door_preprocessing import preprocess_doors
 from utils3d.bbox3d_ops import Bbox3D
+from suncg_meta import SUNCG_META
 
 
 Debug = True
@@ -548,7 +549,15 @@ def gen_bbox(house_fn):
         bboxes[obj] = np.concatenate([b.reshape([1,7]) for b in bboxes[obj]], 0)
       else:
         bboxes[obj] = np.array(bboxes[obj]).reshape([-1,7])
+
       bboxes[obj] = cam2world_box(bboxes[obj])
+
+    for obj in SUNCG_META.class_2_label:
+        if obj == 'background':
+            continue
+        if obj not in bboxes:
+            bboxes[obj] = np.array(bboxes[obj]).reshape([-1,7])
+
 
     level_num = len(house['levels'])
     if level_num == 1:

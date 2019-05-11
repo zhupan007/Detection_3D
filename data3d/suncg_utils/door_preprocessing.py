@@ -14,6 +14,8 @@ def preprocess_doors(doors0, walls, door_thickness=0.18):
   walls:[w,7]
   '''
   door_n = doors0.shape[0]
+  if door_n == 0:
+      return doors0
   wall_n = walls.shape[0]
   walls_1 = walls.copy()
   # (1) Find the coresponding wall of each door
