@@ -77,7 +77,7 @@ class RPNLossComputation(object):
           matched_idxs = torch.ones([anchor.bbox3d.shape[0]], dtype=torch.int64, device=anchor.bbox3d.device) * (-1)
           matched_targets = anchor
         else:
-          match_quality_matrix = boxlist_iou_3d(target, anchor, aug_wall_target_thickness=0.25)
+          match_quality_matrix = boxlist_iou_3d(target, anchor, aug_wall_target_thickness=0.25, criterion=2)
           yaw_diff = angle_dif(anchor.bbox3d[:,-1].view(1,-1),  target.bbox3d[:,-1].view(-1,1), 0)
           yaw_diff = torch.abs(yaw_diff)
           matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff)
@@ -95,6 +95,7 @@ class RPNLossComputation(object):
         if SHOW_IGNORED_ANCHOR:
           sampled_ign_inds = torch.nonzero(matched_idxs==-2).squeeze(1)
           anchors_ign = anchor[sampled_ign_inds]
+          print(f'\n ignore {len(target)} anchors')
           anchors_ign.show_together(target)
 
         if CHECK_MATCHER and target.bbox3d.shape[0]>0:
@@ -221,6 +222,7 @@ class RPNLossComputation(object):
       for bi in range(bs):
         anchors_bi = anchors.example(bi)
         pos_anchors_bi = anchors_bi[pos_inds_examples[bi]]
+        print(f'\n{len(targets[bi])} positive anchors')
         pos_anchors_bi.show_together(targets[bi])
       import pdb; pdb.set_trace()  # XXX BREAKPOINT
       pass

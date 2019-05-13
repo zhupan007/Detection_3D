@@ -23,7 +23,7 @@ PARSED_DIR = f'{DSET_DIR}/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 MAX_FLOAT_DRIFT = 1e-6
 DATASET = 'SUNCG'
-CLASSES_USED = ['wall', 'window', 'door']
+CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
 
 def points2pcd_open3d(points):
   assert points.shape[-1] == 3

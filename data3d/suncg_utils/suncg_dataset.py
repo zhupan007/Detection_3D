@@ -60,7 +60,10 @@ class SUNCGDataset(torch.utils.data.Dataset):
         b = pcl_i
         bboxes_dic_i = {}
         for obj in objects_to_detect:
-          assert obj in bboxes_dic_i_0 or obj=='background', f"unknow class {obj}"
+            if not ( obj in bboxes_dic_i_0 or obj=='background'):
+                print(f"unknow class {obj}")
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                assert False
         for obj in bboxes_dic_i_0:
           if ('all' in objects_to_detect) or (obj in objects_to_detect):
             bboxes_dic_i[obj] = Bbox3D.convert_to_yx_zb_boxes(bboxes_dic_i_0[obj])
