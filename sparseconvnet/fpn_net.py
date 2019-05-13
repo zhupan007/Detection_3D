@@ -6,7 +6,7 @@ import sparseconvnet as scn
 from .sparseConvNetTensor import SparseConvNetTensor
 import numpy as np
 
-SHOW_MODEL = True
+SHOW_MODEL = False
 
 class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL

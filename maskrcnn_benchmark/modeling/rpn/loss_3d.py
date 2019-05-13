@@ -15,11 +15,13 @@ from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d, cat_boxlist_3d
 import numpy as np
 
+from data3d.suncg_utils.suncg_meta import SUNCG_META
+
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
 CHECK_MATCHER = DEBUG and False
 
-SHOW_IGNORED_ANCHOR = DEBUG and True
+SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and True
 
 SHOW_PRED_POS_ANCHORS = DEBUG and False
@@ -91,6 +93,9 @@ class RPNLossComputation(object):
           # out of bounds
           matched_targets = target[matched_idxs.clamp(min=0)]
         matched_targets.add_field("matched_idxs", matched_idxs)
+
+        if SHOW_POS_NEG_ANCHORS:
+            self.matched_idxs = matched_idxs
 
         if SHOW_IGNORED_ANCHOR:
           sampled_ign_inds = torch.nonzero(matched_idxs==-2).squeeze(1)
@@ -216,15 +221,48 @@ class RPNLossComputation(object):
         return objectness_loss, box_loss
 
     def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds, targets):
+      labels_all = list(SUNCG_META.label_2_class.keys())
+      labels_all = [l for  l in labels_all if l!=0]
+      anchors.add_field('matched_idxs', self.matched_idxs.cpu().data.numpy().astype(np.int))
       pos_inds_examples = anchors.seperate_items_to_examples(sampled_pos_inds)
       neg_inds_examples = anchors.seperate_items_to_examples(sampled_neg_inds)
       bs = anchors.batch_size()
       for bi in range(bs):
+        targets_bi = targets[bi]
+        labels_bi = targets_bi.get_field('labels').cpu().data.numpy()
+        #label_nums = [ np.sum(labels_bi==l) for l in labels_all ]
         anchors_bi = anchors.example(bi)
         pos_anchors_bi = anchors_bi[pos_inds_examples[bi]]
+        matched_idxs = pos_anchors_bi.get_field('matched_idxs').cpu().data.numpy().astype(np.int)
+        labels_pos = labels_bi[matched_idxs]
+        #pos_label_nums = [ np.sum(labels_pos==l) for l in labels_all ]
+        mask_targ = np.ones(len(targets_bi))
+        mask_targ[matched_idxs] = 0
+        missed_targets_ids = np.nonzero(mask_targ)[0]
+        missed_targets_label = labels_bi[missed_targets_ids]
+        missed_targets_name = [SUNCG_META.label_2_class[l] for l in missed_targets_label]
+        missed_targets = targets_bi[missed_targets_ids]
+        missed_targets.bbox3d[:,2] += 0.2
+
         print(f'\n{len(targets[bi])} positive anchors')
+        print(f'labels_pos: \n {labels_pos}')
+        print(f'missed_targets_ids: {missed_targets_ids}')
+        print(f'missed_targets_label: {missed_targets_label}, {missed_targets_name}')
         pos_anchors_bi.show_together(targets[bi])
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        if len(missed_targets_ids)>0:
+            print('missed targets')
+            missed_targets.show_together(targets_bi)
+
+        for l in labels_all:
+            mask_l = labels_pos == l
+            idxs_l = np.nonzero(mask_l)[0]
+            class_name = SUNCG_META.label_2_class[ l ]
+            print(f'pos anchors for {class_name}')
+            if len(idxs_l)==0:
+                print('no pos anchors')
+            else:
+                pos_anchors_bi[idxs_l].show_together(targets_bi)
+
       pass
 
     def show_pos_anchors_pred(self, rpn_box_regression, anchors, objectness,
