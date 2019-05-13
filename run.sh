@@ -4,12 +4,9 @@ export PYTHONPATH=$PWD
 TEST='--skip-test'
 #TEST='--only-test'
 
-#CONFIG_FILE='proj2d_4c.yaml'
-CONFIG_FILE='sparse_3d_4c.yaml'
-#CONFIG_FILE='sparse_3d_4c_bs10.yaml'
+CONFIG_FILE='3d1_bs1.yaml'
+#CONFIG_FILE='3d1_bs10.yaml'
 
-#export CUDA_VISIBLE_DEVICES=1
-#CONFIG_FILE='proj2d_2c.yaml'
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 
