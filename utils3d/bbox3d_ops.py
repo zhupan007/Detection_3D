@@ -440,6 +440,8 @@ class Bbox3D():
       out:
         centroid_lines: [n, 2,3]
     '''
+    if bboxes.shape[0] == 0:
+        return np.empty([0,2,3])
     corners = Bbox3D.bboxes_corners(bboxes, up_axis)
     if cen_axis == 'X':
       neg_vs = Bbox3D._xneg_vs
