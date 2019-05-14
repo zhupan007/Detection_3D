@@ -20,6 +20,9 @@ def preprocess_walls(wall_bboxes):
   #show_walls_offsetz(wall_bboxes)
   #Bbox3D.draw_bboxes_mesh(wall_bboxes, 'Z', False)
   #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
+  if wall_bboxes.shape[0] == 0:
+      return wall_bboxes
+
   wall_bboxes = Bbox3D.define_walls_direction(wall_bboxes, 'Z', yx_zb=False, check_thickness=True)
 
 
@@ -180,6 +183,8 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
     1) Find all the walls with not both corners intersected
     2) Merge all the walls can be merged
   '''
+  if wall_bboxes.shape[0] == 0:
+      return wall_bboxes
   intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, check_same_height=False, only_on_corners=True)
   num_inters = np.array([it.shape[0] for it in intersections])
   mask = num_inters < 2
@@ -234,6 +239,8 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
     2) Merge along Y
   '''
   from utils3d.geometric_util import angle_with_x, vertical_dis_points_lines
+  if wall_bboxes.shape[0] == 0:
+      return wall_bboxes
   show = False
   if show:
     wall_bboxes0 = wall_bboxes.copy()
@@ -570,6 +577,8 @@ def crop_walls(wall_bboxes):
     crop walls with intersections not on the corner
   '''
   #show_walls_1by1(wall_bboxes)
+  if wall_bboxes.shape[0]==0:
+      return wall_bboxes
 
   intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, check_same_height=False, not_on_corners=True)
   n = wall_bboxes.shape[0]
