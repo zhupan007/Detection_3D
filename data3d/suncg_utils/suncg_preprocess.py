@@ -388,7 +388,7 @@ class Suncg():
       self.house_fns = house_fns[0:100]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and True:
+    if Debug and False:
       scene_id0 = 'ffe929c9ed4dc7dab9a09ade502ac444' # single room
       scene_id1 = '8c033357d15373f4079b1cecef0e065a' # one level, with yaw!=0, one wall left and right has angle (31 final walls)
       scene_id2 = '28297783bce682aac7fb35a1f35f68fa' # one level, with yaw!=0 (22 final walls)
@@ -405,7 +405,6 @@ class Suncg():
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
 
       scene_id = scene_id10
-      scene_id = '004356129bb908cd2db89527f4b2e2d6'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -504,7 +503,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug and True
+    always_gen_bbox = Debug
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -623,8 +622,6 @@ def split_room_parts(house_fn, modelId):
     return room_bboxes
 
 def gen_pcl(house_fn):
-    if Debug:
-        return
     always_gen_pcl = False
     check_points_out_of_house = False
 
