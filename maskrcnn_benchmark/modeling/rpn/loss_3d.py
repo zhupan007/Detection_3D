@@ -19,7 +19,7 @@ from data3d.suncg_utils.suncg_meta import SUNCG_META
 
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
-CHECK_MATCHER = DEBUG and False
+CHECK_MATCHER = DEBUG and True
 
 SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
@@ -28,19 +28,24 @@ SHOW_PRED_POS_ANCHORS = DEBUG and False
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
   from data3d.suncg_utils.suncg_meta import SUNCG_META
+  ONLY_MISSED_TARGET = True
+
   num_gt = target.bbox3d.shape[0]
   labels = target.get_field('labels').cpu().data.numpy().astype(np.int)
   classes = [SUNCG_META.label_2_class[l] for l in labels]
   for j in range(num_gt):
-    if classes[j] not in ['window', 'door']:
-        continue
-    target.show_highlight([j])
-
     ious_j = match_quality_matrix[j]
     mathched_inds_j = torch.nonzero(matched_idxs == j).squeeze(1)
     iou_m_j = ious_j[mathched_inds_j]
     a_m_j = anchor[mathched_inds_j]
+
+    if ONLY_MISSED_TARGET and mathched_inds_j.shape[0] != 0:
+        continue
+
+    print(f'\n{j}-th target The checked {classes[j]}\n')
     print(f"matched iou: {iou_m_j}")
+    target.show_highlight([j])
+
     a_m_j.show_together(target[j], points=anchor.bbox3d[:,0:3] )
 
     ious_j_top, ids_top_j = ious_j.topk(5)
@@ -48,8 +53,13 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
 
     for k in range(len(ids_top_j)):
       a_j_top = anchor[ids_top_j[k]]
-      print(f"iou:{ious_j_top[k]}")
+      the_matched_idx = matched_idxs[ids_top_j[k]]
+      print(f"iou:{ious_j_top[k]}, matched idx:{the_matched_idx}")
       a_j_top.show_together(target[j], points=anchor.bbox3d[:,0:3])
+      if the_matched_idx >= 0:
+        iou_another = match_quality_matrix[the_matched_idx, ids_top_j[k]]
+        print(f'this anchor matched with another target with iou: {iou_another}')
+        a_j_top.show_together(target[[j, the_matched_idx]], points=anchor.bbox3d[:,0:3])
     import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -248,10 +258,12 @@ class RPNLossComputation(object):
         print(f'labels_pos: \n {labels_pos}')
         print(f'missed_targets_ids: {missed_targets_ids}')
         print(f'missed_targets_label: {missed_targets_label}, {missed_targets_name}')
-        pos_anchors_bi.show_together(targets[bi])
         if len(missed_targets_ids)>0:
             print('missed targets')
             missed_targets.show_together(targets_bi)
+        else:
+            print('no target missed')
+        pos_anchors_bi.show_together(targets[bi])
 
         for l in labels_all:
             mask_l = labels_pos == l
