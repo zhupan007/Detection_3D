@@ -1,6 +1,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 
+DEBUG = True
+CHECK_SMAE_ANCHOR_MATCH_MULTI_TARGETS = DEBUG and False
+CHECK_MISSED_TARGETS_NUM = DEBUG and False
+
+ENALE_SECOND_THIRD_MAX = True # reduce missed target
 
 class Matcher(object):
     """
@@ -35,13 +40,15 @@ class Matcher(object):
                 set_low_quality_matches_ for more details.
         """
         assert low_threshold <= high_threshold
-        assert yaw_threshold < 1.57
+        #assert yaw_threshold < 1.57
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
         self.yaw_threshold = yaw_threshold
 
     def yaw_diff_constrain(self, match_quality_matrix, yaw_diff):
+        if self.yaw_threshold > 1.58:
+            return match_quality_matrix
         mask = torch.abs(yaw_diff) < self.yaw_threshold
         match_quality_matrix_new = match_quality_matrix * mask.float()
         return match_quality_matrix_new
@@ -88,9 +95,15 @@ class Matcher(object):
         if self.allow_low_quality_matches:
             self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
+        if CHECK_MISSED_TARGETS_NUM:
+            target_num = match_quality_matrix.shape[0]
+            tmp = matches[matches>=0]
+            detected_num = torch.unique(tmp).shape[0]
+            missed_num = target_num - detected_num
+            print(f'missed target num: {missed_num}')
         return matches
 
-    def set_low_quality_matches_(self, matches, all_matches, match_quality_matrix):
+    def set_low_quality_matches_(self, matches, all_matches, match_quality_matrix0):
         """
         Produce additional matches for predictions that have only low-quality matches.
         Specifically, for each ground-truth find the set of predictions that have
@@ -98,6 +111,15 @@ class Matcher(object):
         it is unmatched, then match it to the ground-truth with which it has the highest
         quality value.
         """
+        match_quality_matrix = match_quality_matrix0.clone()
+
+        if ENALE_SECOND_THIRD_MAX:
+            matched_vals_0, matches_0 = match_quality_matrix.max(dim=0)
+            mask_only_max = match_quality_matrix*0
+            tmp = torch.ones(matches_0.shape, device=matches_0.device)
+            mask_only_max = mask_only_max.scatter(0, matches_0.view(1,-1), tmp.view(1,-1))
+            match_quality_matrix *= mask_only_max
+
         # For each gt, find the prediction with which it has highest quality
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
         # Find highest quality match available, even if it is low, including ties
@@ -120,6 +142,13 @@ class Matcher(object):
 
         pred_inds_to_update = gt_pred_pairs_of_highest_quality[:, 1]
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
+
+        if CHECK_SMAE_ANCHOR_MATCH_MULTI_TARGETS:
+            one_anchor_multi_targets = pred_inds_to_update.shape[0] - torch.unique(pred_inds_to_update).shape[0]
+            if one_anchor_multi_targets >0:
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                pass
+
 
 
 

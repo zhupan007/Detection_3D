@@ -19,7 +19,7 @@ from data3d.suncg_utils.suncg_meta import SUNCG_META
 
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
-CHECK_MATCHER = DEBUG and True
+CHECK_MATCHER = DEBUG and False
 
 SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
@@ -28,7 +28,7 @@ SHOW_PRED_POS_ANCHORS = DEBUG and False
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
   from data3d.suncg_utils.suncg_meta import SUNCG_META
-  ONLY_MISSED_TARGET = True
+  ONLY_MISSED_TARGET = False
 
   num_gt = target.bbox3d.shape[0]
   labels = target.get_field('labels').cpu().data.numpy().astype(np.int)
@@ -43,9 +43,9 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
         continue
 
     print(f'\n{j}-th target The checked {classes[j]}\n')
-    print(f"matched iou: {iou_m_j}")
     target.show_highlight([j])
 
+    print(f"matched iou: {iou_m_j}")
     a_m_j.show_together(target[j], points=anchor.bbox3d[:,0:3] )
 
     ious_j_top, ids_top_j = ious_j.topk(5)
@@ -54,15 +54,14 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
     for k in range(len(ids_top_j)):
       a_j_top = anchor[ids_top_j[k]]
       the_matched_idx = matched_idxs[ids_top_j[k]]
-      print(f"iou:{ious_j_top[k]}, matched idx:{the_matched_idx}")
+      print(f"\n\niou:{ious_j_top[k]}, matched idx:{the_matched_idx}")
       a_j_top.show_together(target[j], points=anchor.bbox3d[:,0:3])
-      if the_matched_idx >= 0:
+      if the_matched_idx >= 0 and the_matched_idx!=j:
         iou_another = match_quality_matrix[the_matched_idx, ids_top_j[k]]
         print(f'this anchor matched with another target with iou: {iou_another}')
         a_j_top.show_together(target[[j, the_matched_idx]], points=anchor.bbox3d[:,0:3])
     import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   pass
 
 class RPNLossComputation(object):
