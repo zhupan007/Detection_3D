@@ -3,9 +3,9 @@ import torch
 
 DEBUG = True
 CHECK_SMAE_ANCHOR_MATCH_MULTI_TARGETS = DEBUG and False
-CHECK_MISSED_TARGETS_NUM = DEBUG and False
+CHECK_MISSED_TARGETS_NUM = DEBUG and True
 
-ENALE_SECOND_THIRD_MAX = True # reduce missed target
+ENALE_SECOND_THIRD_MAX__ONLY_HIGHEST_IOU_TARGET = True # reduce missed target
 
 class Matcher(object):
     """
@@ -113,7 +113,12 @@ class Matcher(object):
         """
         match_quality_matrix = match_quality_matrix0.clone()
 
-        if ENALE_SECOND_THIRD_MAX:
+        if ENALE_SECOND_THIRD_MAX__ONLY_HIGHEST_IOU_TARGET:
+            # If one anchor has the maximum ious with multiple, some targets may
+            # match no anchor.
+            # An anchor can only be matched to the target, which has the largest iou
+            # with it. As a result, a target may match the second or third ...
+            # highest iou. This can guarantee every target not be missed.
             matched_vals_0, matches_0 = match_quality_matrix.max(dim=0)
             mask_only_max = match_quality_matrix*0
             tmp = torch.ones(matches_0.shape, device=matches_0.device)
@@ -148,7 +153,5 @@ class Matcher(object):
             if one_anchor_multi_targets >0:
                 import pdb; pdb.set_trace()  # XXX BREAKPOINT
                 pass
-
-
 
 
