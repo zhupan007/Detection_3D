@@ -5,7 +5,6 @@ export PYTHONPATH=$PWD
 TEST='--skip-test'
 #TEST='--only-test'
 
-CONFIG_FILE='fpn432_3d01_bs1.yaml'
 CONFIG_FILE='fpn432_3d01_bs10.yaml'
 
 

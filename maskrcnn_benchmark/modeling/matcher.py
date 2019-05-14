@@ -3,9 +3,10 @@ import torch
 
 DEBUG = True
 CHECK_SMAE_ANCHOR_MATCH_MULTI_TARGETS = DEBUG and False
-CHECK_MISSED_TARGETS_NUM = DEBUG and True
+CHECK_MISSED_TARGETS_NUM = DEBUG and False
 
 ENALE_SECOND_THIRD_MAX__ONLY_HIGHEST_IOU_TARGET = True # reduce missed target
+IGNORE_LOW_MATCH_NEARBY = True
 
 class Matcher(object):
     """
@@ -147,6 +148,15 @@ class Matcher(object):
 
         pred_inds_to_update = gt_pred_pairs_of_highest_quality[:, 1]
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
+
+        if IGNORE_LOW_MATCH_NEARBY:
+            ignore_threshold = highest_quality_foreach_gt - 0.05
+            ignore_mask =  match_quality_matrix0 > ignore_threshold.view(-1,1)
+            ignore_mask = ignore_mask.any(dim=0)
+            neg_mask = matches==-1
+            ignore_mask = ignore_mask * neg_mask
+            ignore_ids = torch.nonzero(ignore_mask).view(-1)
+            matches[ignore_ids] = Matcher.BETWEEN_THRESHOLDS
 
         if CHECK_SMAE_ANCHOR_MATCH_MULTI_TARGETS:
             one_anchor_multi_targets = pred_inds_to_update.shape[0] - torch.unique(pred_inds_to_update).shape[0]
