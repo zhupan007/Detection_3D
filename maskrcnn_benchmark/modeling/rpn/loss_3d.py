@@ -22,7 +22,7 @@ SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
 CHECK_MATCHER = DEBUG and False
 
 SHOW_IGNORED_ANCHOR = DEBUG and False
-SHOW_POS_NEG_ANCHORS = DEBUG and True
+SHOW_POS_NEG_ANCHORS = DEBUG and False
 
 SHOW_PRED_POS_ANCHORS = DEBUG and False
 
@@ -50,6 +50,8 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
 
     ious_j_top, ids_top_j = ious_j.topk(5)
     print(f"top ious:{ious_j_top}")
+    matched_ids_top = matched_idxs[ids_top_j]
+    print(f'matched_ids_top: {matched_ids_top}')
 
     for k in range(len(ids_top_j)):
       a_j_top = anchor[ids_top_j[k]]
@@ -232,6 +234,7 @@ class RPNLossComputation(object):
     def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds, targets):
       labels_all = list(SUNCG_META.label_2_class.keys())
       labels_all = [l for  l in labels_all if l!=0]
+      assert anchors.batch_size()  == 1
       anchors.add_field('matched_idxs', self.matched_idxs.cpu().data.numpy().astype(np.int))
       pos_inds_examples = anchors.seperate_items_to_examples(sampled_pos_inds)
       neg_inds_examples = anchors.seperate_items_to_examples(sampled_neg_inds)
