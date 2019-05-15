@@ -55,7 +55,7 @@ class SparseRCNN(nn.Module):
         else:
             # RPN-only models don't have roi_heads
             x = rpn_features
-            result = proposals
+            result = proposals.seperate_examples()
             detector_losses = {}
 
         if self.training:

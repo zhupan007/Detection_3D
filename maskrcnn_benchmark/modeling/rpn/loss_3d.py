@@ -24,7 +24,7 @@ CHECK_MATCHER = DEBUG and False
 SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
 
-SHOW_PRED_POS_ANCHORS = DEBUG and False
+SHOW_PRED_POS_ANCHORS = DEBUG and True
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
   from data3d.suncg_utils.suncg_meta import SUNCG_META

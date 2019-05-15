@@ -21,7 +21,7 @@ from yacs.config import CfgNode as CN
 _C = CN()
 
 _C.DEBUG = CN()
-_C.DEBUG.DISABLE_ROILOSS = True
+_C.DEBUG.DISABLE_ROILOSS = False
 _C.DEBUG.eval_in_train = True
 _C.DEBUG.eval_in_train_per_iter = False
 

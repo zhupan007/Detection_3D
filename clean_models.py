@@ -1,5 +1,5 @@
 import  glob, os
-path = './results_sparse3d_wdw_bs1'
+path = './results_2d_bs1_wall_RPN'
 f = open(f'{path}/last_checkpoint', 'r')
 checkpoint = './'+f.readlines()[0]
 fnames = glob.glob(f'{path}/model_*.pth')

@@ -167,6 +167,11 @@ def main():
         shutil.copyfile(args.config_file, f"{output_dir}/{cfn}")
         default_cfn = 'maskrcnn_benchmark/config/defaults.py'
         shutil.copyfile(default_cfn, f"{output_dir}/default.py")
+        train_fns = 'data3d/suncg_utils/SuncgTorch/train_test_splited/train.txt'
+        shutil.copyfile(train_fns, f"{output_dir}/train.txt")
+        val_fns = 'data3d/suncg_utils/SuncgTorch/train_test_splited/val.txt'
+        shutil.copyfile(train_fns, f"{output_dir}/val.txt")
+
 
     logger = setup_logger("maskrcnn_benchmark", output_dir, get_rank())
     logger.info("Using {} GPUs".format(num_gpus))

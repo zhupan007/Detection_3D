@@ -47,7 +47,7 @@ class OBJ_DEF():
       #  xydif = bboxes[:,3] - bboxes[:,4]
       #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
       #  pass
-      assert torch.all(bboxes[:,3] <= bboxes[:,4])
+      #assert torch.all(bboxes[:,3] <= bboxes[:,4])
 
 
       #print(bboxes)
