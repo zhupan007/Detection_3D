@@ -1,0 +1,237 @@
+2019-05-16 09:23:05,374 maskrcnn_benchmark INFO: Using 1 GPUs
+2019-05-16 09:23:05,374 maskrcnn_benchmark INFO: Namespace(config_file='configs/fpn432_3d1_bs8.yaml', distributed=False, local_rank=0, only_test=False, opts=[], skip_test=True)
+2019-05-16 09:23:05,374 maskrcnn_benchmark INFO: Collecting env info (might take some time)
+2019-05-16 09:23:07,339 maskrcnn_benchmark INFO: 
+PyTorch version: 1.1.0.dev20190416
+Is debug build: No
+CUDA used to build PyTorch: 9.0.176
+
+OS: Ubuntu 18.04.2 LTS
+GCC version: (Ubuntu 7.4.0-1ubuntu1~18.04) 7.4.0
+CMake version: version 3.13.3
+
+Python version: 3.7
+Is CUDA available: Yes
+CUDA runtime version: 9.0.176
+GPU models and configuration: 
+GPU 0: GeForce GTX 1080 Ti
+GPU 1: GeForce GTX 1080 Ti
+
+Nvidia driver version: 390.116
+cuDNN version: /usr/local/cuda-9.0/lib64/libcudnn.so.7
+
+Versions of relevant libraries:
+[pip] numpy==1.16.2
+[pip] torch==1.1.0.dev20190416
+[pip] torchvision==0.2.2
+[conda] blas                      1.0                         mkl  
+[conda] mkl                       2019.3                      199  
+[conda] mkl_fft                   1.0.10           py37ha843d7b_0  
+[conda] mkl_random                1.0.2            py37hd81dba3_0  
+[conda] pytorch                   1.0.1           py3.7_cuda9.0.176_cudnn7.4.2_2    pytorch
+[conda] pytorch-nightly           1.1.0.dev20190416 py3.7_cuda9.0.176_cudnn7.4.2_0    pytorch
+[conda] torchvision               0.2.2                      py_3    pytorch
+        Pillow (5.4.1)
+2019-05-16 09:23:07,339 maskrcnn_benchmark INFO: Loaded configuration file configs/fpn432_3d1_bs8.yaml
+2019-05-16 09:23:07,339 maskrcnn_benchmark INFO: 
+DEBUG:
+  DISABLE_ROILOSS: False
+  eval_in_train: True
+INPUT:
+  CLASSES: ['background', 'wall']
+  #CLASSES: ['background', 'wall', 'door', 'window']
+  ELEMENTS: ['xyz', 'color', 'normal']
+MODEL:
+  DEVICE: "cuda"
+  RPN_ONLY: False
+  META_ARCHITECTURE: "SparseRCNN"
+  BACKBONE:
+    CONV_BODY: "Sparse-R-50-FPN"
+    OUT_CHANNELS: 128
+  RPN:
+    USE_FPN: True
+    RPN_HEAD: "SingleConvRPNHead_Sparse3D"
+    ANCHOR_SIZES_3D: [ [0.2,0.5,3], [0.4,1.5,3], [0.6,2.5,3]]
+    YAWS:  (0, -1.57, -0.785, 0.785)
+    PRE_NMS_TOP_N_TRAIN: 1000
+    POST_NMS_TOP_N_TRAIN: 1000
+    PRE_NMS_TOP_N_TEST: 600
+    POST_NMS_TOP_N_TEST: 600
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    RPN_SCALES_FROM_TOP: [4,3,2] 
+    RPN_3D_2D_SELECTOR: [3,4,5]
+    YAW_THRESHOLD: 0.7
+    FG_IOU_THRESHOLD: 0.55 #  0.7
+    BG_IOU_THRESHOLD: 0.2 # 0.3
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: (7,7,3)
+    POOLER_SCALES_FROM_TOP: (4,3)
+  LOSS:
+    YAW_MODE: 'Diff'
+SPARSE3D:
+  nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256, 256]
+  KERNEL: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
+  STRIDE: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
+  VOXEL_FULL_SCALE: [512,512,256]
+  VOXEL_SCALE: 50
+  SCENE_SIZE: [8,8,5]
+DATASETS:
+  TRAIN: ("suncg_train", "suncg_val")
+  TEST: ("suncg_test",)
+DATALOADER:
+  SIZE_DIVISIBILITY: 32
+SOLVER:
+  EPOCHS: 300
+  EPOCHS_BETWEEN_TEST: 300
+  IMS_PER_BATCH: 8
+  BASE_LR: 0.01
+  WEIGHT_DECAY: 0.000
+  STEPS: (8000,)
+  CHECKPOINT_PERIOD: 1530
+  WARMUP_ITERS: 300
+OUTPUT_DIR: "res_2d_bs8_wall"
+TEST:
+  IMS_PER_BATCH: 1
+
+2019-05-16 09:23:07,340 maskrcnn_benchmark INFO: Running with config:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 4
+  SIZE_DIVISIBILITY: 32
+DATASETS:
+  TEST: ('suncg_test',)
+  TRAIN: ('suncg_train', 'suncg_val')
+DEBUG:
+  DISABLE_ROILOSS: False
+  eval_in_train: True
+  eval_in_train_per_iter: False
+INPUT:
+  CLASSES: ['background', 'wall']
+  ELEMENTS: ['xyz', 'color', 'normal']
+  MAX_SIZE_TEST: 1333
+  MAX_SIZE_TRAIN: 1333
+  MIN_SIZE_TEST: 800
+  MIN_SIZE_TRAIN: 800
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: True
+MODEL:
+  BACKBONE:
+    CONV_BODY: Sparse-R-50-FPN
+    FREEZE_CONV_BODY_AT: 2
+    OUT_CHANNELS: 128
+  DEVICE: cuda
+  LOSS:
+    YAW_MODE: Diff
+  MASK_ON: False
+  META_ARCHITECTURE: SparseRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    CANONICAL_SIZE: 8.0
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    POOLER_RESOLUTION: (7, 7, 3)
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES_FROM_TOP: (4, 3)
+    POOLER_SCALES_SPATIAL: [0.0625, 0.03125]
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (1.0, 1, 1, 1, 1, 1, 1)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    CONV_LAYERS: (256, 256, 256, 256)
+    FEATURE_EXTRACTOR: ResNet50Conv5ROIFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_SCALES: (0.0625,)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 14
+    SHARE_BOX_FEATURE_EXTRACTOR: True
+  RPN:
+    ANCHOR_SIZES_3D: [[0.2, 0.5, 3], [0.4, 1.5, 3], [0.6, 2.5, 3]]
+    ANCHOR_STRIDE: [array([16, 16, 16]), array([32, 32, 32]), array([64, 64, 64])]
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.2
+    FG_IOU_THRESHOLD: 0.55
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 600
+    POST_NMS_TOP_N_TRAIN: 1000
+    PRE_NMS_TOP_N_TEST: 600
+    PRE_NMS_TOP_N_TRAIN: 1000
+    RPN_3D_2D_SELECTOR: [3, 4, 5]
+    RPN_HEAD: SingleConvRPNHead_Sparse3D
+    RPN_MAP_SIZES: [[32, 32, 16], [16, 16, 8], [8, 8, 4]]
+    RPN_SCALES_FROM_TOP: [4, 3, 2]
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+    YAWS: (0, -1.57, -0.785, 0.785)
+    YAW_THRESHOLD: 0.7
+  RPN_ONLY: False
+  WEIGHT: 
+OUTPUT_DIR: res_2d_bs8_wall
+PATHS_CATALOG: /home/z/Research/Detection_3D/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.01
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 1530
+  EPOCHS: 300
+  EPOCHS_BETWEEN_TEST: 300
+  GAMMA: 0.1
+  IMS_PER_BATCH: 8
+  MAX_ITER: 40000
+  MOMENTUM: 0.9
+  STEPS: (8000,)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 300
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0
+  WEIGHT_DECAY_BIAS: 0
+SPARSE3D:
+  BLOCK_REPS: 1
+  KERNEL: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
+  RESIDUAL_BLOCK: True
+  SCENE_SIZE: [8, 8, 5]
+  STRIDE: [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
+  VAL_REPS: 3
+  VOXEL_FULL_SCALE: [512, 512, 256]
+  VOXEL_SCALE: 50
+  nPlaneMap: 128
+  nPlanesFront: [32, 64, 64, 128, 128, 128, 256, 256, 256]
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2019-05-16 09:23:10,260 maskrcnn_benchmark.utils.checkpoint INFO: No checkpoint found. Initializing model from scratch
+2019-05-16 09:23:10,261 maskrcnn_benchmark.trainer INFO: Start training 0
+2019-05-16 09:23:22,177 maskrcnn_benchmark.trainer INFO: eta: 0:03:46  iter: 1  loss: 1.5273 (1.5273)  loss_classifier_roi: 0.7674 (0.7674)  loss_box_reg_roi: 0.0003 (0.0003)  loss_objectness: 0.6933 (0.6933)  loss_rpn_box_reg: 0.0664 (0.0664)  time: 11.9154 (11.9154)  data: 1.4205 (1.4205)  lr: 0.003333  max mem: 5195
+2019-05-16 09:23:31,481 maskrcnn_benchmark.trainer INFO: eta: 0:03:10  iter: 2  loss: 1.3379 (1.4326)  loss_classifier_roi: 0.5925 (0.6799)  loss_box_reg_roi: 0.0001 (0.0002)  loss_objectness: 0.6926 (0.6930)  loss_rpn_box_reg: 0.0527 (0.0595)  time: 9.3041 (10.6098)  data: 0.0571 (0.7388)  lr: 0.003356  max mem: 5195
+2019-05-16 09:23:41,277 maskrcnn_benchmark.trainer INFO: eta: 0:02:55  iter: 3  loss: 1.3379 (1.3501)  loss_classifier_roi: 0.5925 (0.5926)  loss_box_reg_roi: 0.0001 (0.0002)  loss_objectness: 0.6926 (0.6927)  loss_rpn_box_reg: 0.0664 (0.0647)  time: 9.7960 (10.3385)  data: 0.0571 (0.4955)  lr: 0.003378  max mem: 5449
+2019-05-16 09:23:51,169 maskrcnn_benchmark.trainer INFO: eta: 0:02:43  iter: 4  loss: 1.1850 (1.2908)  loss_classifier_roi: 0.4179 (0.5327)  loss_box_reg_roi: 0.0001 (0.0014)  loss_objectness: 0.6920 (0.6921)  loss_rpn_box_reg: 0.0644 (0.0646)  time: 9.7960 (10.2268)  data: 0.0223 (0.3772)  lr: 0.003400  max mem: 5662
+2019-05-16 09:24:01,393 maskrcnn_benchmark.trainer INFO: eta: 0:02:33  iter: 5  loss: 1.1850 (1.2593)  loss_classifier_roi: 0.4179 (0.4956)  loss_box_reg_roi: 0.0001 (0.0011)  loss_objectness: 0.6920 (0.6916)  loss_rpn_box_reg: 0.0664 (0.0709)  time: 9.8916 (10.2262)  data: 0.0223 (0.3047)  lr: 0.003422  max mem: 5752
+2019-05-16 09:24:11,524 maskrcnn_benchmark.trainer INFO: eta: 0:02:22  iter: 6  loss: 1.1332 (1.2334)  loss_classifier_roi: 0.3544 (0.4721)  loss_box_reg_roi: 0.0001 (0.0010)  loss_objectness: 0.6906 (0.6910)  loss_rpn_box_reg: 0.0644 (0.0693)  time: 9.8916 (10.2103)  data: 0.0146 (0.2554)  lr: 0.003444  max mem: 5752
+2019-05-16 09:24:20,816 maskrcnn_benchmark.trainer INFO: eta: 0:02:11  iter: 7  loss: 1.1332 (1.2058)  loss_classifier_roi: 0.3544 (0.4441)  loss_box_reg_roi: 0.0001 (0.0008)  loss_objectness: 0.6906 (0.6903)  loss_rpn_box_reg: 0.0664 (0.0706)  time: 9.8916 (10.0791)  data: 0.0146 (0.2193)  lr: 0.003467  max mem: 5752
+2019-05-16 09:24:29,720 maskrcnn_benchmark.trainer INFO: eta: 0:01:59  iter: 8  loss: 1.1332 (1.2002)  loss_classifier_roi: 0.3544 (0.4372)  loss_box_reg_roi: 0.0001 (0.0008)  loss_objectness: 0.6896 (0.6895)  loss_rpn_box_reg: 0.0664 (0.0727)  time: 9.7960 (9.9323)  data: 0.0092 (0.1922)  lr: 0.003489  max mem: 5752
+2019-05-16 09:24:40,703 maskrcnn_benchmark.trainer INFO: eta: 0:01:50  iter: 9  loss: 1.1608 (1.2036)  loss_classifier_roi: 0.3893 (0.4423)  loss_box_reg_roi: 0.0001 (0.0007)  loss_objectness: 0.6896 (0.6887)  loss_rpn_box_reg: 0.0664 (0.0719)  time: 9.8916 (10.0491)  data: 0.0092 (0.1711)  lr: 0.003511  max mem: 6103
+2019-05-16 09:24:49,456 maskrcnn_benchmark.trainer INFO: eta: 0:01:39  iter: 10  loss: 1.1332 (1.1943)  loss_classifier_roi: 0.3726 (0.4353)  loss_box_reg_roi: 0.0001 (0.0006)  loss_objectness: 0.6879 (0.6877)  loss_rpn_box_reg: 0.0655 (0.0706)  time: 9.7960 (9.9194)  data: 0.0089 (0.1542)  lr: 0.003533  max mem: 6103

@@ -24,6 +24,7 @@ SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
 MAX_FLOAT_DRIFT = 1e-6
 DATASET = 'SUNCG'
 CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
+CLASSES_USED = ['wall', 'window', 'door']
 
 def points2pcd_open3d(points):
   assert points.shape[-1] == 3
@@ -553,8 +554,8 @@ def creat_splited_pcl_box():
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   house_names = ['7411df25770eaf8d656cac2be42a9af0']
-  house_names = ['8c033357d15373f4079b1cecef0e065a', '7411df25770eaf8d656cac2be42a9af0']
-  house_names = get_house_names_1level()
+  #house_names = ['8c033357d15373f4079b1cecef0e065a', '7411df25770eaf8d656cac2be42a9af0']
+  #house_names = get_house_names_1level()
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
@@ -581,7 +582,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  creat_splited_pcl_box()
-  #gen_train_list()
+  #creat_splited_pcl_box()
+  gen_train_list()
   pass
 

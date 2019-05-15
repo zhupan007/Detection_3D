@@ -1,6 +1,6 @@
 DEBUG:
-  DISABLE_ROILOSS: False
-  eval_in_train: True
+  DISABLE_ROILOSS: True
+  eval_in_train: False
 INPUT:
   CLASSES: ['background', 'wall']
   #CLASSES: ['background', 'wall', 'door', 'window']
@@ -47,12 +47,12 @@ DATALOADER:
 SOLVER:
   EPOCHS: 300
   EPOCHS_BETWEEN_TEST: 300
-  IMS_PER_BATCH: 1
+  IMS_PER_BATCH: 10
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
-  STEPS: (2000,)
-  CHECKPOINT_PERIOD: 100
-  WARMUP_ITERS: 10
-OUTPUT_DIR: "res_2d_bs1_wall"
+  STEPS: (8000,)
+  CHECKPOINT_PERIOD: 1530
+  WARMUP_ITERS: 300
+OUTPUT_DIR: "res_2d_bs10_wall_rpn"
 TEST:
   IMS_PER_BATCH: 1
