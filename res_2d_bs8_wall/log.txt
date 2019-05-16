@@ -1,7 +1,7 @@
-2019-05-16 09:23:05,374 maskrcnn_benchmark INFO: Using 1 GPUs
-2019-05-16 09:23:05,374 maskrcnn_benchmark INFO: Namespace(config_file='configs/fpn432_3d1_bs8.yaml', distributed=False, local_rank=0, only_test=False, opts=[], skip_test=True)
-2019-05-16 09:23:05,374 maskrcnn_benchmark INFO: Collecting env info (might take some time)
-2019-05-16 09:23:07,339 maskrcnn_benchmark INFO: 
+2019-05-16 10:43:05,615 maskrcnn_benchmark INFO: Using 1 GPUs
+2019-05-16 10:43:05,615 maskrcnn_benchmark INFO: Namespace(config_file='configs/fpn432_3d1_bs8.yaml', distributed=False, local_rank=0, only_test=False, opts=[], skip_test=True)
+2019-05-16 10:43:05,615 maskrcnn_benchmark INFO: Collecting env info (might take some time)
+2019-05-16 10:43:07,642 maskrcnn_benchmark INFO: 
 PyTorch version: 1.1.0.dev20190416
 Is debug build: No
 CUDA used to build PyTorch: 9.0.176
@@ -32,8 +32,8 @@ Versions of relevant libraries:
 [conda] pytorch-nightly           1.1.0.dev20190416 py3.7_cuda9.0.176_cudnn7.4.2_0    pytorch
 [conda] torchvision               0.2.2                      py_3    pytorch
         Pillow (5.4.1)
-2019-05-16 09:23:07,339 maskrcnn_benchmark INFO: Loaded configuration file configs/fpn432_3d1_bs8.yaml
-2019-05-16 09:23:07,339 maskrcnn_benchmark INFO: 
+2019-05-16 10:43:07,642 maskrcnn_benchmark INFO: Loaded configuration file configs/fpn432_3d1_bs8.yaml
+2019-05-16 10:43:07,642 maskrcnn_benchmark INFO: 
 DEBUG:
   DISABLE_ROILOSS: False
   eval_in_train: True
@@ -86,14 +86,14 @@ SOLVER:
   IMS_PER_BATCH: 8
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
-  STEPS: (8000,)
-  CHECKPOINT_PERIOD: 1530
-  WARMUP_ITERS: 300
+  LR_STEP_EPOCHS: (10,)
+  CHECKPOINT_PERIOD_EPOCHS: 20
+  WARMUP_ITERS: 100
 OUTPUT_DIR: "res_2d_bs8_wall"
 TEST:
   IMS_PER_BATCH: 1
 
-2019-05-16 09:23:07,340 maskrcnn_benchmark INFO: Running with config:
+2019-05-16 10:43:07,643 maskrcnn_benchmark INFO: Running with config:
 DATALOADER:
   ASPECT_RATIO_GROUPING: True
   NUM_WORKERS: 4
@@ -195,16 +195,16 @@ PATHS_CATALOG: /home/z/Research/Detection_3D/maskrcnn_benchmark/config/paths_cat
 SOLVER:
   BASE_LR: 0.01
   BIAS_LR_FACTOR: 2
-  CHECKPOINT_PERIOD: 1530
+  CHECKPOINT_PERIOD_EPOCHS: 20
   EPOCHS: 300
   EPOCHS_BETWEEN_TEST: 300
   GAMMA: 0.1
   IMS_PER_BATCH: 8
+  LR_STEP_EPOCHS: (10,)
   MAX_ITER: 40000
   MOMENTUM: 0.9
-  STEPS: (8000,)
   WARMUP_FACTOR: 0.3333333333333333
-  WARMUP_ITERS: 300
+  WARMUP_ITERS: 100
   WARMUP_METHOD: linear
   WEIGHT_DECAY: 0.0
   WEIGHT_DECAY_BIAS: 0
@@ -223,15 +223,6 @@ TEST:
   EXPECTED_RESULTS: []
   EXPECTED_RESULTS_SIGMA_TOL: 4
   IMS_PER_BATCH: 1
-2019-05-16 09:23:10,260 maskrcnn_benchmark.utils.checkpoint INFO: No checkpoint found. Initializing model from scratch
-2019-05-16 09:23:10,261 maskrcnn_benchmark.trainer INFO: Start training 0
-2019-05-16 09:23:22,177 maskrcnn_benchmark.trainer INFO: eta: 0:03:46  iter: 1  loss: 1.5273 (1.5273)  loss_classifier_roi: 0.7674 (0.7674)  loss_box_reg_roi: 0.0003 (0.0003)  loss_objectness: 0.6933 (0.6933)  loss_rpn_box_reg: 0.0664 (0.0664)  time: 11.9154 (11.9154)  data: 1.4205 (1.4205)  lr: 0.003333  max mem: 5195
-2019-05-16 09:23:31,481 maskrcnn_benchmark.trainer INFO: eta: 0:03:10  iter: 2  loss: 1.3379 (1.4326)  loss_classifier_roi: 0.5925 (0.6799)  loss_box_reg_roi: 0.0001 (0.0002)  loss_objectness: 0.6926 (0.6930)  loss_rpn_box_reg: 0.0527 (0.0595)  time: 9.3041 (10.6098)  data: 0.0571 (0.7388)  lr: 0.003356  max mem: 5195
-2019-05-16 09:23:41,277 maskrcnn_benchmark.trainer INFO: eta: 0:02:55  iter: 3  loss: 1.3379 (1.3501)  loss_classifier_roi: 0.5925 (0.5926)  loss_box_reg_roi: 0.0001 (0.0002)  loss_objectness: 0.6926 (0.6927)  loss_rpn_box_reg: 0.0664 (0.0647)  time: 9.7960 (10.3385)  data: 0.0571 (0.4955)  lr: 0.003378  max mem: 5449
-2019-05-16 09:23:51,169 maskrcnn_benchmark.trainer INFO: eta: 0:02:43  iter: 4  loss: 1.1850 (1.2908)  loss_classifier_roi: 0.4179 (0.5327)  loss_box_reg_roi: 0.0001 (0.0014)  loss_objectness: 0.6920 (0.6921)  loss_rpn_box_reg: 0.0644 (0.0646)  time: 9.7960 (10.2268)  data: 0.0223 (0.3772)  lr: 0.003400  max mem: 5662
-2019-05-16 09:24:01,393 maskrcnn_benchmark.trainer INFO: eta: 0:02:33  iter: 5  loss: 1.1850 (1.2593)  loss_classifier_roi: 0.4179 (0.4956)  loss_box_reg_roi: 0.0001 (0.0011)  loss_objectness: 0.6920 (0.6916)  loss_rpn_box_reg: 0.0664 (0.0709)  time: 9.8916 (10.2262)  data: 0.0223 (0.3047)  lr: 0.003422  max mem: 5752
-2019-05-16 09:24:11,524 maskrcnn_benchmark.trainer INFO: eta: 0:02:22  iter: 6  loss: 1.1332 (1.2334)  loss_classifier_roi: 0.3544 (0.4721)  loss_box_reg_roi: 0.0001 (0.0010)  loss_objectness: 0.6906 (0.6910)  loss_rpn_box_reg: 0.0644 (0.0693)  time: 9.8916 (10.2103)  data: 0.0146 (0.2554)  lr: 0.003444  max mem: 5752
-2019-05-16 09:24:20,816 maskrcnn_benchmark.trainer INFO: eta: 0:02:11  iter: 7  loss: 1.1332 (1.2058)  loss_classifier_roi: 0.3544 (0.4441)  loss_box_reg_roi: 0.0001 (0.0008)  loss_objectness: 0.6906 (0.6903)  loss_rpn_box_reg: 0.0664 (0.0706)  time: 9.8916 (10.0791)  data: 0.0146 (0.2193)  lr: 0.003467  max mem: 5752
-2019-05-16 09:24:29,720 maskrcnn_benchmark.trainer INFO: eta: 0:01:59  iter: 8  loss: 1.1332 (1.2002)  loss_classifier_roi: 0.3544 (0.4372)  loss_box_reg_roi: 0.0001 (0.0008)  loss_objectness: 0.6896 (0.6895)  loss_rpn_box_reg: 0.0664 (0.0727)  time: 9.7960 (9.9323)  data: 0.0092 (0.1922)  lr: 0.003489  max mem: 5752
-2019-05-16 09:24:40,703 maskrcnn_benchmark.trainer INFO: eta: 0:01:50  iter: 9  loss: 1.1608 (1.2036)  loss_classifier_roi: 0.3893 (0.4423)  loss_box_reg_roi: 0.0001 (0.0007)  loss_objectness: 0.6896 (0.6887)  loss_rpn_box_reg: 0.0664 (0.0719)  time: 9.8916 (10.0491)  data: 0.0092 (0.1711)  lr: 0.003511  max mem: 6103
-2019-05-16 09:24:49,456 maskrcnn_benchmark.trainer INFO: eta: 0:01:39  iter: 10  loss: 1.1332 (1.1943)  loss_classifier_roi: 0.3726 (0.4353)  loss_box_reg_roi: 0.0001 (0.0006)  loss_objectness: 0.6879 (0.6877)  loss_rpn_box_reg: 0.0655 (0.0706)  time: 9.7960 (9.9194)  data: 0.0089 (0.1542)  lr: 0.003533  max mem: 6103
+2019-05-16 10:43:10,580 maskrcnn_benchmark.utils.checkpoint INFO: No checkpoint found. Initializing model from scratch
+2019-05-16 10:43:10,580 maskrcnn_benchmark.trainer INFO: Start training 0
+2019-05-16 10:43:21,161 maskrcnn_benchmark.trainer INFO: eta: 0:03:21  iter: 1  loss: 1.4147 (1.4147)  loss_classifier_roi: 0.6513 (0.6513)  loss_box_reg_roi: 0.0001 (0.0001)  loss_objectness: 0.6922 (0.6922)  loss_rpn_box_reg: 0.0711 (0.0711)  time: 10.5802 (10.5802)  data: 1.3604 (1.3604)  lr: 0.003333  max mem: 4549

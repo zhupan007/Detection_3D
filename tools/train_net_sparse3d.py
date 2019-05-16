@@ -34,6 +34,12 @@ def train(cfg, local_rank, distributed, loop, only_test):
     model.to(device)
 
     optimizer = make_optimizer(cfg, model)
+
+    arguments = {}
+    arguments["iteration"] = 0
+    data_loader = make_data_loader(cfg, is_train=True, is_distributed=distributed,
+                  start_iter=arguments["iteration"])
+
     scheduler = make_lr_scheduler(cfg, optimizer)
 
     if distributed:
@@ -42,9 +48,6 @@ def train(cfg, local_rank, distributed, loop, only_test):
             # this should be removed if we update BatchNorm stats
             broadcast_buffers=False,
         )
-
-    arguments = {}
-    arguments["iteration"] = 0
 
     output_dir = cfg.OUTPUT_DIR
 
@@ -58,10 +61,8 @@ def train(cfg, local_rank, distributed, loop, only_test):
     if only_test:
       return model
 
-    data_loader = make_data_loader(cfg, is_train=True, is_distributed=distributed,
-                  start_iter=arguments["iteration"])
 
-    checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
+    checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD_EPOCHS * cfg.INPUT.example_num
 
     epochs_between_test = cfg.SOLVER.EPOCHS_BETWEEN_TEST
     for e in range(epochs_between_test):

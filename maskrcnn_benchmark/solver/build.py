@@ -21,9 +21,11 @@ def make_optimizer(cfg, model):
 
 
 def make_lr_scheduler(cfg, optimizer):
+    STEPS = [e * cfg.INPUT.example_num for e in cfg.SOLVER.LR_STEP_EPOCHS ]
+    STEPS = tuple(STEPS)
     return WarmupMultiStepLR(
         optimizer,
-        cfg.SOLVER.STEPS,
+        STEPS,
         cfg.SOLVER.GAMMA,
         warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
         warmup_iters=cfg.SOLVER.WARMUP_ITERS,

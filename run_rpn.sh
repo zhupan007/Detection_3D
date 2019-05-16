@@ -5,8 +5,7 @@ export CUDA_VISIBLE_DEVICES=1
 TEST='--skip-test'
 #TEST='--only-test'
 
-CONFIG_FILE='fpn432_3d1_bs1.yaml'
-CONFIG_FILE='fpn432_3d1_bs10_rpn.yaml'
+CONFIG_FILE='fpn432_3d1_bs8_rpn.yaml'
 
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
