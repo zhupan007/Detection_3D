@@ -2,6 +2,7 @@
 
 
 # on going process
+- good rpn proposals are recognized as false negative, apply aug in iou of roi
 - 3d box encoding is not right: /home/z/Research/Detection_3D/second/pytorch/core/ box_torch_ops.py
 - (1) one anchor mathch two objects, (2) For long objects, a low iou is matched, while other close low iou is neg
 - clip_to_pcl in bounding_box_3d.py not implemented
