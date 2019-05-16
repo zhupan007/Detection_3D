@@ -385,7 +385,7 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[100:1500]
     else:
-      self.house_fns = house_fns[0:100]
+      self.house_fns = house_fns[0:50]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
@@ -503,7 +503,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug
+    always_gen_bbox = False
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)

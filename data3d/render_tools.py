@@ -65,6 +65,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
   #if not show_pcl:
   Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
   #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  show_walls_offsetz(bboxes)
 
   if show_pcl:
     pcl_fn = f'{parsed_dir}/pcl_camref.ply'
