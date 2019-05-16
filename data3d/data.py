@@ -15,7 +15,7 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
 
   split = 'train' if is_train else 'val'
   dataset_ = SUNCGDataset(split, cfg)
-  cfg.INPUT['example_num']=len(dataset_)
+  cfg.INPUT['Example_num']=len(dataset_)
   print(f'\nexample num: {len(dataset_)}\n')
 
   def trainMerge(data_ls):

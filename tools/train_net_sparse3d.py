@@ -62,7 +62,7 @@ def train(cfg, local_rank, distributed, loop, only_test):
       return model
 
 
-    checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD_EPOCHS * cfg.INPUT.example_num
+    checkpoint_period = int(cfg.SOLVER.CHECKPOINT_PERIOD_EPOCHS * cfg.INPUT.Example_num / cfg.SOLVER.IMS_PER_BATCH)
 
     epochs_between_test = cfg.SOLVER.EPOCHS_BETWEEN_TEST
     for e in range(epochs_between_test):
