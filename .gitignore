@@ -30,3 +30,4 @@ dist/
 /models
 *.ropeproject
 results*
+res*
