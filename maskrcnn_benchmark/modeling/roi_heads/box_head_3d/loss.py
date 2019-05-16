@@ -12,9 +12,10 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
-DEBUG = False
-SHOW_ROI_CLASSFICATION = DEBUG and True
+DEBUG = True
+SHOW_ROI_CLASSFICATION = DEBUG and False
 CHECK_IOU = False
+CHECK_REGRESSION_TARGET_YAW = False
 
 class FastRCNNLossComputation(object):
     """
@@ -194,6 +195,13 @@ class FastRCNNLossComputation(object):
         map_inds = 7 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3, 4, 5, 6], device=device)
         box_regression_pos = box_regression[sampled_pos_inds_subset[:, None], map_inds]
         regression_targets_pos = regression_targets[sampled_pos_inds_subset]
+
+        if CHECK_REGRESSION_TARGET_YAW:
+            roi_target_yaw = regression_targets_pos[:,-1]
+            print(f'max_roi_target_yaw: {roi_target_yaw.max()}')
+            print(f'min_roi_target_yaw: {roi_target_yaw.min()}')
+            assert roi_target_yaw.max() < 1.5
+            assert roi_target_yaw.min() > -1.5
 
         box_loss = smooth_l1_loss(
             box_regression_pos,

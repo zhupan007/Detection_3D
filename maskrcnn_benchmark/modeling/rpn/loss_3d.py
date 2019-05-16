@@ -25,6 +25,7 @@ SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
 
 SHOW_PRED_POS_ANCHORS = DEBUG and False
+CHECK_REGRESSION_TARGET_YAW = False
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
   from data3d.suncg_utils.suncg_meta import SUNCG_META
@@ -215,6 +216,13 @@ class RPNLossComputation(object):
             self.show_pos_anchors_pred(box_regression, anchors, objectness, targets, sampled_pos_inds, sampled_neg_inds, regression_targets)
 
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
+
+        if CHECK_REGRESSION_TARGET_YAW:
+            rpn_target_yaw = regression_targets[sampled_pos_inds]
+            print(f'max_rpn_target_yaw: {rpn_target_yaw.max()}')
+            print(f'min_rpn_target_yaw: {rpn_target_yaw.min()}')
+            assert rpn_target_yaw.max() < 1.5
+            assert rpn_target_yaw.min() > -1.5
 
         box_loss = smooth_l1_loss(
             box_regression[sampled_pos_inds],

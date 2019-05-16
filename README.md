@@ -64,6 +64,10 @@ ht = hg / ha - 1
 rt = rg - ra
 ```
 
+## Taregts
+- maskrcnn_benchmark/modeling/rpn/loss_3d.py: prepare_targets / self.box_coder.encode
+- maskrcnn_benchmark/modeling/roi_heads/box_head_3d/loss.py: prepare_targets / self.box_coder.encode
+
 ## Yaw loss
 - layers/smooth_l1_loss.py/get_yaw_loss
 1. Dif: abs(yaw_t - yaw_p)

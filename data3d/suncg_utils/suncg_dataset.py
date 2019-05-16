@@ -6,7 +6,7 @@ import numpy as np
 
 import os, glob
 
-DEBUG = False
+DEBUG = True
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
@@ -28,6 +28,8 @@ class SUNCGDataset(torch.utils.data.Dataset):
     with open(f'{dset_path}/train_test_splited/{split}.txt') as f:
       scene_names = [l.strip() for l in f.readlines()]
     files = []
+    if DEBUG:
+        scene_names = ['7411df25770eaf8d656cac2be42a9af0']
     for scene in scene_names:
       files += glob.glob(f'{dset_path}/houses/{scene}/*.pth')
     self.files = files
