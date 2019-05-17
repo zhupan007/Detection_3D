@@ -72,6 +72,7 @@ _C.INPUT.TO_BGR255 = True
 
 _C.INPUT.ELEMENTS = ['xyz', 'color', 'normal']
 _C.INPUT.CLASSES = ['background', 'wall', 'door', 'window']
+_C.INPUT.SCENES = []
 # -----------------------------------------------------------------------------
 # Dataset
 # -----------------------------------------------------------------------------

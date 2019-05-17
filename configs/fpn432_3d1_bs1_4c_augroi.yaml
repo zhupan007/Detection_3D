@@ -5,6 +5,7 @@ INPUT:
   #CLASSES: ['background', 'wall']
   CLASSES: ['background', 'wall', 'door', 'window']
   ELEMENTS: ['xyz', 'color', 'normal']
+  SCENES: ['8c033357d15373f4079b1cecef0e065a']
 MODEL:
   DEVICE: "cuda"
   RPN_ONLY: False

@@ -3,6 +3,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from .suncg_meta import SUNCG_META
 from utils3d.bbox3d_ops import Bbox3D
 import numpy as np
+import logging
 
 import os, glob
 
@@ -13,6 +14,7 @@ SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
 
 class SUNCGDataset(torch.utils.data.Dataset):
   def __init__(self, split, cfg):
+    logger = logging.getLogger("maskrcnn_benchmark.input")
     self.is_train = is_train = split == 'train'
     self.scale = cfg.SPARSE3D.VOXEL_SCALE
     full_scale=cfg.SPARSE3D.VOXEL_FULL_SCALE
@@ -28,8 +30,10 @@ class SUNCGDataset(torch.utils.data.Dataset):
     with open(f'{dset_path}/train_test_splited/{split}.txt') as f:
       scene_names = [l.strip() for l in f.readlines()]
     files = []
-    if DEBUG and False:
-        scene_names = ['7411df25770eaf8d656cac2be42a9af0']
+    small_scenes = cfg.INPUT.SCENES
+    if len(small_scenes)>0:
+        logger.info(f'\nsmall scenes:\n{small_scenes}\n')
+        scene_names = small_scenes
     for scene in scene_names:
       files += glob.glob(f'{dset_path}/houses/{scene}/*.pth')
     self.files = files
