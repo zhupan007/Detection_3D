@@ -166,9 +166,9 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
   #house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   #house_names = ['72148738e98fe68f38ec17945d5c9730']
-  #house_names = ['8c033357d15373f4079b1cecef0e065a']
+  house_names = ['8c033357d15373f4079b1cecef0e065a']
 
-  house_names = os.listdir(PARSED_DIR)
+  #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

@@ -23,7 +23,7 @@ class FastRCNNLossComputation(object):
     Also supports FPN
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -38,10 +38,11 @@ class FastRCNNLossComputation(object):
         self.high_threshold = proposal_matcher.high_threshold
         self.low_threshold = proposal_matcher.low_threshold
         self.add_gt_proposals = add_gt_proposals
+        self.aug_thickness = aug_thickness
 
 
     def match_targets_to_proposals(self, proposal, target):
-        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness={'target':0.2, 'anchor':0.2}, criterion=-1)
+        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness=self.aug_thickness, criterion=-1)
         matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff=None, flag='ROI')
         # Fast RCNN only need "labels" field for selecting the targets
         target = target.copy_with_fields("labels")
@@ -311,7 +312,9 @@ def make_roi_box_loss_evaluator(cfg):
     )
     yaw_loss_mode = cfg.MODEL.LOSS.YAW_MODE
     add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
+    tmp = cfg.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC
+    aug_thickness = {'target':tmp[0], 'anchor':tmp[1]}
 
-    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals)
+    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness)
 
     return loss_evaluator

@@ -5,6 +5,7 @@ INPUT:
   #CLASSES: ['background', 'wall']
   CLASSES: ['background', 'wall', 'door', 'window']
   ELEMENTS: ['xyz', 'color', 'normal']
+  SCENES: ['8c033357d15373f4079b1cecef0e065a']
 MODEL:
   DEVICE: "cuda"
   RPN_ONLY: False
@@ -30,6 +31,8 @@ MODEL:
   ROI_BOX_HEAD:
     POOLER_RESOLUTION: (7,7,3)
     POOLER_SCALES_FROM_TOP: (4,3)
+  ROI_HEADS:
+    AUG_THICKNESS_TAR_ANC: [0,0]
   LOSS:
     YAW_MODE: 'Diff'
 SPARSE3D:
@@ -47,12 +50,12 @@ DATALOADER:
 SOLVER:
   EPOCHS: 300
   EPOCHS_BETWEEN_TEST: 300
-  IMS_PER_BATCH: 8
+  IMS_PER_BATCH: 2
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (10,)
   CHECKPOINT_PERIOD_EPOCHS: 20
   WARMUP_EPOCHS: 0.7
-OUTPUT_DIR: "res_3d_bs8_wdw_augroi"
+OUTPUT_DIR: "res_3d_bs1_wdw_noaugroi"
 TEST:
   IMS_PER_BATCH: 1

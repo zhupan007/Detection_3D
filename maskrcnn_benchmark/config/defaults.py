@@ -202,6 +202,7 @@ _C.MODEL.ROI_HEADS.NMS = 0.5
 # Maximum number of detections to return per image (100 is based on the limit
 # established for the COCO dataset)
 _C.MODEL.ROI_HEADS.DETECTIONS_PER_IMG = 100
+_C.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC = [0.2,0.2]
 
 
 _C.MODEL.ROI_BOX_HEAD = CN()
