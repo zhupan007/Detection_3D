@@ -7,7 +7,7 @@ from render_tools import show_walls_offsetz, show_walls_1by1
 from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu, rotate_iou_gpu_eval
 
 MERGE_Z_ANYWAY_XYIOU_THRESHOLD = 0.75
-DEBUG = False
+DEBUG = True
 
 def preprocess_walls(wall_bboxes):
   '''
@@ -105,7 +105,7 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
             z_sames = True
         else:
             print('abort merging because of z is different')
-        if DEBUG:
+        if DEBUG and False:
             box_show = np.concatenate([bbox0, bbox1], 0)
             Bbox3D.draw_bboxes(box_show, 'Z', False)
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -354,10 +354,18 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
             # offset: half of the thickness
             intersection += cen_dir_longer * wall_bboxes[i,4] * 0.5
 
-            splited_boxes = Bbox3D.split_wall_by_centroid_intersections(wall_bboxes[longer_idx], intersection.reshape([1,3]))
-            tmp = wall_bboxes[short_idx,0:3] - splited_boxes[:,0:3]
-            tmp = np.linalg.norm(tmp, axis=1)
-            merge_id = int(tmp[0] > tmp[1])
+            splited_boxes = Bbox3D.split_wall_by_centroid_intersections(wall_bboxes[longer_idx], intersection.reshape([1,3])) # [2,7]
+            if DEBUG and splited_boxes.shape[0] == 1:
+                Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), wall_bboxes[longer_idx], 'Z', False)
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                pass
+            tmp = wall_bboxes[short_idx,0:3] - splited_boxes[:,0:3] # [2,3]
+            tmp = np.linalg.norm(tmp, axis=1) # [2]
+            try:
+                merge_id = int(tmp[0] > tmp[1])
+            except:
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                pass
 
             box_merge = merge_2pieces_of_1wall(wall_bboxes[short_idx], splited_boxes[merge_id], 'Y')
 

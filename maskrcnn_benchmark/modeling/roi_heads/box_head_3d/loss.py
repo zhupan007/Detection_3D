@@ -40,8 +40,8 @@ class FastRCNNLossComputation(object):
 
 
     def match_targets_to_proposals(self, proposal, target):
-        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_wall_target_thickness=0, criterion=-1)
-        matched_idxs = self.proposal_matcher(match_quality_matrix)
+        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness={'target':0.2, 'anchor':0.2}, criterion=-1)
+        matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff=None, flag='ROI')
         # Fast RCNN only need "labels" field for selecting the targets
         target = target.copy_with_fields("labels")
         # get the targets corresponding GT for each proposal

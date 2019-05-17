@@ -3,7 +3,7 @@ import torch
 
 DEBUG = True
 CHECK_SMAE_ANCHOR_MATCH_MULTI_TARGETS = DEBUG and False
-CHECK_MISSED_TARGETS_NUM = DEBUG and False
+CHECK_MISSED_TARGETS_NUM = DEBUG and True
 
 ENALE_SECOND_THIRD_MAX__ONLY_HIGHEST_IOU_TARGET = False # reduce missed target
 IGNORE_HIGHEST_MATCH_NEARBY = True
@@ -54,7 +54,7 @@ class Matcher(object):
         match_quality_matrix_new = match_quality_matrix * mask.float()
         return match_quality_matrix_new
 
-    def __call__(self, match_quality_matrix, yaw_diff=None):
+    def __call__(self, match_quality_matrix, yaw_diff=None, flag=''):
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -101,7 +101,7 @@ class Matcher(object):
             tmp = matches[matches>=0]
             detected_num = torch.unique(tmp).shape[0]
             missed_num = target_num - detected_num
-            print(f'missed target num: {missed_num}')
+            print(f'missed target num: {missed_num}  flag:{flag}')
         return matches
 
     def set_low_quality_matches_(self, matches, all_matches, match_quality_matrix0):
