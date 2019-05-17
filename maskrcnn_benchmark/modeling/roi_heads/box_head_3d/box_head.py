@@ -25,7 +25,8 @@ def rm_gt_from_proposals(class_logits, box_regression, proposals, detections_per
         box_regression_.append( box_regression[s:s+detections_per_img,:] )
         s += len(proposals[b])
 
-        proposals_.append(proposals[b][range(detections_per_img)])
+        ids = range( len(proposals[b]) - len(targets[b]) )
+        proposals_.append(proposals[b][ids])
     class_logits_ = torch.cat(class_logits_, 0)
     box_regression_ = torch.cat(box_regression_, 0)
     return class_logits_, box_regression_, proposals_
