@@ -31,6 +31,7 @@ class SparseRCNN(nn.Module):
         self.rpn = build_rpn(cfg)
         self.roi_heads = build_roi_heads(cfg)
         self.DISABLE_ROILOSS = cfg.DEBUG.DISABLE_ROILOSS
+        self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
 
     def forward(self, points, targets=None):
         """

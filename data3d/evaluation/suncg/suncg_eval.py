@@ -127,7 +127,7 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
             iou = boxlist_iou_3d(
                 BoxList3D(pred_bbox_l, pred_boxlist.size3d, pred_boxlist.mode, None, pred_boxlist.constants),
                 BoxList3D(gt_bbox_l, gt_boxlist.size3d, gt_boxlist.mode, None, gt_boxlist.constants),
-                aug_wall_target_thickness = 0,
+                aug_thickness = { 'target':0, 'anchor':0},
                 criterion = -1,
             ).numpy()
 

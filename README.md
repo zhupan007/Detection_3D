@@ -332,6 +332,11 @@ cfg.MODEL.RPN.YAW_THRESHOLD
         fpn = scn.FPN_Net(full_scale, dimension, raw_elements, block_reps, nPlanesF,...)
 ```
 
+## add_gt_proposals
+- maskrcnn_benchmark/modeling/rpn/inference_3d.py:RPNPostProcessor/forward
+- modeling/roi_heads/box_head_3d/box_head.py:ROIBoxHead3D -> rm_gt_from_proposals
+- modeling/roi_heads/box_head_3d/loss.py: show_roi_cls_regs    
+
 # Ideas for the future
 - 3D object detection by keypoint
 - 3D object detection with deformable convolution

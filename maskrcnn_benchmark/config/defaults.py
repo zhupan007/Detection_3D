@@ -167,6 +167,7 @@ _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"
 
 _C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2]
 _C.MODEL.RPN.RPN_3D_2D_SELECTOR =  [1,2,3,4,5]
+_C.MODEL.RPN.ADD_GT_PROPOSALS = True
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options
 # ---------------------------------------------------------------------------- #

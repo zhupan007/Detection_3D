@@ -23,7 +23,7 @@ class FastRCNNLossComputation(object):
     Also supports FPN
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -37,6 +37,7 @@ class FastRCNNLossComputation(object):
 
         self.high_threshold = proposal_matcher.high_threshold
         self.low_threshold = proposal_matcher.low_threshold
+        self.add_gt_proposals = add_gt_proposals
 
 
     def match_targets_to_proposals(self, proposal, target):
@@ -243,7 +244,7 @@ class FastRCNNLossComputation(object):
 
           def show_one_type(eval_type):
               indices = metric_inds[eval_type]
-              if eval_type == 'TP':
+              if eval_type == 'TP' and self.add_gt_proposals:
                 indices = indices[0:-gt_num]
               n0 = indices.shape[0]
               pro_ = proposals[indices]
@@ -309,7 +310,8 @@ def make_roi_box_loss_evaluator(cfg):
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE, cfg.MODEL.ROI_HEADS.POSITIVE_FRACTION
     )
     yaw_loss_mode = cfg.MODEL.LOSS.YAW_MODE
+    add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
 
-    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode)
+    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals)
 
     return loss_evaluator
