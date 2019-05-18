@@ -395,7 +395,7 @@ class BoxList3D(object):
       else:
         Bbox3D.draw_points_centroids(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
 
-    def show_together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None):
+    def show_together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None, offset_x=None):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy().copy()
@@ -408,6 +408,9 @@ class BoxList3D(object):
         ids = np.random.choice(boxes_1.shape[0], max_num_1, replace=False)
         boxes_1 = boxes_1[ids]
 
+      if offset_x is not None:
+          boxes_1[:,0] += offset_x
+
       labels = np.array([0]*boxes.shape[0] + [1]*boxes_1.shape[0])
       boxes = np.concatenate([boxes, boxes_1], 0)
 
@@ -416,6 +419,10 @@ class BoxList3D(object):
       else:
         if isinstance(points, torch.Tensor):
           points = points.cpu().data.numpy()
+          if offset_x is not None:
+              tp = points.copy()
+              tp[:,0] += offset_x
+              points = np.concatenate([points, tp], 0)
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
     def show_highlight(self, ids):

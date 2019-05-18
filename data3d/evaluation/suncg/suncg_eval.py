@@ -56,7 +56,7 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
         for i in range(len(pred_boxlists)):
             pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
             tops = pred_boxlists[i].remove_low('scores', 0.5)
-            tops.show_together(gt_boxlists[i], points=pcl_i)
+            tops.show_together(gt_boxlists[i], points=pcl_i, offset_x=10)
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     return result

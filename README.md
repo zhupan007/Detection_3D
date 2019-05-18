@@ -152,7 +152,8 @@ later, SpConv and SparseConvCnn should only need to install one
 - run.sh
 
 # Debug
-- sparseconvnet/fpn_net.py: SHOW_MODEL
+ - data3d/evaluation/suncg/suncg_eval.py: SHOW_GOOD_PRED
+ - sparseconvnet/fpn_net.py: SHOW_MODEL
 
  - modeling/rpn/rpn_sparse3d.py 
         SHOW_TARGETS_ANCHORS  
