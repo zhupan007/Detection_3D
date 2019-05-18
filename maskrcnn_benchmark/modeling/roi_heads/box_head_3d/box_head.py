@@ -21,11 +21,12 @@ def rm_gt_from_proposals(class_logits, box_regression, proposals, detections_per
     s = 0
     for b in range(batch_size):
         #print(f's:{s}')
-        class_logits_.append( class_logits[s:s+detections_per_img,:] )
-        box_regression_.append( box_regression[s:s+detections_per_img,:] )
+        real_proposal_num = len(proposals[b]) - len(targets[b])
+        class_logits_.append( class_logits[s:s+real_proposal_num,:] )
+        box_regression_.append( box_regression[s:s+real_proposal_num,:] )
         s += len(proposals[b])
 
-        ids = range( len(proposals[b]) - len(targets[b]) )
+        ids = range( real_proposal_num )
         proposals_.append(proposals[b][ids])
     class_logits_ = torch.cat(class_logits_, 0)
     box_regression_ = torch.cat(box_regression_, 0)

@@ -1,10 +1,11 @@
 DEBUG:
-  DISABLE_ROILOSS: True
-  eval_in_train: False
+  DISABLE_ROILOSS: False
+  eval_in_train: True
 INPUT:
-  #CLASSES: ['background', 'wall']
-  CLASSES: ['background', 'wall', 'door', 'window']
+  CLASSES: ['background', 'wall']
+  #CLASSES: ['background', 'wall', 'door', 'window']
   ELEMENTS: ['xyz', 'color', 'normal']
+  #SCENES: ['8c033357d15373f4079b1cecef0e065a']
 MODEL:
   DEVICE: "cuda"
   RPN_ONLY: False
@@ -15,7 +16,7 @@ MODEL:
   RPN:
     USE_FPN: True
     RPN_HEAD: "SingleConvRPNHead_Sparse3D"
-    ANCHOR_SIZES_3D: [[0.4,1.5,1.5], [0.2,0.5,3], [0.4,1.5,3], [0.6,2.5,3]]
+    ANCHOR_SIZES_3D: [[0.2,0.5,3], [0.4,1.5,3], [0.6,2.5,3]]
     YAWS:  (0, -1.57, -0.785, 0.785)
     PRE_NMS_TOP_N_TRAIN: 1000
     POST_NMS_TOP_N_TRAIN: 1000
@@ -23,7 +24,7 @@ MODEL:
     POST_NMS_TOP_N_TEST: 600
     FPN_POST_NMS_TOP_N_TEST: 1000
     RPN_SCALES_FROM_TOP: [4,3,2] 
-    RPN_3D_2D_SELECTOR: [1,3,4,5]
+    RPN_3D_2D_SELECTOR: [3,4,5]
     YAW_THRESHOLD: 0.7
     FG_IOU_THRESHOLD: 0.55 #  0.7
     BG_IOU_THRESHOLD: 0.2 # 0.3
@@ -53,6 +54,6 @@ SOLVER:
   LR_STEP_EPOCHS: (50,)
   CHECKPOINT_PERIOD_EPOCHS: 20
   WARMUP_EPOCHS: 0.7
-OUTPUT_DIR: "res_3d_bs8_wdw_rpn"
+OUTPUT_DIR: "res_2d_bs8_wall"
 TEST:
   IMS_PER_BATCH: 1
