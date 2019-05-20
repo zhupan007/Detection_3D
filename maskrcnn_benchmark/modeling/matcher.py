@@ -129,6 +129,7 @@ class Matcher(object):
         # For each gt, find the prediction with which it has highest quality
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
         # Find highest quality match available, even if it is low, including ties
+        #print(f'highest_quality_foreach_gt: \n{highest_quality_foreach_gt}')
         gt_pred_pairs_of_highest_quality = torch.nonzero(
             match_quality_matrix == highest_quality_foreach_gt[:, None]
         )
