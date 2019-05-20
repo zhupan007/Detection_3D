@@ -24,7 +24,7 @@ CHECK_MATCHER = DEBUG and False
 SHOW_IGNORED_ANCHOR = DEBUG and False
 SHOW_POS_NEG_ANCHORS = DEBUG and False
 
-SHOW_PRED_POS_ANCHORS = DEBUG and False
+SHOW_PRED_POS_ANCHORS = DEBUG and True
 CHECK_REGRESSION_TARGET_YAW = False
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
