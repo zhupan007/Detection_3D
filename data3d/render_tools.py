@@ -96,6 +96,7 @@ def render_splited_house_walls(pth_fn):
 
   all_bboxes = np.concatenate([boxes for boxes in bboxes.values()], 0)
   Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False)
+  show_walls_offsetz(all_bboxes)
 
   #for clas in bboxes.keys():
   #  if clas not in CLASSES:
@@ -174,6 +175,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['c3802ae080bc1d5f4ada2f75448f7b49']
   house_names = ['be37c58e21c4595b3cf3ccaf3cbc51c4']
   house_names = ['3a86005157c0acf437626cde8e26b4be']
+  house_names = ['a046e442fa9c38ae063e8ea9d2ceeeea']
 
   #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
@@ -221,11 +223,23 @@ def render_obj_house():
         new_mesh.set_attribute(an, attributes[an])
     pymesh.save_mesh(new_mesh_fn, new_mesh, use_float=True)
 
+
+def render_fn():
+    pth_fn = '/home/z/Research/Detection_3D/data3d/suncg_utils/SuncgTorch/houses/a046e442fa9c38ae063e8ea9d2ceeeea/pcl_1.pth'
+    render_splited_house_walls(pth_fn)
+
+def main():
+    render_houses(
+            r_cam=False,
+            r_whole = 1,
+            r_splited = 0
+    )
+
+
+
 if __name__ == '__main__':
-  render_houses(
-        r_cam=False,
-        r_whole = 1,
-        r_splited = 1
-  )
+    render_fn()
+    #main()
+
 
 

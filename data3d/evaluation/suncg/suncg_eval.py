@@ -18,13 +18,16 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     pred_boxlists = predictions
     gt_boxlists = []
     image_ids = []
+    fns = []
     for i, prediction in enumerate(predictions):
         image_id = prediction.constants['data_id']
+        fns.append( dataset.files[image_id] )
         image_ids.append(image_id)
         img_info = dataset.get_img_info(image_id)
         gt_boxlist = dataset.get_groundtruth(image_id)
         gt_boxlists.append(gt_boxlist)
 
+    print(f'\n{fns}')
     gt_num_totally = sum([len(g) for g in gt_boxlists])
     if gt_num_totally == 0:
         print(f'gt_num_totally=0, abort evalution')
@@ -56,6 +59,7 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
         for i in range(len(pred_boxlists)):
             pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
             tops = pred_boxlists[i].remove_low('scores', 0.5)
+            print(f'tops num: {len(tops)}\ngt num: {len(gt_boxlists[i])}\n')
             tops.show_together(gt_boxlists[i], points=pcl_i, offset_x=10)
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
