@@ -7,10 +7,11 @@ from collections import defaultdict
 import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
+from data3d.suncg_utils.suncg_meta import SUNCG_META
 
 DEBUG = True
 SHOW_IOU = DEBUG and False
-SHOW_GOOD_PRED = DEBUG and False
+SHOW_GOOD_PRED = DEBUG and True
 
 def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     # TODO need to make the use_07_metric format available
@@ -54,17 +55,26 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     if SHOW_GOOD_PRED:
         print('SHOW_GOOD_PRED')
         ap = result['ap'][1:]
-        if np.isnan(ap).any():
+        if np.isnan(ap).all():
             return result
         for i in range(len(pred_boxlists)):
             pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
             tops = pred_boxlists[i].remove_low('scores', 0.5)
-            print(f'tops num: {len(tops)}\ngt num: {len(gt_boxlists[i])}\n')
-            tops.show_together(gt_boxlists[i], points=pcl_i, offset_x=10)
+            gt_nums = get_obejct_numbers(gt_boxlists[i])
+            pred_nums = get_obejct_numbers(tops)
+            print(f'pred: {pred_nums}\ngt: {gt_nums}')
+            tops.show_together(gt_boxlists[i], points=pcl_i, offset_x=9)
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     return result
 
+def get_obejct_numbers(boxlist):
+    labels = boxlist.get_field('labels').data.numpy()
+    lset = list(set(labels))
+    obj_nums = {}
+    for l in lset:
+        obj_nums[SUNCG_META.label_2_class[l]] = sum(labels==l)
+    return obj_nums
 
 def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh=0.5, use_07_metric=False):
     """Evaluate on suncg dataset.
