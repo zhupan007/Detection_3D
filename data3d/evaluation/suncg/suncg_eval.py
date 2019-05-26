@@ -11,7 +11,7 @@ from data3d.suncg_utils.suncg_meta import SUNCG_META
 
 DEBUG = True
 SHOW_IOU = DEBUG and False
-SHOW_GOOD_PRED = DEBUG and True
+SHOW_GOOD_PRED = DEBUG and False
 
 def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     # TODO need to make the use_07_metric format available
