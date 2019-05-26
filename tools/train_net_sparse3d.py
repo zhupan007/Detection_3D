@@ -161,6 +161,8 @@ def main():
     intact_cfg(cfg)
     cfg.freeze()
 
+    train_example_num = get_train_example_num(cfg)
+    cfg['OUTPUT_DIR'] = f'{cfg.OUTPUT_DIR}_T{train_example_num}'
     output_dir = cfg.OUTPUT_DIR
     if output_dir:
         mkdir(output_dir)
@@ -193,6 +195,10 @@ def main():
       if not args.skip_test:
           test(cfg, model, args.distributed)
 
+def get_train_example_num(cfg):
+    from data3d.suncg_utils.suncg_dataset import SUNCGDataset
+    train_dataset = SUNCGDataset('train', cfg)
+    return len(train_dataset)
 
 def intact_cfg(cfg):
   fpn_scalse = cfg.MODEL.RPN.RPN_SCALES_FROM_TOP
