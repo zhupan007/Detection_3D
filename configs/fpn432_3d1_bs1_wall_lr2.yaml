@@ -2,8 +2,8 @@ DEBUG:
   DISABLE_ROILOSS: False
   eval_in_train: True
 INPUT:
-  #CLASSES: ['background', 'wall']
-  CLASSES: ['background', 'wall', 'door', 'window']
+  CLASSES: ['background', 'wall']
+  #CLASSES: ['background', 'wall', 'door', 'window']
   ELEMENTS: ['xyz', 'color', 'normal']
 MODEL:
   DEVICE: "cuda"
@@ -48,11 +48,11 @@ SOLVER:
   EPOCHS: 300
   EPOCHS_BETWEEN_TEST: 300
   IMS_PER_BATCH: 1
-  BASE_LR: 0.005
+  BASE_LR: 0.002
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (200,)
   CHECKPOINT_PERIOD_EPOCHS: 20
   WARMUP_EPOCHS: 0.7
-OUTPUT_DIR: "res_3d_bs1_wdw_lr5"
+OUTPUT_DIR: "res_3d_bs1_wall_lr2"
 TEST:
   IMS_PER_BATCH: 1
