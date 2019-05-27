@@ -63,7 +63,11 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
             gt_nums = get_obejct_numbers(gt_boxlists[i])
             pred_nums = get_obejct_numbers(tops)
             print(f'pred: {pred_nums}\ngt: {gt_nums}')
-            tops.show_together(gt_boxlists[i], points=pcl_i, offset_x=9)
+            xyz_max = pcl_i[:,0:3].max(0).values.data.numpy()
+            xyz_min = pcl_i[:,0:3].min(0).values.data.numpy()
+            xyz_size = xyz_max - xyz_min
+            print(f'xyz_size:{xyz_size}')
+            tops.show_together(gt_boxlists[i], points=pcl_i, offset_x=xyz_size[0]+0.2)
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     return result
