@@ -7,6 +7,7 @@
 
 import torch, numpy as np, glob, math, torch.utils.data, scipy.ndimage, multiprocessing as mp
 from .suncg_utils.suncg_dataset import SUNCGDataset
+import logging
 
 DEBUG = False
 
@@ -15,7 +16,9 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
 
   split = 'train' if is_train else 'val'
   dataset_ = SUNCGDataset(split, cfg)
-
+  cfg.INPUT['Example_num']=len(dataset_)
+  logger = logging.getLogger("maskrcnn_benchmark.input")
+  logger.info(f'\n\nexample num: {len(dataset_)}\n')
 
   def trainMerge(data_ls):
     locs = torch.cat( [data['x'][0] for data in data_ls], 0 )

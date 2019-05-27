@@ -2,6 +2,7 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
+import math
 
 from maskrcnn_benchmark.layers import ROIAlignRotated3D
 
@@ -117,6 +118,9 @@ class Pooler(nn.Module):
             dim=0,
         )
         rois = torch.cat([ids, concat_boxes], dim=1)
+
+        rois = rois[:,[0, 2,1,3, 5,4,6, 7]] # reverse the order of x and y
+        rois[:,-1]  *= 180.0/math.pi
         return rois
 
     def forward(self, x, boxes):
@@ -145,11 +149,11 @@ class Pooler(nn.Module):
         num_rois = len(rois)
         x0_features = x[0].features
         num_channels = x0_features.shape[1]
-        output_size = self.output_size[0]
+        os0,os1,os2 = self.output_size
 
         dtype, device = x0_features.dtype, x0_features.device
         result = torch.zeros(
-            (num_rois, num_channels, output_size, output_size),
+            (num_rois, num_channels, os0, os1, os2),
             dtype=dtype,
             device=device,
         )

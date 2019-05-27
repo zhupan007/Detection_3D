@@ -11,13 +11,14 @@ SHOW_MODEL = False
 class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
     def __init__(self, full_scale, dimension, raw_elements, reps, nPlanesF, nPlaneM, residual_blocks,
-                  fpn_scales_from_top, roi_scales_from_top, downsample,
-                  leakiness=0, voxel_scale=None):
+                  fpn_scales_from_top, roi_scales_from_top, downsample, rpn_map_sizes,
+                  rpn_3d_2d_selector, leakiness=0, voxel_scale=None, ):
         '''
         downsample:[kernel, stride] :[[2,2,2], [2,2,2]]
         '''
         nn.Module.__init__(self)
 
+        self.dimension = dimension
         self.down_kernels =  downsample[0]
         self.down_strides = downsample[1]
         self.fpn_scales_from_top = fpn_scales_from_top
@@ -41,6 +42,12 @@ class FPN_Net(torch.nn.Module):
 
         self.linear = nn.Linear(nPlanesF[0], 20)
         self.voxel_scale = voxel_scale
+        self.rpn_map_sizes = np.array( rpn_map_sizes )
+        self.rpn_3d_2d_selector = rpn_3d_2d_selector
+
+        self.convs_pro2d = nn.ModuleList()
+        for zsize in self.rpn_map_sizes[:,-1]:
+            self.convs_pro2d.append( scn.Convolution(self.dimension, nPlaneM, nPlaneM, [1,1,zsize], [1,1,1], False) )
         #**********************************************************************#
 
         def block(m, a, b):
@@ -120,6 +127,9 @@ class FPN_Net(torch.nn.Module):
         self.operations_down = operations_down
         self.operations_up = operations_up
 
+
+
+
     def forward(self, net0):
       if self._show: print(f'\nFPN net input: {net0[0].shape}')
       net1 = self.layers_in(net0)
@@ -158,8 +168,15 @@ class FPN_Net(torch.nn.Module):
         #if self._show:  sparse_shape(net)
         ups.append(self.m_mergeds[k](net))
 
-      rpn_maps = [ups[i] for i in self.fpn_scales_from_top]
+      rpn_maps_3d = [ups[i] for i in self.fpn_scales_from_top]
+      rpn_maps_2d = [ self.convs_pro2d[i](rpn_maps_3d[i]) for i in range(len(rpn_maps_3d)) ]
+      rpn_maps = rpn_maps_3d + rpn_maps_2d
+      rpn_maps = [rpn_maps[i] for i in self.rpn_3d_2d_selector]
+
       roi_maps = [ups[i] for i in self.roi_scales_from_top]
+
+      for i in range(len(rpn_maps_3d)):
+        assert torch.all(rpn_maps_3d[i].spatial_size == torch.tensor(self.rpn_map_sizes[i]))
 
       if self._show:
           receptive_field(self.operations_down, self.voxel_scale)
@@ -198,7 +215,10 @@ class FPN_Net(torch.nn.Module):
           print(f'{self.fpn_scales_from_top} of ups')
           receptive_fields_fpn = [self.operations_down[-i-1]['rf'] for i in self.fpn_scales_from_top]
           for j,t in enumerate(rpn_maps):
-            tmp = f'\t Receptive:{receptive_fields_fpn[j]}'
+            if j < len(receptive_fields_fpn):
+                tmp = f'\t Receptive:{receptive_fields_fpn[j]}'
+            else:
+                tmp = ''
             sparse_shape(t, post=tmp)
             sparse_real_size(t,'\t')
             print('\n')
@@ -214,6 +234,7 @@ class FPN_Net(torch.nn.Module):
           print('--------------------------------------------------\n\n')
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
+
       return rpn_maps, roi_maps
 
 
@@ -237,11 +258,15 @@ def receptive_field(operations, voxel_scale = None):
       op['rf'] /= 1.0*voxel_scale
 
 def sparse_shape(t, pre='\t', post=''):
-  print(f'{pre}{t.features.shape}, {t.spatial_size}{post}')
+  loc = t.get_spatial_locations()
+  batch_size = loc[:,-1].max().float() + 1
+  sparse_rate = 1.0 * t.features.shape[0] / t.spatial_size.prod().float() / batch_size
+  print(f'{pre}{t.features.shape}, {t.spatial_size}{post}, sparse_rate:{sparse_rate}')
 
 def sparse_real_size(t,pre=''):
   loc = t.get_spatial_locations()
   loc_min = loc.min(0)[0]
-  loc_max = loc.max(0)[0]
-  print(f"{pre}min: {loc_min}, max: {loc_max}")
+  loc_max = loc.max(0)[0] + 1
+  sparse_rate = 1.0 * t.features.shape[0] / loc_max.prod().float()
+  print(f"{pre}min: {loc_min}, max: {loc_max}, sparse rate:{sparse_rate}")
 

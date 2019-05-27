@@ -3,6 +3,7 @@ import math
 
 import torch
 from second.pytorch.core.box_torch_ops import second_box_encode, second_box_decode
+from utils3d.geometric_torch import limit_period
 
 class BoxCoder3D(object):
     """
@@ -29,6 +30,8 @@ class BoxCoder3D(object):
 
     def encode(self, targets, anchors):
         box_encodings = second_box_encode(targets, anchors, smooth_dim=self.smooth_dim)
+        # yaw diff in [-pi/2, pi/2]
+        box_encodings[:,-1] = limit_period(box_encodings[:,-1], 0.5, math.pi)
         box_encodings = box_encodings * self.weights.to(box_encodings.device)
         return box_encodings
 
@@ -53,6 +56,8 @@ class BoxCoder3D(object):
         box_encodings = box_encodings / self.weights.to(box_encodings.device)
         box_encodings[:,3:6] = torch.clamp(box_encodings[:,3:6], max=self.bbox_xform_clip)
         boxes_decoded = second_box_decode(box_encodings, anchors, smooth_dim=self.smooth_dim)
+        # yaw diff in [-pi/2, pi/2]
+        boxes_decoded[:,-1] = limit_period(boxes_decoded[:,-1], 0.5, math.pi)
 
         if num_classes != 1:
           boxes_decoded = boxes_decoded.view(-1,num_classes*7)

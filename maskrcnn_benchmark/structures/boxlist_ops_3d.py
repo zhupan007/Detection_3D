@@ -76,13 +76,30 @@ def remove_small_boxes3d(boxlist, min_size):
     return boxlist[keep]
 
 
-def boxlist_iou_3d(targets, anchors, aug_wall_target_thickness):
+def iou_one_dim(targets_z, anchors_z):
+    anchors_z[:,1] = anchors_z[:,0] + anchors_z[:,1]
+    targets_z[:,1] = targets_z[:,0] + targets_z[:,1]
+    targets_z = targets_z.unsqueeze(1)
+    anchors_z = anchors_z.unsqueeze(0)
+    overlap = torch.min(anchors_z[:,:,1], targets_z[:,:,1]) - torch.max(anchors_z[:,:,0], targets_z[:,:,0])
+    common = torch.max(anchors_z[:,:,1], targets_z[:,:,1]) - torch.min(anchors_z[:,:,0], targets_z[:,:,0])
+    iou_z = overlap / common
+    return iou_z
+
+def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False):
   '''
   about criterion check:
     second.core.non_max_suppression.nms_gpu/devRotateIoUEval
   '''
-  targets.mode == 'yx_zb'
-  anchors.mode == 'yx_zb'
+  assert targets.mode == 'yx_zb'
+  assert anchors.mode == 'yx_zb'
+
+  assert isinstance(aug_thickness, dict)
+  assert 'target' in aug_thickness
+  assert 'anchor' in aug_thickness
+
+  iouz = iou_one_dim(targets.bbox3d[:,[2,5]].clone(), anchors.bbox3d[:,[2,5]].clone())
+
   cuda_index = targets.bbox3d.device.index
   anchors_2d = anchors.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
   targets_2d = targets.bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()
@@ -91,69 +108,32 @@ def boxlist_iou_3d(targets, anchors, aug_wall_target_thickness):
   #print(f"anchors yaw : {anchors_2d[:,-1].min()} , {anchors_2d[:,-1].max()}")
 
   # aug thickness. When thickness==0, iou is wrong
-  targets_2d[:,2] += aug_wall_target_thickness # 0.25
+  targets_2d[:,2] += aug_thickness['target'] # 0.25
+  anchors_2d[:,2] += aug_thickness['anchor']
   # criterion=1: use targets_2d as ref
-  iou = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=2, device_id=cuda_index)
+  iou2d = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=criterion, device_id=cuda_index)
+  iou2d = torch.from_numpy(iou2d)
+  iou2d = iou2d.to(targets.bbox3d.device)
 
-  area_inter = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=-2, device_id=cuda_index)
-  area_1 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=-3, device_id=cuda_index)
-  area_2 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=-4, device_id=cuda_index)
-
-
-  iou = torch.from_numpy(iou)
-  iou = iou.to(targets.bbox3d.device)
+  if only_xy:
+      iou3d = iou2d
+  else:
+      iou3d = iou2d * iouz
 
   if DEBUG:
-    mask = iou == iou.max()
+    mask = iou3d == iou3d.max()
     t_i, a_i = torch.nonzero(mask)[0]
     t = targets[t_i]
     a = anchors[a_i]
-    print(f"iou: {iou.max()}")
+    print(f"iou: {iou3d.max()}")
     a.show_together(t)
     import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
-  return iou
+  return iou3d
 
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
 # with slight modifications
 
-
-def boxlist_iou(boxlist1, boxlist2):
-    """Compute the intersection over union of two set of boxes.
-    The box order must be (xmin, ymin, xmax, ymax).
-
-    Arguments:
-      box1: (BoxList) bounding boxes, sized [N,4].
-      box2: (BoxList) bounding boxes, sized [M,4].
-
-    Returns:
-      (tensor) iou, sized [N,M].
-
-    Reference:
-      https://github.com/chainer/chainercv/blob/master/chainercv/utils/bbox/bbox_iou.py
-    """
-    if boxlist1.size != boxlist2.size:
-        raise RuntimeError(
-                "boxlists should have same image size, got {}, {}".format(boxlist1, boxlist2))
-
-    N = len(boxlist1)
-    M = len(boxlist2)
-
-    area1 = boxlist1.area()
-    area2 = boxlist2.area()
-
-    box1, box2 = boxlist1.bbox, boxlist2.bbox
-
-    lt = torch.max(box1[:, None, :2], box2[:, :2])  # [N,M,2]
-    rb = torch.min(box1[:, None, 2:], box2[:, 2:])  # [N,M,2]
-
-    TO_REMOVE = 1
-
-    wh = (rb - lt + TO_REMOVE).clamp(min=0)  # [N,M,2]
-    inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
-
-    iou = inter / (area1[:, None] + area2 - inter)
-    return iou
 
 
 def test_iou_3d(bbox3d0, bbox3d1, mode):

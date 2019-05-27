@@ -151,7 +151,7 @@ class RPNPostProcessor(torch.nn.Module):
         result = cat_boxlist_3d(result, per_example=True)
         return result
 
-    def forward(self, anchors, objectness, box_regression, targets=None):
+    def forward(self, anchors, objectness, box_regression, targets=None, add_gt_proposals=False):
         """
         Arguments:
             anchors: BoxList
@@ -177,7 +177,8 @@ class RPNPostProcessor(torch.nn.Module):
         #    boxlists = self.select_over_all_levels(boxlists)
 
         # append ground-truth bboxes to proposals
-        if self.training and targets is not None:
+        if self.training and add_gt_proposals:
+            assert targets is not None
             boxlists = self.add_gt_proposals(boxlists, targets)
 
         return boxlists

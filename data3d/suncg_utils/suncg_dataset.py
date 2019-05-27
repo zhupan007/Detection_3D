@@ -3,6 +3,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from .suncg_meta import SUNCG_META
 from utils3d.bbox3d_ops import Bbox3D
 import numpy as np
+import logging
 
 import os, glob
 
@@ -13,6 +14,7 @@ SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
 
 class SUNCGDataset(torch.utils.data.Dataset):
   def __init__(self, split, cfg):
+    logger = logging.getLogger("maskrcnn_benchmark.input")
     self.is_train = is_train = split == 'train'
     self.scale = cfg.SPARSE3D.VOXEL_SCALE
     full_scale=cfg.SPARSE3D.VOXEL_FULL_SCALE
@@ -28,6 +30,10 @@ class SUNCGDataset(torch.utils.data.Dataset):
     with open(f'{dset_path}/train_test_splited/{split}.txt') as f:
       scene_names = [l.strip() for l in f.readlines()]
     files = []
+    small_scenes = cfg.INPUT.SCENES
+    if len(small_scenes)>0:
+        logger.info(f'\nsmall scenes:\n{small_scenes}\n')
+        scene_names = small_scenes
     for scene in scene_names:
       files += glob.glob(f'{dset_path}/houses/{scene}/*.pth')
     self.files = files
@@ -60,7 +66,10 @@ class SUNCGDataset(torch.utils.data.Dataset):
         b = pcl_i
         bboxes_dic_i = {}
         for obj in objects_to_detect:
-          assert obj in bboxes_dic_i_0 or obj=='background', f"unknow class {obj}"
+            if not ( obj in bboxes_dic_i_0 or obj=='background'):
+                print(f"unknow class {obj}")
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                assert False
         for obj in bboxes_dic_i_0:
           if ('all' in objects_to_detect) or (obj in objects_to_detect):
             bboxes_dic_i[obj] = Bbox3D.convert_to_yx_zb_boxes(bboxes_dic_i_0[obj])
@@ -113,9 +122,15 @@ class SUNCGDataset(torch.utils.data.Dataset):
           pass
 
         #---------------------------------------------------------------------
+        assert a.min() >= 0, f"point location should not < 0: {a.min()}"
         up_check = np.all(a < full_scale[np.newaxis,:], 1)
+        if not np.all(up_check):
+            max_scale = a.max(0)
+            print(f'\nmax scale: {max_scale} > full_scale: {full_scale}, some points will be missed\n')
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            assert False
+
         idxs = (a.min(1)>=0)*(up_check)
-        assert np.all(idxs), f"some points are missed in is_train={is_train}"
         a=a[idxs]
         b=b[idxs]
         #c=c[idxs]

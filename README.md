@@ -2,6 +2,9 @@
 
 
 # on going process
+- good rpn proposals are recognized as false negative, apply aug in iou of roi
+- 3d box encoding is not right: /home/z/Research/Detection_3D/second/pytorch/core/ box_torch_ops.py
+- (1) one anchor mathch two objects, (2) For long objects, a low iou is matched, while other close low iou is neg
 - clip_to_pcl in bounding_box_3d.py not implemented
 - considering aug both proposal and targets in match_targets_to_proposals in roi_heads/box_head_3d/loss.py
 - \_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE
@@ -10,8 +13,8 @@
         (2)  modeling/roi_heads/box_head_3d/box_head.py: self.loss_evaluator.subsample(proposals, targets)
 - add yaw loss
 - rethink how to improve acc for long wall: add yaw loss
-- crop gt box with anchor
-- multi scale: feature concate
+- ** Big object is really hard ** crop gt box with anchor
+- multi scale: (1) residual (2) feature concate in each scale of pyramid (3) feature concate to one single layer
 - IOU: area_inter / (area2 + max(0,area1*0.5 - area_inter))   
    second/core/non_max_suppression/nms_gpu.py devRotateIoUEval
 - ** Decormable net/cnn ** avoid rectangle conv kernel and fixed net. use adaptive formable net. use deformable cnn. 
@@ -61,6 +64,10 @@ wt = wg / wa - 1
 ht = hg / ha - 1
 rt = rg - ra
 ```
+
+## Taregts
+- maskrcnn_benchmark/modeling/rpn/loss_3d.py: prepare_targets / self.box_coder.encode
+- maskrcnn_benchmark/modeling/roi_heads/box_head_3d/loss.py: prepare_targets / self.box_coder.encode
 
 ## Yaw loss
 - layers/smooth_l1_loss.py/get_yaw_loss
@@ -145,7 +152,8 @@ later, SpConv and SparseConvCnn should only need to install one
 - run.sh
 
 # Debug
-- sparseconvnet/fpn_net.py: SHOW_MODEL
+ - data3d/evaluation/suncg/suncg_eval.py: SHOW_GOOD_PRED
+ - sparseconvnet/fpn_net.py: SHOW_MODEL
 
  - modeling/rpn/rpn_sparse3d.py 
         SHOW_TARGETS_ANCHORS  
@@ -324,6 +332,11 @@ cfg.MODEL.RPN.YAW_THRESHOLD
 - modeling/backbone/backbone.py/build_sparse_resnet_fpn_backbone:
         fpn = scn.FPN_Net(full_scale, dimension, raw_elements, block_reps, nPlanesF,...)
 ```
+
+## add_gt_proposals
+- maskrcnn_benchmark/modeling/rpn/inference_3d.py:RPNPostProcessor/forward
+- modeling/roi_heads/box_head_3d/box_head.py:ROIBoxHead3D -> rm_gt_from_proposals
+- modeling/roi_heads/box_head_3d/loss.py: show_roi_cls_regs    
 
 # Ideas for the future
 - 3D object detection by keypoint

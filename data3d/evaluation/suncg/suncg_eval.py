@@ -7,6 +7,7 @@ from collections import defaultdict
 import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
+from data3d.suncg_utils.suncg_meta import SUNCG_META
 
 DEBUG = True
 SHOW_IOU = DEBUG and False
@@ -18,13 +19,16 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     pred_boxlists = predictions
     gt_boxlists = []
     image_ids = []
+    fns = []
     for i, prediction in enumerate(predictions):
         image_id = prediction.constants['data_id']
+        fns.append( dataset.files[image_id] )
         image_ids.append(image_id)
         img_info = dataset.get_img_info(image_id)
         gt_boxlist = dataset.get_groundtruth(image_id)
         gt_boxlists.append(gt_boxlist)
 
+    print(f'\n{fns}')
     gt_num_totally = sum([len(g) for g in gt_boxlists])
     if gt_num_totally == 0:
         print(f'gt_num_totally=0, abort evalution')
@@ -51,16 +55,30 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     if SHOW_GOOD_PRED:
         print('SHOW_GOOD_PRED')
         ap = result['ap'][1:]
-        if np.isnan(ap).any():
+        if np.isnan(ap).all():
             return result
         for i in range(len(pred_boxlists)):
             pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
             tops = pred_boxlists[i].remove_low('scores', 0.5)
-            tops.show_together(gt_boxlists[i], points=pcl_i)
+            gt_nums = get_obejct_numbers(gt_boxlists[i])
+            pred_nums = get_obejct_numbers(tops)
+            print(f'pred: {pred_nums}\ngt: {gt_nums}')
+            xyz_max = pcl_i[:,0:3].max(0).values.data.numpy()
+            xyz_min = pcl_i[:,0:3].min(0).values.data.numpy()
+            xyz_size = xyz_max - xyz_min
+            print(f'xyz_size:{xyz_size}')
+            tops.show_together(gt_boxlists[i], points=pcl_i, offset_x=xyz_size[0]+0.2)
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     return result
 
+def get_obejct_numbers(boxlist):
+    labels = boxlist.get_field('labels').data.numpy()
+    lset = list(set(labels))
+    obj_nums = {}
+    for l in lset:
+        obj_nums[SUNCG_META.label_2_class[l]] = sum(labels==l)
+    return obj_nums
 
 def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh=0.5, use_07_metric=False):
     """Evaluate on suncg dataset.
@@ -127,7 +145,8 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
             iou = boxlist_iou_3d(
                 BoxList3D(pred_bbox_l, pred_boxlist.size3d, pred_boxlist.mode, None, pred_boxlist.constants),
                 BoxList3D(gt_bbox_l, gt_boxlist.size3d, gt_boxlist.mode, None, gt_boxlist.constants),
-                aug_wall_target_thickness = 0
+                aug_thickness = { 'target':0, 'anchor':0},
+                criterion = -1,
             ).numpy()
 
             gt_index = iou.argmax(axis=1)

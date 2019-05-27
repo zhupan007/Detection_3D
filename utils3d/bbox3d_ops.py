@@ -14,7 +14,8 @@ from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 DEBUG = True
 
 FRAME_SHOW = 1
-POINTS_KEEP_RATE = 0.8
+POINTS_KEEP_RATE = 1.0
+BOX_XSURFACE_COLOR_DIF = False
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
@@ -157,6 +158,14 @@ class Bbox3D():
     boxes[:,_yaw] = OBJ_DEF.limit_yaw(boxes[:,_yaw], True)
     OBJ_DEF.check_bboxes(boxes, True)
     return boxes
+
+  @staticmethod
+  def boxes_size(boxes, up_axis='Z'):
+      corners = Bbox3D.bboxes_corners(boxes, up_axis).reshape([-1,3])
+      xyz_max = corners.max(0)
+      xyz_min = corners.min(0)
+      xyz_size = xyz_max - xyz_min
+      return xyz_size
 
   @staticmethod
   def draw_points_open3d(points, color=[0,1,1], show=False):
@@ -312,8 +321,9 @@ class Bbox3D():
     assert bbox.shape == (7,)
     corners = Bbox3D.bbox_corners(bbox, up_axis)
     colors = [color for i in range(len(Bbox3D._lines_vids))]
-    for i in Bbox3D._x_pos_lines:
-      colors[i] = [0,0,1]
+    if BOX_XSURFACE_COLOR_DIF:
+        for i in Bbox3D._x_pos_lines:
+            colors[i] = [0,0,1]
     line_set = open3d.LineSet()
     line_set.points = open3d.Vector3dVector(corners)
     line_set.lines = open3d.Vector2iVector(Bbox3D._lines_vids)
@@ -438,6 +448,8 @@ class Bbox3D():
       out:
         centroid_lines: [n, 2,3]
     '''
+    if bboxes.shape[0] == 0:
+        return np.empty([0,2,3])
     corners = Bbox3D.bboxes_corners(bboxes, up_axis)
     if cen_axis == 'X':
       neg_vs = Bbox3D._xneg_vs

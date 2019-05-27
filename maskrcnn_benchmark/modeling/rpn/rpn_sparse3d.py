@@ -142,7 +142,7 @@ class RPNModule(torch.nn.Module):
         in_channels = cfg.MODEL.BACKBONE.OUT_CHANNELS
         rpn_head = registry.RPN_HEADS[cfg.MODEL.RPN.RPN_HEAD]
         head = rpn_head(
-            cfg, in_channels, anchor_generator.num_anchors_per_location()[0]
+            cfg, in_channels, anchor_generator.num_anchors_per_location()
         )
 
         rpn_box_coder = BoxCoder3D()
@@ -158,6 +158,7 @@ class RPNModule(torch.nn.Module):
         self.box_selector_train = box_selector_train
         self.box_selector_test = box_selector_test
         self.loss_evaluator = loss_evaluator
+        self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
 
     def forward(self, points_sparse, features_sparse, targets=None):
         """
@@ -245,7 +246,7 @@ class RPNModule(torch.nn.Module):
             # sampled into a training batch.
             with torch.no_grad():
                 boxes = self.box_selector_train(
-                    anchors, objectness, rpn_box_regression, targets
+                    anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals
                 )
         loss_objectness, loss_rpn_box_reg = self.loss_evaluator(
             anchors, objectness, rpn_box_regression, targets

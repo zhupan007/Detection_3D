@@ -1,4 +1,7 @@
 import numpy as np
+
+IS_SHUFFLE = False
+
 COLOR_LIST = np.array( [
 [0,0,255],
 [255,0,0],
@@ -85,9 +88,6 @@ COLOR_LIST = np.array( [
 [255,255,0],
 ])
 
-#n = COLOR_LIST.shape[0]
-#shuffle = np.arange(n)
-#np.random.shuffle(shuffle)
 shuffle = np.array([\
         62,  6, 30, 47, 58, 59, 60, 43, 76,  7, 73,  5, 25, 75, 37, 67, 40,
         2, 56, 34, 15, 36,  4, 45, 19, 24, 48, 33,  9, 71, 64, 81, 74, 39,
@@ -95,7 +95,12 @@ shuffle = np.array([\
        22, 26, 11, 57, 80, 28, 68, 10, 41, 52, 55, 29, 72, 49, 17, 46,  3,
        12, 21, 38, 63, 32, 20, 23, 79, 61, 44, 77, 65, 78, 16])
 
-#COLOR_LIST = COLOR_LIST[shuffle]
+if IS_SHUFFLE:
+    n = COLOR_LIST.shape[0]
+    shuffle = np.arange(n)
+    np.random.shuffle(shuffle)
+    COLOR_LIST = COLOR_LIST[shuffle]
+
 COLOR_LIST = np.tile(COLOR_LIST, [4,1]) / 255.0
 
 import matplotlib.pyplot as plt

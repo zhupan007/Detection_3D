@@ -18,12 +18,14 @@ from wall_preprocessing import preprocess_walls
 from window_preprocessing import preprocess_windows
 from door_preprocessing import preprocess_doors
 from utils3d.bbox3d_ops import Bbox3D
+from suncg_meta import SUNCG_META
 
 
 Debug = True
 FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
+ENABLE_NO_RECTANGLE = ['Ceiling', 'Floor', 'Room']
 SAGE = False
 
 ONLY_LEVEL_1 = True
@@ -184,7 +186,7 @@ def merge_inside_out(mesh_parts):
             break
   return new_parts
 
-def gen_mesh(vertices, triangle, color=[0,0,0], only_genmesh=False):
+def show_mesh(vertices, triangle, color=[0,0,0], only_genmesh=False):
   mesh = open3d.TriangleMesh()
   mesh.vertices = open3d.Vector3dVector(vertices)
   mesh.triangles = open3d.Vector3iVector(triangle)
@@ -199,15 +201,20 @@ def get_part_bbox(vertices, triangle, triangle_norms, name=''):
   '''
     bbox: [xc, yc, zc, x_size, y_size, z_size, yaw]
   '''
+  #show_mesh(vertices, triangle)
+  class_name = name.split('#')[0]
+
   box_min = np.min( vertices, 0)
   box_max = np.max( vertices, 0)
+
   centroid = (box_min + box_max)  /2.0
   y_size = box_max[1] - box_min[1]
+
 
   ## Find the 8 outside corners
   distances = np.linalg.norm( vertices - np.expand_dims( centroid, 0 ), axis=1)
   max_dis = max(distances)
-  out_corner_mask = (abs(distances-max_dis) < 1e-9)
+  out_corner_mask = (abs(distances-max_dis) < 1e-5)
   n0 = vertices.shape[0]
   #print([i for i in range(n0) if out_corner_mask[i]])
   out_vertices = [vertices[i:i+1,:] for i in range(n0) if out_corner_mask[i]]
@@ -216,11 +223,23 @@ def get_part_bbox(vertices, triangle, triangle_norms, name=''):
     pass
     return None
   out_vertices = np.concatenate(out_vertices, 0)
-  #gen_mesh(vertices, triangle)
+
+
   if out_vertices.shape[0] != 8:
     #Bbox3D.draw_points_open3d(out_vertices, show=True)
-    print(f'\nFailed to find bbox, not rectangle, {out_vertices.shape[0]} vertices\n')
-    return None
+    #Bbox3D.draw_points_open3d(vertices, show=True)
+    #show_mesh(vertices, triangle)
+    if class_name  not in ENABLE_NO_RECTANGLE:
+        print(f'\nFailed to find bbox, not rectangle, {class_name} \n {out_vertices.shape[0]} vertices\n')
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        pass
+        return None
+    else:
+        print(f'\nNot rectangle, use no yaw box, {class_name} \n {out_vertices.shape[0]} vertices\n')
+        min_max = {'min':box_min, 'max':box_max}
+        bbox_noyaw = Bbox3D.bbox_from_minmax( min_max )
+        #Bbox3D.draw_points_bboxes(vertices, bbox_noyaw, 'Y', is_yx_zb=False)
+        return bbox_noyaw
 
   ## Find the 4 corners on one side
   x_right_mask = out_vertices[:,0]-centroid[0] > 0
@@ -261,17 +280,23 @@ def get_part_bbox(vertices, triangle, triangle_norms, name=''):
   ### Check
   if yaw!=0 and False:
     Bbox3D.draw_bboxes(bbox, 'Y', False)
+
+  if False:
+      min_max = {'min':box_min, 'max':box_max}
+      bbox_noyaw = Bbox3D.bbox_from_minmax( min_max )
+      bboxes_show = np.concatenate([bbox.reshape([1,7]), bbox_noyaw.reshape([1,7])], 0)
+      Bbox3D.draw_points_bboxes(vertices, bboxes_show, 'Y', is_yx_zb=False)
   return bbox
 
 
 def read_room_obj(obj_fn, room_parts_dir):
   import pymesh
-  mesh0 = pymesh.load_mesh(obj_fn)
+  #mesh0 = pymesh.load_mesh(obj_fn)
   mesh_parts = read_obj_parts(obj_fn)
   bboxs_roomparts = [part['bbox'] for part in mesh_parts]
   room_name = os.path.splitext(os.path.basename(obj_fn))[0]
 
-  is_save_part = True
+  is_save_part = False
   if is_save_part:
     print(f'save room parts in:\n {room_parts_dir}')
     for i in range(len(mesh_parts)):
@@ -360,10 +385,10 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[100:1500]
     else:
-      self.house_fns = house_fns[0:3]
+      self.house_fns = house_fns[0:100]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and True:
+    if Debug and False:
       scene_id0 = 'ffe929c9ed4dc7dab9a09ade502ac444' # single room
       scene_id1 = '8c033357d15373f4079b1cecef0e065a' # one level, with yaw!=0, one wall left and right has angle (31 final walls)
       scene_id2 = '28297783bce682aac7fb35a1f35f68fa' # one level, with yaw!=0 (22 final walls)
@@ -378,7 +403,8 @@ class Suncg():
 
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-      scene_id = scene_id1
+
+      scene_id = scene_id10
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -395,6 +421,7 @@ class Suncg():
   def parse_houses(self):
     #house_names_1level = []
     for k,fn in enumerate(self.house_fns):
+      print(f'\nstart {k+1}th house: \n  {fn}\n')
       parse_house_onef(fn)
       print(f'\nfinish {k+1} houses\n')
 
@@ -417,7 +444,7 @@ def parse_house_onef( house_fn):
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
-    if ONLY_LEVEL_1 and summary['level_num'] != 1:
+    if ONLY_LEVEL_1 and 'level_num' in summary and summary['level_num'] != 1:
       return
 
     if is_gen_cam:
@@ -436,7 +463,7 @@ def read_summary(base_dir):
   summary_fn = os.path.join(base_dir, 'summary.txt')
   summary = {}
   if not os.path.exists(summary_fn):
-    return summary, False
+    return summary
   with open(summary_fn, 'r') as f:
     for line in f:
       line = line.strip()
@@ -476,7 +503,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug
+    always_gen_bbox = False
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -522,7 +549,15 @@ def gen_bbox(house_fn):
         bboxes[obj] = np.concatenate([b.reshape([1,7]) for b in bboxes[obj]], 0)
       else:
         bboxes[obj] = np.array(bboxes[obj]).reshape([-1,7])
+
       bboxes[obj] = cam2world_box(bboxes[obj])
+
+    for obj in SUNCG_META.class_2_label:
+        if obj == 'background':
+            continue
+        if obj not in bboxes:
+            bboxes[obj] = np.array(bboxes[obj]).reshape([-1,7])
+
 
     level_num = len(house['levels'])
     if level_num == 1:
@@ -535,16 +570,23 @@ def gen_bbox(house_fn):
     if not os.path.exists(object_bbox_dir):
       os.makedirs(object_bbox_dir)
 
+    bboxes_num = {}
     for category in bboxes.keys():
+      bboxes_num[category] = len(bboxes[category])
       boxes_fn = os.path.join(object_bbox_dir, category+'.txt')
       boxes = np.array(bboxes[category])
       np.savetxt(boxes_fn, boxes)
 
-    save_ply = True
+    #######################
+    print(f'parsed_dir: {parsed_dir}')
+    write_summary(parsed_dir, 'level_num', level_num, 'w')
+    for obj in ['room', 'wall', 'window', 'door', 'floor', 'ceiling']:
+        write_summary(parsed_dir, f'{obj}_num', bboxes_num[obj], 'a')
+
+    #######################
+    save_ply = False
     if save_ply:
-      bboxes_num = {}
       for category in bboxes.keys():
-        bboxes_num[category] = len(bboxes[category])
         for i,bbox in enumerate(bboxes[category]):
           box_dir = os.path.join(object_bbox_dir,'{}'.format(category))
           if not os.path.exists(box_dir):
@@ -554,11 +596,6 @@ def gen_bbox(house_fn):
           bbox_cam = world2cam_box(bbox.reshape([1,7]))[0]
           Bbox3D.draw_bbox_open3d(bbox_cam, 'Y', plyfn=box_fn)
 
-      #######################
-      print(f'parsed_dir: {parsed_dir}')
-      write_summary(parsed_dir, 'level_num', level_num, 'w')
-      for obj in ['room', 'wall', 'window', 'door', 'floor', 'ceiling']:
-        write_summary(parsed_dir, f'{obj}_num', bboxes_num[obj], 'a')
 
 def split_room_parts(house_fn, modelId):
     tmp = house_fn.split('/')
@@ -876,7 +913,11 @@ def read_object_bbox(parsed_dir, category):
 def add_exta_cam_locations(cam_fn, show=False):
   parsed_dir = os.path.dirname(cam_fn)
   walls = read_object_bbox(parsed_dir, 'wall')
-  walls = world2cam_box(walls)
+  try:
+    walls = world2cam_box(walls)
+  except:
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
   #Bbox3D.draw_bboxes(walls, 'Y', False)
   wall_corners = Bbox3D.bboxes_corners(walls, up_axis='Y').reshape([-1,3])
   walls_min = wall_corners.min(0)

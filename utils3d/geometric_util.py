@@ -204,6 +204,8 @@ def lines_intersection_2d(line0s, line1s, must_on0=False, must_on1=False,
     '''
     shape0 = line0s.shape
     shape1 = line1s.shape
+    if shape0[0] * shape1[0] == 0:
+        return np.empty([shape0[0], shape1[0], 2, 2])
     assert len(shape0) == len(shape1) == 3
     assert shape0[1:] == shape1[1:] == (2,2)
     ints_all = []

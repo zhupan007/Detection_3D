@@ -12,9 +12,10 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 
-DEBUG = False
-SHOW_ROI_CLASSFICATION = DEBUG and True
+DEBUG = True
+SHOW_ROI_CLASSFICATION = DEBUG and False
 CHECK_IOU = False
+CHECK_REGRESSION_TARGET_YAW = False
 
 class FastRCNNLossComputation(object):
     """
@@ -22,7 +23,7 @@ class FastRCNNLossComputation(object):
     Also supports FPN
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -36,11 +37,13 @@ class FastRCNNLossComputation(object):
 
         self.high_threshold = proposal_matcher.high_threshold
         self.low_threshold = proposal_matcher.low_threshold
+        self.add_gt_proposals = add_gt_proposals
+        self.aug_thickness = aug_thickness
 
 
     def match_targets_to_proposals(self, proposal, target):
-        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_wall_target_thickness=0)
-        matched_idxs = self.proposal_matcher(match_quality_matrix)
+        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness=self.aug_thickness, criterion=-1)
+        matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff=None, flag='ROI')
         # Fast RCNN only need "labels" field for selecting the targets
         target = target.copy_with_fields("labels")
         # get the targets corresponding GT for each proposal
@@ -195,6 +198,13 @@ class FastRCNNLossComputation(object):
         box_regression_pos = box_regression[sampled_pos_inds_subset[:, None], map_inds]
         regression_targets_pos = regression_targets[sampled_pos_inds_subset]
 
+        if CHECK_REGRESSION_TARGET_YAW:
+            roi_target_yaw = regression_targets_pos[:,-1]
+            print(f'max_roi_target_yaw: {roi_target_yaw.max()}')
+            print(f'min_roi_target_yaw: {roi_target_yaw.min()}')
+            assert roi_target_yaw.max() < 1.5
+            assert roi_target_yaw.min() > -1.5
+
         box_loss = smooth_l1_loss(
             box_regression_pos,
             regression_targets_pos,
@@ -235,7 +245,7 @@ class FastRCNNLossComputation(object):
 
           def show_one_type(eval_type):
               indices = metric_inds[eval_type]
-              if eval_type == 'TP':
+              if eval_type == 'TP' and self.add_gt_proposals:
                 indices = indices[0:-gt_num]
               n0 = indices.shape[0]
               pro_ = proposals[indices]
@@ -301,7 +311,10 @@ def make_roi_box_loss_evaluator(cfg):
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE, cfg.MODEL.ROI_HEADS.POSITIVE_FRACTION
     )
     yaw_loss_mode = cfg.MODEL.LOSS.YAW_MODE
+    add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
+    tmp = cfg.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC
+    aug_thickness = {'target':tmp[0], 'anchor':tmp[1]}
 
-    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode)
+    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness)
 
     return loss_evaluator

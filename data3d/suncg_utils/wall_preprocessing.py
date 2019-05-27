@@ -4,6 +4,10 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import limit_period, vertical_dis_1point_lines, \
              vertical_dis_points_lines, ave_angles
 from render_tools import show_walls_offsetz, show_walls_1by1
+from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu, rotate_iou_gpu_eval
+
+MERGE_Z_ANYWAY_XYIOU_THRESHOLD = 0.75
+DEBUG = True
 
 def preprocess_walls(wall_bboxes):
   '''
@@ -14,7 +18,11 @@ def preprocess_walls(wall_bboxes):
     4) Clean repeated walls
   '''
   #show_walls_offsetz(wall_bboxes)
+  #Bbox3D.draw_bboxes_mesh(wall_bboxes, 'Z', False)
   #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
+  if wall_bboxes.shape[0] == 0:
+      return wall_bboxes
+
   wall_bboxes = Bbox3D.define_walls_direction(wall_bboxes, 'Z', yx_zb=False, check_thickness=True)
 
 
@@ -73,8 +81,51 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
   else:
     so_same = np.abs(dif[0,3+1-dim]) < 0.15
   sz_same = np.abs(dif[0,3+2]) < 0.01
+  z_sames0 = z_same and sz_same
+  if z_sames0:
+      z_sames = z_sames0
+  else:
+      z0_max = bbox0[0,2] + bbox0[0,5] * 0.5
+      z0_min = bbox0[0,2] - bbox0[0,5] * 0.5
+      z1_max = bbox1[0,2] + bbox1[0,5] * 0.5
+      z1_min = bbox1[0,2] - bbox1[0,5] * 0.5
+      zmin_dif = np.abs(z1_min - z0_min)
+      zmax_dif = np.abs(z1_max - z0_max)
+      zmin_same = zmin_dif < 0.01
+      zmax_same = zmax_dif < 0.03
+      z_sames = zmin_same and zmax_same
+
+      if not zmax_same:
+        iou_xy = rotate_iou_gpu(bbox0[:,[0,1,3,4,6]], bbox1[:,[0,1,3,4,6]])
+        #print(f'box0 : {bbox0}')
+        #print(f'box1 : {bbox1}')
+        print(f'zmin_dif:{zmin_dif}, zmax_dif:{zmax_dif}\n iou_xy:{iou_xy}\n')
+        if iou_xy > MERGE_Z_ANYWAY_XYIOU_THRESHOLD:
+            print('Merge even z is different')
+            z_sames = True
+        else:
+            print('abort merging because of z is different')
+        if DEBUG and False:
+            box_show = np.concatenate([bbox0, bbox1], 0)
+            Bbox3D.draw_bboxes(box_show, 'Z', False)
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
+
+      if z_sames:
+        zmin_new = min(z0_min, z1_min)
+        zmax_new = max(z0_max, z1_max)
+        z_new = (zmin_new + zmax_new) / 2.0
+        z_size_new = zmax_new - zmin_new
+
+        bbox0[0,2] = z_new
+        bbox0[0,5] = z_size_new
+        bbox1[0,2] = z_new
+        bbox1[0,5] = z_size_new
+
   yaw_same = np.abs(dif[0,-1]) < 0.05
-  if not (z_same and so_same and sz_same and yaw_same):
+
+
+  if not (z_sames and so_same and yaw_same):
     return None
 
   cen_direc = dif[:,0:2]
@@ -90,12 +141,6 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
     if not overlap_mask1:
       return None
 
-  if (bbox0[:,[2,5]] != bbox1[:,[2,5]]).any():
-    print("Merge two walls with different z is not implemented")
-    show_box = np.concatenate([bbox0, bbox1], 0)
-    Bbox3D.draw_bboxes(show_box, 'Z', False)
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    pass
 
   centroid_lines1 = Bbox3D.bboxes_centroid_lines(bbox1, 'X' if dim == 1 else 'Y', 'Z')
   cen_dis = vertical_dis_1point_lines(bbox0[0,0:3], centroid_lines1)[0]
@@ -105,6 +150,8 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
 
   is_box0_covered_by_1 = size_dim1*0.5 > cen_dis + size_dim0*0.5
   is_box1_covered_by_0 = size_dim0*0.5 > cen_dis + size_dim1*0.5
+
+
   if is_box0_covered_by_1:
     merged = bbox1
   elif is_box1_covered_by_0:
@@ -136,6 +183,8 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
     1) Find all the walls with not both corners intersected
     2) Merge all the walls can be merged
   '''
+  if wall_bboxes.shape[0] == 0:
+      return wall_bboxes
   intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, check_same_height=False, only_on_corners=True)
   num_inters = np.array([it.shape[0] for it in intersections])
   mask = num_inters < 2
@@ -190,6 +239,8 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
     2) Merge along Y
   '''
   from utils3d.geometric_util import angle_with_x, vertical_dis_points_lines
+  if wall_bboxes.shape[0] == 0:
+      return wall_bboxes
   show = False
   if show:
     wall_bboxes0 = wall_bboxes.copy()
@@ -276,6 +327,8 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
             try:
               wall_bboxes[idx] = box_merge.reshape([7])
             except:
+              show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
+              Bbox3D.draw_bboxes(show_boxes, 'Z', False)
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
             remain_mask[i] = False
@@ -301,10 +354,18 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
             # offset: half of the thickness
             intersection += cen_dir_longer * wall_bboxes[i,4] * 0.5
 
-            splited_boxes = Bbox3D.split_wall_by_centroid_intersections(wall_bboxes[longer_idx], intersection.reshape([1,3]))
-            tmp = wall_bboxes[short_idx,0:3] - splited_boxes[:,0:3]
-            tmp = np.linalg.norm(tmp, axis=1)
-            merge_id = int(tmp[0] > tmp[1])
+            splited_boxes = Bbox3D.split_wall_by_centroid_intersections(wall_bboxes[longer_idx], intersection.reshape([1,3])) # [2,7]
+            if DEBUG and splited_boxes.shape[0] == 1:
+                Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), wall_bboxes[longer_idx], 'Z', False)
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                pass
+            tmp = wall_bboxes[short_idx,0:3] - splited_boxes[:,0:3] # [2,3]
+            tmp = np.linalg.norm(tmp, axis=1) # [2]
+            try:
+                merge_id = int(tmp[0] > tmp[1])
+            except:
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                pass
 
             box_merge = merge_2pieces_of_1wall(wall_bboxes[short_idx], splited_boxes[merge_id], 'Y')
 
@@ -524,6 +585,8 @@ def crop_walls(wall_bboxes):
     crop walls with intersections not on the corner
   '''
   #show_walls_1by1(wall_bboxes)
+  if wall_bboxes.shape[0]==0:
+      return wall_bboxes
 
   intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, check_same_height=False, not_on_corners=True)
   n = wall_bboxes.shape[0]

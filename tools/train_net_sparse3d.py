@@ -34,6 +34,12 @@ def train(cfg, local_rank, distributed, loop, only_test):
     model.to(device)
 
     optimizer = make_optimizer(cfg, model)
+
+    arguments = {}
+    arguments["iteration"] = 0
+    data_loader = make_data_loader(cfg, is_train=True, is_distributed=distributed,
+                  start_iter=arguments["iteration"])
+
     scheduler = make_lr_scheduler(cfg, optimizer)
 
     if distributed:
@@ -42,9 +48,6 @@ def train(cfg, local_rank, distributed, loop, only_test):
             # this should be removed if we update BatchNorm stats
             broadcast_buffers=False,
         )
-
-    arguments = {}
-    arguments["iteration"] = 0
 
     output_dir = cfg.OUTPUT_DIR
 
@@ -58,10 +61,8 @@ def train(cfg, local_rank, distributed, loop, only_test):
     if only_test:
       return model
 
-    data_loader = make_data_loader(cfg, is_train=True, is_distributed=distributed,
-                  start_iter=arguments["iteration"])
 
-    checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
+    checkpoint_period = int(cfg.SOLVER.CHECKPOINT_PERIOD_EPOCHS * cfg.INPUT.Example_num / cfg.SOLVER.IMS_PER_BATCH)
 
     epochs_between_test = cfg.SOLVER.EPOCHS_BETWEEN_TEST
     for e in range(epochs_between_test):
@@ -160,6 +161,8 @@ def main():
     intact_cfg(cfg)
     cfg.freeze()
 
+    train_example_num = get_train_example_num(cfg)
+    cfg['OUTPUT_DIR'] = f'{cfg.OUTPUT_DIR}_T{train_example_num}'
     output_dir = cfg.OUTPUT_DIR
     if output_dir:
         mkdir(output_dir)
@@ -167,6 +170,11 @@ def main():
         shutil.copyfile(args.config_file, f"{output_dir}/{cfn}")
         default_cfn = 'maskrcnn_benchmark/config/defaults.py'
         shutil.copyfile(default_cfn, f"{output_dir}/default.py")
+        train_fns = 'data3d/suncg_utils/SuncgTorch/train_test_splited/train.txt'
+        shutil.copyfile(train_fns, f"{output_dir}/train.txt")
+        val_fns = 'data3d/suncg_utils/SuncgTorch/train_test_splited/val.txt'
+        shutil.copyfile(train_fns, f"{output_dir}/val.txt")
+
 
     logger = setup_logger("maskrcnn_benchmark", output_dir, get_rank())
     logger.info("Using {} GPUs".format(num_gpus))
@@ -187,28 +195,37 @@ def main():
       if not args.skip_test:
           test(cfg, model, args.distributed)
 
+def get_train_example_num(cfg):
+    from data3d.suncg_utils.suncg_dataset import SUNCGDataset
+    train_dataset = SUNCGDataset('train', cfg)
+    return len(train_dataset)
 
 def intact_cfg(cfg):
-  fpn_scalse = cfg.MODEL.RPN_SCALES_FROM_TOP
+  fpn_scalse = cfg.MODEL.RPN.RPN_SCALES_FROM_TOP
   strides = cfg.SPARSE3D.STRIDE
   nPlanesFront = cfg.SPARSE3D.nPlanesFront
+  scales_selector_3d_2d = cfg.MODEL.RPN.RPN_3D_2D_SELECTOR
+
   scale_num = len(nPlanesFront)
   assert scale_num == len(strides) + 1
   ANCHOR_STRIDE = [np.array([1,1,1])]
   for s in range(scale_num-1):
     anchor_stride = ANCHOR_STRIDE[-1] * np.array(strides[s])
     ANCHOR_STRIDE.append(anchor_stride)
-  cfg.MODEL.RPN.ANCHOR_STRIDE = [ANCHOR_STRIDE[-i-1] for i in fpn_scalse]
+  anchor_stride = [ANCHOR_STRIDE[-i-1] for i in fpn_scalse]
+  anchor_stride = anchor_stride + anchor_stride
+  anchor_stride_final = [anchor_stride[i] for i in scales_selector_3d_2d]
+  cfg.MODEL.RPN.ANCHOR_STRIDE = anchor_stride_final
 
   #cfg.MODEL.RPN.ANCHOR_STRIDE = list(reversed([ANCHOR_STRIDE[i] for i in fpn_scalse]))
   #cfg.MODEL.RPN.ANCHOR_SIZES_3D = list(reversed( cfg.MODEL.RPN.ANCHOR_SIZES_3D ))
 
   anchor_size = cfg.MODEL.RPN.ANCHOR_SIZES_3D
-  anchor_stride = cfg.MODEL.RPN.ANCHOR_STRIDE
   ns = len(fpn_scalse)
   na = len(anchor_size)
-  assert ns==na, f"fpn_scalse num {ns} != anchor_size num {na}. The anchor size for each scale should be seperately"
-  for s in range(1,na):
+  #assert ns*2==na, f"fpn_scalse num {ns}*2 != anchor_size num {na}. The anchor size for each scale should be seperately"
+  tmp = [i for i in scales_selector_3d_2d if i <ns]
+  for s in range(1, len(tmp)):
     assert fpn_scalse[s-1] > fpn_scalse[s], "fpn should from level_id large (map large) to level_id small (map small)"
     assert anchor_size[s-1][0] < anchor_size[s][0], "ANCHOR_SIZES_3D should set from small to large, to match scale order of feature map"
     assert anchor_stride[s-1][0] < anchor_stride[s][0]
@@ -217,6 +234,7 @@ def intact_cfg(cfg):
   #  assert anchor_size[0][0] > anchor_size[1][0], "ANCHOR_SIZES_3D should set from small to large after reversed, to match scale order of feature map"
 
   check_roi_parameters(cfg)
+
 
 def check_roi_parameters(cfg):
   #spatial_scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL
@@ -227,12 +245,23 @@ def check_roi_parameters(cfg):
 
   strides = np.array(strides)
   strides = np.cumprod(strides, 0)
+
+  # RPN
+  strides_ = np.flip(strides, 0)
+  rpn_strides = strides_[cfg.MODEL.RPN.RPN_SCALES_FROM_TOP]
+  full_scale = cfg.SPARSE3D.VOXEL_FULL_SCALE
+  rpn_map_sizes = (np.array(full_scale).reshape(1,-1) / rpn_strides).astype(np.int32)
+
+  cfg.MODEL.RPN.RPN_MAP_SIZES = rpn_map_sizes.tolist()
+
+  # ROI
   spatial_scales_all = np.flip(1.0 / strides, 0)
   roi_spatial_scales = spatial_scales_all[roi_scales, :]
   assert np.all(roi_spatial_scales[:,0] == roi_spatial_scales[:,1])
   roi_spatial_scales_xy = roi_spatial_scales[:,0].tolist()
 
   cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL = roi_spatial_scales_xy
+
 
   show = True
   if show:

@@ -10,7 +10,7 @@ from utils3d.geometric_torch import OBJ_DEF
 
 DEBUG = True
 SHOW_ANCHOR_EACH_SCALE = DEBUG and False
-CHECK_ANCHOR_STRIDES = True
+CHECK_ANCHOR_STRIDES = False
 if DEBUG:
   from utils3d.bbox3d_ops import Bbox3D
 
@@ -56,10 +56,10 @@ class AnchorGenerator(nn.Module):
 
         sizes_3d = np.array(sizes_3d, dtype=np.float32)
         anchor_strides = np.array(anchor_strides)
-        levels_num = sizes_3d.shape[0]
-        for l in range(1,levels_num):
-          assert sizes_3d[l,0] >= sizes_3d[l-1,0], "should start from small to large"
-          assert anchor_strides[l,0] >= anchor_strides[l-1,0], "should start from small to large"
+        #levels_num = sizes_3d.shape[0]
+        #for l in range(1,levels_num//2):
+        #  assert sizes_3d[l,0] >= sizes_3d[l-1,0], "should start from small to large"
+        #  assert anchor_strides[l,0] >= anchor_strides[l-1,0], "should start from small to large"
         assert sizes_3d.shape[1] == 3
         anchor_strides = np.array(anchor_strides, dtype=np.float32)
         assert anchor_strides.shape[1] == 3
@@ -80,7 +80,8 @@ class AnchorGenerator(nn.Module):
         self.scene_size = torch.tensor(scene_size, dtype=torch.float)
 
     def num_anchors_per_location(self):
-        return [len(cell_anchors) for cell_anchors in self.cell_anchors]
+        return self.anchor_num_per_loc
+        #return [len(cell_anchors) for cell_anchors in self.cell_anchors]
 
     def grid_anchors(self, locations):
         anchors = []
@@ -102,11 +103,11 @@ class AnchorGenerator(nn.Module):
 
         # CHECK_ANCHOR_STRIDES:
         if CHECK_ANCHOR_STRIDES:
-          scales_num = len(anchors)
+          scales_num = len(anchors) // 2
           for s in range(scales_num):
             xyz_max = anchors[s][:,0:2].max(0)[0]
             er = (xyz_max / self.scene_size[0:2]).min()
-            scope_min = 0.85 if s==0 else 0.75
+            scope_min = 0.8 if s==0 else 0.7
             if er < scope_min:
               print( "CHECK_ANCHOR_STRIDES ERROR")
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -159,7 +160,7 @@ class AnchorGenerator(nn.Module):
               print(f'points ctr mean: {points.mean(0)}')
               print(f'points ctr max: {points.max(0)}')
 
-              anchors[scale_i].show(2, points, with_centroids=True)
+              anchors[scale_i].show(3, points, with_centroids=True)
               #anchors[scale_i].show_centroids(-1, points)
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
@@ -213,62 +214,9 @@ def make_anchor_generator(config):
     else:
         assert len(anchor_stride) == 1, "Non-FPN should have a single ANCHOR_STRIDE"
     anchor_generator = AnchorGenerator(
-        voxel_scale, anchor_sizes_3d, yaws, anchor_stride, scene_size, straddle_thresh
+        voxel_scale, anchor_sizes_3d, yaws, anchor_stride, scene_size,  straddle_thresh
     )
     return anchor_generator
-
-
-# Copyright (c) 2017-present, Facebook, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-##############################################################################
-#
-# Based on:
-# --------------------------------------------------------
-# Faster R-CNN
-# Copyright (c) 2015 Microsoft
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Ross Girshick and Sean Bell
-# --------------------------------------------------------
-
-
-# Verify that we compute the same anchors as Shaoqing's matlab implementation:
-#
-#    >> load output/rpn_cachedir/faster_rcnn_VOC2007_ZF_stage1_rpn/anchors.mat
-#    >> anchors
-#
-#    anchors =
-#
-#       -83   -39   100    56
-#      -175   -87   192   104
-#      -359  -183   376   200
-#       -55   -55    72    72
-#      -119  -119   136   136
-#      -247  -247   264   264
-#       -35   -79    52    96
-#       -79  -167    96   184
-#      -167  -343   184   360
-
-# array([[ -83.,  -39.,  100.,   56.],
-#        [-175.,  -87.,  192.,  104.],
-#        [-359., -183.,  376.,  200.],
-#        [ -55.,  -55.,   72.,   72.],
-#        [-119., -119.,  136.,  136.],
-#        [-247., -247.,  264.,  264.],
-#        [ -35.,  -79.,   52.,   96.],
-#        [ -79., -167.,   96.,  184.],
-#        [-167., -343.,  184.,  360.]])
-
 
 
 def generate_anchors_3d( size, yaws, centroids=np.array([[0,0,0]])):
@@ -283,6 +231,7 @@ def generate_anchors_3d( size, yaws, centroids=np.array([[0,0,0]])):
           anchors.append(anchor)
     anchors = np.concatenate(anchors, 0)
     return torch.from_numpy( anchors )
+
 
 def generate_anchors(
     sizes=(32, 64, 128, 256, 512), aspect_ratios=(0.5, 1, 2)

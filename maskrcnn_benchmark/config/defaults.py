@@ -21,7 +21,7 @@ from yacs.config import CfgNode as CN
 _C = CN()
 
 _C.DEBUG = CN()
-_C.DEBUG.DISABLE_ROILOSS = True
+_C.DEBUG.DISABLE_ROILOSS = False
 _C.DEBUG.eval_in_train = True
 _C.DEBUG.eval_in_train_per_iter = False
 
@@ -72,6 +72,7 @@ _C.INPUT.TO_BGR255 = True
 
 _C.INPUT.ELEMENTS = ['xyz', 'color', 'normal']
 _C.INPUT.CLASSES = ['background', 'wall', 'door', 'window']
+_C.INPUT.SCENES = []
 # -----------------------------------------------------------------------------
 # Dataset
 # -----------------------------------------------------------------------------
@@ -135,11 +136,11 @@ _C.MODEL.RPN.STRADDLE_THRESH = 0
 # Minimum overlap required between an anchor and ground-truth box for the
 # (anchor, gt box) pair to be a positive example (IoU >= FG_IOU_THRESHOLD
 # ==> positive RPN example) (->Matcher)
-_C.MODEL.RPN.FG_IOU_THRESHOLD = 0.6 #  0.7
+_C.MODEL.RPN.FG_IOU_THRESHOLD = 0.55 #  0.7
 # Maximum overlap allowed between an anchor and ground-truth box for the
 # (anchor, gt box) pair to be a negative examples (IoU < BG_IOU_THRESHOLD
 # ==> negative RPN example) (->Matcher)
-_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.28 # 0.3
+_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.25 # 0.3
 # Maximum yaw dif for positive anchor (->Matcher)
 _C.MODEL.RPN.YAW_THRESHOLD = 0.7
 # Total number of RPN examples per image (-> BalancedPositiveNegativeSampler)
@@ -165,9 +166,9 @@ _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 1000 #  2000
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"
 
-
-_C.MODEL.RPN_SCALES_FROM_TOP =  [4,3,2,1]
-
+_C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2]
+_C.MODEL.RPN.RPN_3D_2D_SELECTOR =  [1,2,3,4,5]
+_C.MODEL.RPN.ADD_GT_PROPOSALS = True
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options
 # ---------------------------------------------------------------------------- #
@@ -201,12 +202,13 @@ _C.MODEL.ROI_HEADS.NMS = 0.5
 # Maximum number of detections to return per image (100 is based on the limit
 # established for the COCO dataset)
 _C.MODEL.ROI_HEADS.DETECTIONS_PER_IMG = 100
+_C.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC = [0.2,0.2]
 
 
 _C.MODEL.ROI_BOX_HEAD = CN()
 _C.MODEL.ROI_BOX_HEAD.FEATURE_EXTRACTOR = "FPN2MLPFeatureExtractor"
 _C.MODEL.ROI_BOX_HEAD.PREDICTOR = "FPNPredictor"
-_C.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = 7 #14
+_C.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = (7,7,3) #14
 _C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 2
 #_C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (0.5,0.25, 0.125)  # (1.0 / 16,)
 #_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
@@ -276,13 +278,13 @@ _C.SOLVER.WEIGHT_DECAY = 0.0005
 _C.SOLVER.WEIGHT_DECAY_BIAS = 0
 
 _C.SOLVER.GAMMA = 0.1
-_C.SOLVER.STEPS = (30000,)
+_C.SOLVER.LR_STEP_EPOCHS = (30,)
 
 _C.SOLVER.WARMUP_FACTOR = 1.0 / 3
-_C.SOLVER.WARMUP_ITERS = 500
+_C.SOLVER.WARMUP_EPOCHS = 0.5
 _C.SOLVER.WARMUP_METHOD = "linear"
 
-_C.SOLVER.CHECKPOINT_PERIOD = 2500
+_C.SOLVER.CHECKPOINT_PERIOD_EPOCHS = 20
 
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
