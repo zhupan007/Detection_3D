@@ -122,9 +122,15 @@ class SUNCGDataset(torch.utils.data.Dataset):
           pass
 
         #---------------------------------------------------------------------
+        assert a.min() >= 0, f"point location should not < 0: {a.min()}"
         up_check = np.all(a < full_scale[np.newaxis,:], 1)
+        if not np.all(up_check):
+            max_scale = a.max(0)
+            print(f'\nmax scale: {max_scale} > full_scale: {full_scale}, some points will be missed\n')
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            assert False
+
         idxs = (a.min(1)>=0)*(up_check)
-        assert np.all(idxs), f"some points are missed in is_train={is_train}"
         a=a[idxs]
         b=b[idxs]
         #c=c[idxs]

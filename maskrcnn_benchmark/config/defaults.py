@@ -23,7 +23,7 @@ _C = CN()
 _C.DEBUG = CN()
 _C.DEBUG.DISABLE_ROILOSS = False
 _C.DEBUG.eval_in_train = True
-_C.DEBUG.eval_in_train_per_iter = True
+_C.DEBUG.eval_in_train_per_iter = False
 
 _C.MODEL = CN()
 _C.MODEL.RPN_ONLY = False

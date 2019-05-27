@@ -10,7 +10,7 @@ from suncg_utils.suncg_meta import SUNCG_META
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
-SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
+SPLITED_DIR = '/DS/SUNCG/suncg_v1_torch_splited'
 
 #CLASSES = ['wall', 'ceiling']
 CLASSES = ['wall', 'window', 'door']
@@ -196,7 +196,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['a046e442fa9c38ae063e8ea9d2ceeeea']
   house_names = ['8c033357d15373f4079b1cecef0e065a']
 
-  #house_names = os.listdir(PARSED_DIR)
+  house_names = os.listdir(PARSED_DIR)
   house_names.sort()
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -215,7 +215,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
     pth_fns = glob.glob(splited_boxfn)
     if r_splited:
       for i,pth_fn in enumerate( pth_fns ):
-        print(f'\nThe {i}-th splited scene')
+        print(f'\nThe {i}-th / {len(pth_fns)} splited scene')
         render_pth_file(pth_fn)
 
 
@@ -251,15 +251,15 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 
 
 if __name__ == '__main__':
-    render_fn()
-    #main()
+    #render_fn()
+    main()
 
 
 
