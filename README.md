@@ -100,6 +100,7 @@ pcl xyz: [0:max]
 - conda install -c open3d-admin open3d
 - pip install torch==1.1.0 -f https://download.pytorch.org/whl/cu100/stable  
   # pytorch 1.2 failed while building spconv
+- pip3 install -U https://download.pytorch.org/whl/cu100/torch-1.0.0-cp36-cp36m-linux_x86_64.whl  
 
 ## maskrcnn
 A gcc error occured while builing with this project
