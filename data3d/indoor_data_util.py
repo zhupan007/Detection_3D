@@ -18,9 +18,12 @@ DEBUG = True
 if DEBUG:
   from second.data.data_render import DataRender
 
+BLOCK_SIZE0 = np.array([30, 30, -1])
+NUM_POINTS = 300 * 1000
+
 DSET_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{DSET_DIR}/parsed'
-SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch'
+SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch' + f'_BS_{BLOCK_SIZE0[0]}_{BLOCK_SIZE0[1]}_BN_{NUM_POINTS//1000}K'
 MAX_FLOAT_DRIFT = 1e-6
 DATASET = 'SUNCG'
 CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
@@ -77,11 +80,11 @@ def add_norm(pcd):
 #  print(f'write summary: {summary_fn}')
 
 class IndoorData():
-  _block_size0 = np.array([8,8,-1])
+  _block_size0 = BLOCK_SIZE0
   #_block_size0 = np.array([16,16,3])
   _block_stride_rate = np.array([0.8,0.8,0.8])
-  _min_pn_inblock = 1000
-  _num_points = 100 * 1000
+  _num_points = NUM_POINTS
+  _min_pn_inblock = NUM_POINTS / 10
 
   @staticmethod
   def split_scene(scene_dir, splited_path):
@@ -554,8 +557,8 @@ def creat_splited_pcl_box():
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   house_names = ['7411df25770eaf8d656cac2be42a9af0']
-  #house_names = ['8c033357d15373f4079b1cecef0e065a', '7411df25770eaf8d656cac2be42a9af0']
-  #house_names = get_house_names_1level()
+  #house_names = ['8c033357d15373f4079b1cecef0e065a']
+  house_names = get_house_names_1level()
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
@@ -582,7 +585,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  #creat_splited_pcl_box()
-  gen_train_list()
+  creat_splited_pcl_box()
+  #gen_train_list()
   pass
 

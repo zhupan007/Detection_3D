@@ -160,6 +160,14 @@ class Bbox3D():
     return boxes
 
   @staticmethod
+  def boxes_size(boxes, up_axis='Z'):
+      corners = Bbox3D.bboxes_corners(boxes, up_axis).reshape([-1,3])
+      xyz_max = corners.max(0)
+      xyz_min = corners.min(0)
+      xyz_size = xyz_max - xyz_min
+      return xyz_size
+
+  @staticmethod
   def draw_points_open3d(points, color=[0,1,1], show=False):
     points = cut_points_roof(points, POINTS_KEEP_RATE)
     pcl = open3d.PointCloud()
