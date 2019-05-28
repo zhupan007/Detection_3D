@@ -101,6 +101,7 @@ pcl xyz: [0:max]
 - pip install torch==1.1.0 -f https://download.pytorch.org/whl/cu100/stable  
   # pytorch 1.2 failed while building spconv
 - pip3 install -U https://download.pytorch.org/whl/cu100/torch-1.0.0-cp36-cp36m-linux_x86_64.whl  
+- conda install pytorch=1.0.0 cuda100 -c pytorch
 
 ## maskrcnn
 A gcc error occured while builing with this project

@@ -355,19 +355,19 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
             intersection += cen_dir_longer * wall_bboxes[i,4] * 0.5
 
             splited_boxes = Bbox3D.split_wall_by_centroid_intersections(wall_bboxes[longer_idx], intersection.reshape([1,3])) # [2,7]
-            if DEBUG and splited_boxes.shape[0] == 1:
-                Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), wall_bboxes[longer_idx], 'Z', False)
-                import pdb; pdb.set_trace()  # XXX BREAKPOINT
-                pass
-            tmp = wall_bboxes[short_idx,0:3] - splited_boxes[:,0:3] # [2,3]
-            tmp = np.linalg.norm(tmp, axis=1) # [2]
-            try:
-                merge_id = int(tmp[0] > tmp[1])
-            except:
-                import pdb; pdb.set_trace()  # XXX BREAKPOINT
-                pass
 
-            box_merge = merge_2pieces_of_1wall(wall_bboxes[short_idx], splited_boxes[merge_id], 'Y')
+            if splited_boxes.shape[0] == 1:
+                box_merge = None
+                if False and DEBUG and splited_boxes.shape[0] == 1:
+                    box_tmp = np.array([[0,0,0, 0.5,0.5,0.5, 0]])
+                    box_tmp[0,0:3] = intersection.reshape([1,3])
+                    boxes_show = np.concatenate([box_tmp, wall_bboxes[longer_idx].reshape([-1,7])], 0)
+                    Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), boxes_show, 'Z', False)
+            else:
+                tmp = wall_bboxes[short_idx,0:3] - splited_boxes[:,0:3] # [2,3]
+                tmp = np.linalg.norm(tmp, axis=1) # [2]
+                merge_id = int(tmp[0] > tmp[1])
+                box_merge = merge_2pieces_of_1wall(wall_bboxes[short_idx], splited_boxes[merge_id], 'Y')
 
             if show and False:
             #if box_merge is None:
