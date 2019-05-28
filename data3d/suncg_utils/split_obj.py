@@ -47,9 +47,6 @@ def read_obj(fn):
 if __name__ == '__main__':
     folder = '/home/z/SUNCG/suncg_v1/parsed'
     house_name = '31a69e882e51c7c5dfdc0da464c3c02d'
-    house_name = '8c033357d15373f4079b1cecef0e065a'
-    #house_name = 'b021ab18bb170a167d569dcfcaf58cd4'
-    house_name = '0005b92a9ed6349df155a462947bfdfe'
-    house_name = '0004d52d1aeeb8ae6de39d6bd993e992'
+    house_name = '004e36a61e574321adc8da7b48c331f2'
     fn = f'{folder}/{house_name}/house.obj'
     read_obj(fn)

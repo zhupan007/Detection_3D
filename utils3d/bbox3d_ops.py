@@ -210,7 +210,11 @@ class Bbox3D():
     open3d.draw_geometries(mesh)
 
   @staticmethod
-  def draw_bboxes(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True):
+  def draw_bboxes(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True, highlight_ids=None):
+    if highlight_ids is not None:
+        assert labels is None
+        labels = np.zeros([gt_boxes0.shape[0]], dtype=np.int32)
+        labels[highlight_ids] = 1
     bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color=random_color)
     open3d.draw_geometries(bboxes_lineset_ls)
 

@@ -401,10 +401,18 @@ class Suncg():
       scene_id9 = '0a83d94e9df3a8d07c71f0fe125f4b57'
       scene_id10 =  'b021ab18bb170a167d569dcfcaf58cd4'
 
+      # hard and error_prone scenes
+      scene1_id0 = '0058113bdc8bee5f387bb5ad316d7b28'  # a wall is broken by no intersection
+      scene1_id1 = '001ef7e63573bd8fecf933f10fa4491b'  # two very close walls can easily be merged as one incorrectly (very hard to detect)
+      scene1_id2 = '0027affcd87fc7616b0afbb20c0aaf99'  # two walls very close, very hard
+      scene1_id3 = '002f987c1663f188c75997593133c28f'  # very small angle walls, ambiguous in wall definition
+      scene1_id4 = '00466151039216eb333369aa60ea3efe'  # too long wall
+      scene1_id5 = '004e36a61e574321adc8da7b48c331f2'  # complicated and wall definitoin ambiguous
+
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
 
-      scene_id = scene_id10
+      scene_id = scene1_id1
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -503,7 +511,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = False
+    always_gen_bbox = Debug and False
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)

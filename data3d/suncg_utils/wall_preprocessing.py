@@ -3,11 +3,11 @@ import numpy as np
 from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import limit_period, vertical_dis_1point_lines, \
              vertical_dis_points_lines, ave_angles
-from render_tools import show_walls_offsetz, show_walls_1by1
+from data3d.render_tools import show_walls_offsetz, show_walls_1by1
 from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu, rotate_iou_gpu_eval
 
 MERGE_Z_ANYWAY_XYIOU_THRESHOLD = 0.75
-DEBUG = True
+DEBUG = False
 
 def preprocess_walls(wall_bboxes):
   '''
@@ -17,9 +17,12 @@ def preprocess_walls(wall_bboxes):
     3) If a wall in SUNCG actually contains several finally walls, crop it
     4) Clean repeated walls
   '''
-  #show_walls_offsetz(wall_bboxes)
-  #Bbox3D.draw_bboxes_mesh(wall_bboxes, 'Z', False)
-  #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
+  show_pro = False
+  if show_pro:
+    print('original')
+    show_walls_offsetz(wall_bboxes)
+    #Bbox3D.draw_bboxes_mesh(wall_bboxes, 'Z', False)
+    #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
   if wall_bboxes.shape[0] == 0:
       return wall_bboxes
 
@@ -27,33 +30,38 @@ def preprocess_walls(wall_bboxes):
 
 
   wall_bboxes = merge_pieces_of_same_walls_alongY(wall_bboxes)
-  print('merge_pieces_of_same_walls_alongY')
-  #show_walls_offsetz(wall_bboxes)
+  if show_pro:
+    print('merge_pieces_of_same_walls_alongY')
+    show_walls_offsetz(wall_bboxes)
 
   wall_bboxes = merge_pieces_of_same_walls_alongX(wall_bboxes)
-  print('merge_pieces_of_same_walls_alongX')
-  #show_walls_offsetz(wall_bboxes)
+  if show_pro:
+    print('merge_pieces_of_same_walls_alongX')
+    show_walls_offsetz(wall_bboxes)
 
 
   wall_bboxes = crop_walls(wall_bboxes)
-  print('crop_walls')
-  #show_walls_offsetz(wall_bboxes)
+  if show_pro:
+    print('crop_walls')
+    show_walls_offsetz(wall_bboxes)
+
+  wall_bboxes = merge_pieces_of_same_walls_alongY(wall_bboxes)
+  if show_pro:
+    print('merge_pieces_of_same_walls_alongY again after crop_walls to solve some special case: Originally, a wall is broken by no intersection like 0058113bdc8bee5f387bb5ad316d7b28')
+    show_walls_offsetz(wall_bboxes)
 
   wall_bboxes = find_close_walls(wall_bboxes)
-  print('clean_close_walls')
+  if show_pro:
+    print('clean_close_walls')
+    show_walls_offsetz(wall_bboxes)
 
-  #show_walls_offsetz(wall_bboxes)
-  #show_walls_1by1(wall_bboxes)
-  #show_walls_offsetz(wall_bboxes[[26,31]])
-  #Bbox3D.draw_bboxes(wall_bboxes[[31,26]], 'Z', False)
 
-  #intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, not_on_corners=True, show_res=True)
+    #intersections = Bbox3D.all_intersections_by_cenline(wall_bboxes, not_on_corners=True, show_res=True)
+    #mask =( wall_bboxes[:,0] < 45) *  (wall_bboxes[:,0] > 43)
+    #wall_bboxes_ = wall_bboxes[mask]
 
-  #mask =( wall_bboxes[:,0] < 45) *  (wall_bboxes[:,0] > 43)
-  #wall_bboxes_ = wall_bboxes[mask]
-  #show_walls_offsetz(wall_bboxes_)
-  ##Bbox3D.draw_bboxes(wall_bboxes_[[3,10]], 'Z', False)
-  ##show_walls_1by1(wall_bboxes_)
+  if DEBUG and False:
+    show_walls_offsetz(wall_bboxes)
   return wall_bboxes
 
 
@@ -268,7 +276,9 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
     cen_dis = np.linalg.norm(cen_dis, axis=3)
     cen_dis_min = cen_dis.min(axis=1).min(axis=1)
     cen_dis_max = cen_dis.max(axis=1).max(axis=1)
-    cendis_mask = cen_dis_min < 0.01 * 15
+    thickness_sum = wall_bboxes[:,4]*0.5 + wall_bboxes[i,4]*0.5
+    thickness_sum = thickness_sum[i+1:]
+    cendis_mask = cen_dis_min < thickness_sum
 
     # 3) the other centroid line corner is inside of the long box
     centroid_dis = np.linalg.norm(wall_bboxes[i:i+1,0:3] - wall_bboxes[i+1:,0:3], axis=1)
@@ -310,89 +320,93 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
           size_x_rate = size_x_i / size_x_j
           print(f'size_x_rate: {size_x_rate}')
           if np.abs(size_x_rate-1) < 0.15:
-            merge_y_num += 1
-            box_merge = merge_2pieces_of_1wall(wall_bboxes[i], wall_bboxes[idx], 'Y')
+              merge_y_num += 1
+              box_merge = merge_2pieces_of_1wall(wall_bboxes[i], wall_bboxes[idx], 'Y')
 
-            if show and False:
-              show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
-              if box_merge is not None:
-                show_boxes = np.concatenate([show_boxes, box_merge], 0)
-                show_boxes[-1,2] += 0.2
-              else:
-                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              if show and False:
+                show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
+                if box_merge is not None:
+                  show_boxes = np.concatenate([show_boxes, box_merge], 0)
+                  show_boxes[-1,2] += 0.2
+                else:
+                  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                  pass
+                show_boxes = np.concatenate([show_boxes, wall_bboxes0], 0)
+                Bbox3D.draw_bboxes(show_boxes, 'Z', False)
                 pass
-              show_boxes = np.concatenate([show_boxes, wall_bboxes0], 0)
-              Bbox3D.draw_bboxes(show_boxes, 'Z', False)
-              pass
-            try:
-              wall_bboxes[idx] = box_merge.reshape([7])
-            except:
-              show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
-              Bbox3D.draw_bboxes(show_boxes, 'Z', False)
-              import pdb; pdb.set_trace()  # XXX BREAKPOINT
-              pass
-            remain_mask[i] = False
+              if box_merge is not None:
+                wall_bboxes[idx] = box_merge.reshape([7])
+                remain_mask[i] = False
+              else:
+                print('The two walls cannot be merged along Y, this should not happen normally')
+                print('merge_pieces_of_same_walls_alongY again after crop_walls to solve some special case: Originally, a wall is broken by no intersection like 0058113bdc8bee5f387bb5ad316d7b28')
+                #show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
+                #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False, highlight_ids=[idx, i])
+                #Bbox3D.draw_bboxes(show_boxes, 'Z', False)
+                #import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                #pass
+                #raise NotImplementedError
 
           else:
-            # the longer box need to be split along X before merging
-            split_and_merge_num += 1
-            cen_dis_ij = cen_dis[idx-i-1]
-            if size_x_rate>1:
-              longer_idx = i
-              short_idx = idx
-              cen_dis_ij = cen_dis_ij.min(axis=0)
-            else:
-              longer_idx = idx
-              short_idx = i
-              cen_dis_ij = cen_dis_ij.min(axis=1)
-            # find the intersection point on longer box
-            far_corner_id = int(cen_dis_ij[0] < cen_dis_ij[1])
-            cen_dir_longer = cen_lines[longer_idx, 1] - cen_lines[longer_idx, 0]
-            cen_dir_longer /= np.linalg.norm(cen_dir_longer)
-            sl_dir = cen_lines[short_idx, far_corner_id] - cen_lines[longer_idx, 0]
-            intersection = np.sum(sl_dir * cen_dir_longer) * cen_dir_longer + cen_lines[longer_idx,0]
-            # offset: half of the thickness
-            intersection += cen_dir_longer * wall_bboxes[i,4] * 0.5
+              # the longer box need to be split along X before merging
+              split_and_merge_num += 1
+              cen_dis_ij = cen_dis[idx-i-1]
+              if size_x_rate>1:
+                longer_idx = i
+                short_idx = idx
+                cen_dis_ij = cen_dis_ij.min(axis=0)
+              else:
+                longer_idx = idx
+                short_idx = i
+                cen_dis_ij = cen_dis_ij.min(axis=1)
+              # find the intersection point on longer box
+              far_corner_id = int(cen_dis_ij[0] < cen_dis_ij[1])
+              cen_dir_longer = cen_lines[longer_idx, 1] - cen_lines[longer_idx, 0]
+              cen_dir_longer /= np.linalg.norm(cen_dir_longer)
+              sl_dir = cen_lines[short_idx, far_corner_id] - cen_lines[longer_idx, 0]
+              intersection = np.sum(sl_dir * cen_dir_longer) * cen_dir_longer + cen_lines[longer_idx,0]
+              # offset: half of the thickness
+              intersection += cen_dir_longer * wall_bboxes[i,4] * 0.5
 
-            splited_boxes = Bbox3D.split_wall_by_centroid_intersections(wall_bboxes[longer_idx], intersection.reshape([1,3])) # [2,7]
+              splited_boxes = Bbox3D.split_wall_by_centroid_intersections(wall_bboxes[longer_idx], intersection.reshape([1,3])) # [2,7]
 
-            if splited_boxes.shape[0] == 1:
+              if splited_boxes.shape[0] == 1:
+                  print('\n\n\t\tComplicated situation, not solved well yet.\n\n')
+                  box_merge = None
+                  if False and DEBUG and splited_boxes.shape[0] == 1:
+                      box_tmp = np.array([[0,0,0, 0.5,0.5,0.5, 0]])
+                      box_tmp[0,0:3] = intersection.reshape([1,3])
+                      boxes_show = np.concatenate([box_tmp, wall_bboxes[longer_idx].reshape([-1,7])], 0)
+                      Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), boxes_show, 'Z', False)
+              else:
+                  tmp = wall_bboxes[short_idx,0:3] - splited_boxes[:,0:3] # [2,3]
+                  tmp = np.linalg.norm(tmp, axis=1) # [2]
+                  merge_id = int(tmp[0] > tmp[1])
+                  box_merge = merge_2pieces_of_1wall(wall_bboxes[short_idx], splited_boxes[merge_id], 'Y')
+
+              if show and False:
+              #if box_merge is None:
+                show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
+                Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), show_boxes, 'Z', False)
+                show_boxes = np.concatenate([show_boxes, splited_boxes], 0)
+                show_boxes[-1,2] += 0.5
+                show_boxes[-2,2] += 0.7
+                if box_merge is not None:
+                  show_boxes = np.concatenate([show_boxes, box_merge], 0)
+                  show_boxes[-1,2] += 1
+                show_boxes = np.concatenate([show_boxes, wall_bboxes0], 0)
+                Bbox3D.draw_bboxes(show_boxes, 'Z', False)
                 import pdb; pdb.set_trace()  # XXX BREAKPOINT
-                box_merge = None
-                if False and DEBUG and splited_boxes.shape[0] == 1:
-                    box_tmp = np.array([[0,0,0, 0.5,0.5,0.5, 0]])
-                    box_tmp[0,0:3] = intersection.reshape([1,3])
-                    boxes_show = np.concatenate([box_tmp, wall_bboxes[longer_idx].reshape([-1,7])], 0)
-                    Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), boxes_show, 'Z', False)
-            else:
-                tmp = wall_bboxes[short_idx,0:3] - splited_boxes[:,0:3] # [2,3]
-                tmp = np.linalg.norm(tmp, axis=1) # [2]
-                merge_id = int(tmp[0] > tmp[1])
-                box_merge = merge_2pieces_of_1wall(wall_bboxes[short_idx], splited_boxes[merge_id], 'Y')
+                pass
 
-            if show and False:
-            #if box_merge is None:
-              show_boxes = np.concatenate([wall_bboxes[i:i+1], wall_bboxes[idx:idx+1]], 0)
-              Bbox3D.draw_points_bboxes(intersection.reshape([1,3]), show_boxes, 'Z', False)
-              show_boxes = np.concatenate([show_boxes, splited_boxes], 0)
-              show_boxes[-1,2] += 0.5
-              show_boxes[-2,2] += 0.7
-              if box_merge is not None:
-                show_boxes = np.concatenate([show_boxes, box_merge], 0)
-                show_boxes[-1,2] += 1
-              show_boxes = np.concatenate([show_boxes, wall_bboxes0], 0)
-              Bbox3D.draw_bboxes(show_boxes, 'Z', False)
-              import pdb; pdb.set_trace()  # XXX BREAKPOINT
-              pass
-
-            if box_merge is None:
-              # temperally solution, may because of a wall being changed several
-              # times
-              remain_mask[short_idx] = False
-            else:
-              wall_bboxes[longer_idx] = splited_boxes[1-merge_id]
-              wall_bboxes[short_idx] = box_merge.reshape([7])
-              boxes_merged_extra.append(box_merge.reshape([1,7]))
+              if box_merge is None:
+                # temperally solution, may because of a wall being changed several
+                # times
+                remain_mask[short_idx] = False
+              else:
+                wall_bboxes[longer_idx] = splited_boxes[1-merge_id]
+                wall_bboxes[short_idx] = box_merge.reshape([7])
+                boxes_merged_extra.append(box_merge.reshape([1,7]))
 
   wall_bboxes_new = wall_bboxes[remain_mask]
   #boxes_merged_extra = np.concatenate(boxes_merged_extra, 0)
