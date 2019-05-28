@@ -357,6 +357,7 @@ def merge_pieces_of_same_walls_alongY(wall_bboxes):
             splited_boxes = Bbox3D.split_wall_by_centroid_intersections(wall_bboxes[longer_idx], intersection.reshape([1,3])) # [2,7]
 
             if splited_boxes.shape[0] == 1:
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
                 box_merge = None
                 if False and DEBUG and splited_boxes.shape[0] == 1:
                     box_tmp = np.array([[0,0,0, 0.5,0.5,0.5, 0]])
