@@ -8,10 +8,12 @@ import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 from data3d.suncg_utils.suncg_meta import SUNCG_META
+import matplotlib.pyplot as plt
 
 DEBUG = True
 SHOW_IOU = DEBUG and False
 SHOW_GOOD_PRED = DEBUG and False
+DRAW_RECALL_PRECISION = DEBUG and False
 
 def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     # TODO need to make the use_07_metric format available
@@ -70,7 +72,22 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
             tops.show_together(gt_boxlists[i], points=pcl_i, offset_x=xyz_size[0]+0.2)
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
+    if DRAW_RECALL_PRECISION:
+        draw_recall_precision(result['recall_precision'])
     return result
+
+def draw_recall_precision(recall_precision):
+    num_classes = len(recall_precision)
+    for i in range(1,num_classes):
+        obj = SUNCG_META.label_2_class[i]
+        rp = recall_precision[i]
+        print(f'\n{obj}\n{rp}')
+        plt.figure(i)
+        plt.plot(rp[:,0], rp[:,1])
+        plt.ylabel('precision')
+        plt.xlabel('recall')
+        plt.title(obj)
+    plt.show()
 
 def get_obejct_numbers(boxlist):
     labels = boxlist.get_field('labels').data.numpy()
@@ -96,8 +113,8 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh=0.5, use_07_metr
     prec, rec = calc_detection_suncg_prec_rec(
         pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh
     )
-    ap = calc_detection_suncg_ap(prec, rec, use_07_metric=use_07_metric)
-    return {"ap": ap, "map": np.nanmean(ap)}
+    ap, recall_precision = calc_detection_suncg_ap(prec, rec, use_07_metric=use_07_metric)
+    return {"ap": ap, "map": np.nanmean(ap), "recall_precision":recall_precision}
 
 
 def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
@@ -229,20 +246,25 @@ def calc_detection_suncg_ap(prec, rec, use_07_metric=False):
 
     n_fg_class = len(prec)
     ap = np.empty(n_fg_class)
+    recall_precision = np.empty([n_fg_class, 11, 2])
     for l in range(n_fg_class):
         if prec[l] is None or rec[l] is None:
             ap[l] = np.nan
+            recall_precision[l] = np.nan
             continue
 
         if use_07_metric:
             # 11 point metric
             ap[l] = 0
+            rp = []
             for t in np.arange(0.0, 1.1, 0.1):
                 if np.sum(rec[l] >= t) == 0:
                     p = 0
                 else:
                     p = np.max(np.nan_to_num(prec[l])[rec[l] >= t])
                 ap[l] += p / 11
+                rp.append([t, p])
+            recall_precision[l] = np.array(rp)
         else:
             # correct AP calculation
             # first append sentinel values at the end
@@ -258,4 +280,4 @@ def calc_detection_suncg_ap(prec, rec, use_07_metric=False):
             # and sum (\Delta recall) * prec
             ap[l] = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
 
-    return ap
+    return ap, recall_precision

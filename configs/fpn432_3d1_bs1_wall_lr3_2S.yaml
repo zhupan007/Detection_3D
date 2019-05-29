@@ -1,7 +1,7 @@
 DEBUG:
   DISABLE_ROILOSS: False
   eval_in_train: True
-  eval_in_train_per_iter: False
+  eval_in_train_per_iter: True
 INPUT:
   CLASSES: ['background', 'wall']
   #CLASSES: ['background', 'wall', 'door', 'window']
