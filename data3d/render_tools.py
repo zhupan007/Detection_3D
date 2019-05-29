@@ -188,11 +188,11 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['008969b6e13d18db3abc9d954cebe6a5']
   #house_names = [SceneSamples.hard_id0]
 
-  #house_names = os.listdir(PARSED_DIR)
+  house_names = os.listdir(PARSED_DIR)
   house_names.sort()
   print(f'totally {len(house_names)} houses')
 
-  #house_names = house_names[100:]
+  #house_names = house_names[80:]
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

@@ -386,10 +386,10 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[500:1500]
     else:
-      self.house_fns = house_fns[0:500]
+      self.house_fns = house_fns[0:200]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and True:
+    if Debug and False:
       scene_id = '008969b6e13d18db3abc9d954cebe6a5'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
@@ -1114,8 +1114,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  #suncg.parse_houses_pool()
-  suncg.parse_houses()
+  suncg.parse_houses_pool()
+  #suncg.parse_houses()
 
 if __name__ == '__main__':
   parse_house()

@@ -1,6 +1,6 @@
 import numpy as np
 
-IS_SHUFFLE = False
+IS_SHUFFLE = True
 
 COLOR_LIST = np.array( [
 [0,0,255],
