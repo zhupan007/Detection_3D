@@ -35,7 +35,7 @@ def show_walls_offsetz(wall_bboxes):
   Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
 
 
-def cut_points_roof(points, keep_rate=0.7):
+def cut_points_roof(points, keep_rate=0.5):
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate
@@ -114,8 +114,8 @@ def render_pth_file(pth_fn):
   print(f'\nclasses: {num_classes}\n\n')
 
   all_bboxes = np.concatenate([boxes for boxes in bboxes.values()], 0)
-  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False)
   show_walls_offsetz(all_bboxes)
+  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False)
 
   #for clas in bboxes.keys():
   #  if clas not in CLASSES:
@@ -198,8 +198,9 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['8c033357d15373f4079b1cecef0e065a']
   house_names = ['0005b92a9ed6349df155a462947bfdfe']
   house_names = ['005d71f81a3c981d8a20876c8fdd1685']
+  house_names = ['00602d3d932a8d5305234360a9d1e0ad', '0067620211b8e6459ff24ebe0780a21c']
 
-  house_names = os.listdir(PARSED_DIR)
+  #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

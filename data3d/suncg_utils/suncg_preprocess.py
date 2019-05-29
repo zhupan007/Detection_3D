@@ -402,7 +402,9 @@ class Suncg():
       scene_id10 =  'b021ab18bb170a167d569dcfcaf58cd4'
 
       # good samples
-      scene0_id0 = ''
+      good_samples_complex = [ '0058113bdc8bee5f387bb5ad316d7b28', '005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4','00922f91aa09dbdda3a74489ea0e21eb']
+      good_samples_close_wall = ['001ef7e63573bd8fecf933f10fa4491b',]
+      good_samples_angle = ['0055398beb892233e0664d843eb451ca', '00602d3d932a8d5305234360a9d1e0ad', '0067620211b8e6459ff24ebe0780a21c']
 
       # hard and error_prone scenes
       scene1_id0 = '0058113bdc8bee5f387bb5ad316d7b28'  # a wall is broken by no intersection
@@ -412,7 +414,7 @@ class Suncg():
       scene1_id4 = '00466151039216eb333369aa60ea3efe'  # too long wall
       scene1_id5 = '004e36a61e574321adc8da7b48c331f2'  # complicated and wall definitoin ambiguous
 
-      err_scenes = ['0016652bf7b3ec278d54e0ef94476eb8']
+      err_scenes = ['0016652bf7b3ec278d54e0ef94476eb8', '0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca']
 
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels

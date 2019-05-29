@@ -96,7 +96,7 @@ class IndoorData():
       print(f'skip {splited_path}')
       return
     print(f'spliting {scene_dir}')
-    gen_ply = False and DEBUG
+    gen_ply = False
 
     #house_intact, intacts = check_house_intact(scene_dir)
     #if not house_intact:
@@ -570,7 +570,10 @@ def creat_splited_pcl_box():
 def gen_train_list():
   house_names = os.listdir(os.path.join(SPLITED_DIR, 'houses'))
   num = len(house_names)
-  train_num = int(num*0.8)
+  if DEBUG:
+      train_num = num
+  else:
+    train_num = int(num*0.8)
   train_hosue_names = house_names[0:train_num]
   test_house_names = house_names[train_num:]
 
