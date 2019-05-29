@@ -7,6 +7,7 @@ from utils3d.geometric_util import cam2world_box, cam2world_pcl
 import torch
 from collections import defaultdict
 from suncg_utils.suncg_meta import SUNCG_META
+from suncg_utils.scene_samples import SceneSamples
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
@@ -66,8 +67,8 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
 
   #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #if not show_pcl:
-  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
-  #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   show_walls_offsetz(bboxes)
 
   if show_pcl:
@@ -184,8 +185,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       31a69e882e51c7c5dfdc0da464c3c02d **
   '''
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
-  house_names = ['00602d3d932a8d5305234360a9d1e0ad', '0067620211b8e6459ff24ebe0780a21c']
-  house_names = ['0058113bdc8bee5f387bb5ad316d7b28']
+  house_names = [SceneSamples.hard_id0]
 
   #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
@@ -242,8 +242,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 

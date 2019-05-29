@@ -19,6 +19,7 @@ from window_preprocessing import preprocess_windows
 from door_preprocessing import preprocess_doors
 from utils3d.bbox3d_ops import Bbox3D
 from suncg_meta import SUNCG_META
+from scene_samples import SceneSamples
 
 
 Debug = True
@@ -388,37 +389,8 @@ class Suncg():
       self.house_fns = house_fns[0:500]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and True:
-      scene_id0 = 'ffe929c9ed4dc7dab9a09ade502ac444' # single room
-      scene_id1 = '8c033357d15373f4079b1cecef0e065a' # one level, with yaw!=0, one wall left and right has angle (31 final walls)
-      scene_id2 = '28297783bce682aac7fb35a1f35f68fa' # one level, with yaw!=0 (22 final walls)
-      scene_id3 = 'ffbb0cd7ee77c6b0e5956275352704b8' # one level, multi rooms (complicated, good demo) (34 final walls)
-      scene_id4 = '7bff414da8570ef53c87c5ce5c15bc2a' # one level, big room (16 final walls)
-      scene_id5 = '7cd75b127f06a078929a6524396c738c' # one level, complicate merge requires, (36 final walls)
-      scene_id6 = 'c3802ae080bc1d5f4ada2f75448f7b49' # 71 final walls
-      scene_id7 = '31a69e882e51c7c5dfdc0da464c3c02d' # 68 walls
-      scene_id8 = '7411df25770eaf8d656cac2be42a9af0' # walls
-      scene_id9 = '0a83d94e9df3a8d07c71f0fe125f4b57'
-      scene_id10 =  'b021ab18bb170a167d569dcfcaf58cd4'
-
-      # good samples
-      good_samples_complex = [ '0058113bdc8bee5f387bb5ad316d7b28', '005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4','00922f91aa09dbdda3a74489ea0e21eb']
-      good_samples_close_wall = ['001ef7e63573bd8fecf933f10fa4491b',]
-      good_samples_angle = ['0055398beb892233e0664d843eb451ca', '00602d3d932a8d5305234360a9d1e0ad', '0067620211b8e6459ff24ebe0780a21c']
-      good_samples_notwall_butsimilar = ['0016652bf7b3ec278d54e0ef94476eb8']
-
-      # hard and error_prone scenes
-      scene1_id0 = '0058113bdc8bee5f387bb5ad316d7b28'  # a wall is broken by no intersection
-      scene1_id1 = '001ef7e63573bd8fecf933f10fa4491b'  # two very close walls can easily be merged as one incorrectly (very hard to detect)
-      scene1_id2 = '0027affcd87fc7616b0afbb20c0aaf99'  # two walls very close, very hard
-      scene1_id3 = '002f987c1663f188c75997593133c28f'  # very small angle walls, ambiguous in wall definition
-      scene1_id4 = '00466151039216eb333369aa60ea3efe'  # too long wall
-      scene1_id5 = '004e36a61e574321adc8da7b48c331f2'  # complicated and wall definitoin ambiguous
-
-      err_scenes = ['0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca']
-
-
-      scene_id = err_scenes[0]
+    if Debug and False:
+      scene_id = '0058113bdc8bee5f387bb5ad316d7b28'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -1011,7 +983,8 @@ def gen_house_names_1level():
   for hn in house_names0:
     house_intact, intacts = check_house_intact(os.path.join(PARSED_DIR, hn))
     if house_intact:
-        house_names.append(hn)
+        if hn not in SceneSamples.bad_scenes:
+            house_names.append(hn)
 
   print(f'totally {len(house_names0)} houses, got {len(house_names)} 1 level houses')
 
@@ -1145,8 +1118,8 @@ def parse_house():
   suncg.parse_houses()
 
 if __name__ == '__main__':
-  parse_house()
-  #gen_house_names_1level()
+  #parse_house()
+  gen_house_names_1level()
 
   #check_house_status()
 
