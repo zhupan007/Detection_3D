@@ -257,11 +257,54 @@ class IndoorData():
     return bboxes_splited
 
   @staticmethod
+  def crop_special_scenes(scene_name, pcd):
+      '''
+      some special scenes are two large, but contain a lot empty in the middle.
+      Directly split by the pipeline is not good. Manually crop
+      '''
+      points = np.asarray(pcd.points)
+      colors = np.asarray(pcd.colors)
+      if scene_name not in ['0058113bdc8bee5f387bb5ad316d7b28']:
+          return points, colors
+      debuging = False
+      xyz_max0 = points.max(0)
+      xyz_min0 = points.min(0)
+      scope0 = xyz_max0 - xyz_min0
+
+      min_thres = xyz_min0 - 0.1
+      max_thres = xyz_max0 + 0.1
+
+      if scene_name == '0058113bdc8bee5f387bb5ad316d7b28':
+            max_thres[2] -= 10
+      else:
+            raise NotImplementedError
+
+      mask0 = np.all( points < max_thres, 1)
+      mask1 = np.all( points > min_thres, 1)
+      mask = mask0 * mask1
+      points_new = points[mask]
+      colors_new = colors[mask]
+
+      if debuging:
+        open3d.draw_geometries([pcd])
+        print(f'orignal min:{xyz_min0}, max:{xyz_max0}, scope:{scope0}')
+
+        xyz_max1 = points_new.max(0)
+        xyz_min1 = points_new.min(0)
+        scope1 = xyz_max1 - xyz_min1
+        print(f'new min:{xyz_min1}, max:{xyz_max1}, scope:{scope1}')
+
+        pcd.points = open3d.Vector3dVector(points_new)
+        open3d.draw_geometries([pcd])
+      return points_new, colors_new
+
+  @staticmethod
   def split_pcl_plyf(pcl_fn):
     assert os.path.exists(pcl_fn)
     pcd = open3d.read_point_cloud(pcl_fn)
-    colors = np.asarray(pcd.colors)
-    points = np.asarray(pcd.points)
+    scene_name = os.path.basename( os.path.dirname(pcl_fn))
+    points, colors = IndoorData.crop_special_scenes(scene_name, pcd)
+
     points = cam2world_pcl(points)
     pcd.points = open3d.Vector3dVector(points)
 
@@ -556,9 +599,8 @@ def creat_splited_pcl_box():
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']  # a lot of unseen corners
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
-  house_names = ['7411df25770eaf8d656cac2be42a9af0']
-  #house_names = ['8c033357d15373f4079b1cecef0e065a']
-  house_names = get_house_names_1level()
+  house_names = ['0058113bdc8bee5f387bb5ad316d7b28']
+  #house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
@@ -589,7 +631,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  #creat_splited_pcl_box()
-  gen_train_list()
+  creat_splited_pcl_box()
+  #gen_train_list()
   pass
 

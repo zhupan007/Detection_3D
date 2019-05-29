@@ -7,7 +7,7 @@ from data3d.render_tools import show_walls_offsetz, show_walls_1by1
 from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu, rotate_iou_gpu_eval
 
 MERGE_Z_ANYWAY_XYIOU_THRESHOLD = 0.75
-DEBUG = False
+DEBUG = True
 
 def preprocess_walls(wall_bboxes):
   '''

@@ -184,21 +184,8 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       31a69e882e51c7c5dfdc0da464c3c02d **
   '''
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
-  house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
-  #house_names = ['72148738e98fe68f38ec17945d5c9730']
-  #house_names = ['8c033357d15373f4079b1cecef0e065a']
-  #house_names = ['7411df25770eaf8d656cac2be42a9af0']
-  #house_names = ['7cd75b127f06a078929a6524396c738c']
-  #house_names = ['e7b3e2566e174b6fbb2864de76b50334']
-  #house_names = ['aaa535ef80b7d34f57f5d3274eec0daf']
-  house_names = ['c3802ae080bc1d5f4ada2f75448f7b49']
-  house_names = ['be37c58e21c4595b3cf3ccaf3cbc51c4']
-  house_names = ['3a86005157c0acf437626cde8e26b4be']
-  house_names = ['a046e442fa9c38ae063e8ea9d2ceeeea']
-  house_names = ['8c033357d15373f4079b1cecef0e065a']
-  house_names = ['0005b92a9ed6349df155a462947bfdfe']
-  house_names = ['005d71f81a3c981d8a20876c8fdd1685']
   house_names = ['00602d3d932a8d5305234360a9d1e0ad', '0067620211b8e6459ff24ebe0780a21c']
+  house_names = ['0058113bdc8bee5f387bb5ad316d7b28']
 
   #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
@@ -255,8 +242,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 0,
-            r_splited = 1
+            r_whole = 1,
+            r_splited = 0
     )
 
 

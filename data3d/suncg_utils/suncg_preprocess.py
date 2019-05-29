@@ -388,7 +388,7 @@ class Suncg():
       self.house_fns = house_fns[0:500]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and False:
+    if Debug and True:
       scene_id0 = 'ffe929c9ed4dc7dab9a09ade502ac444' # single room
       scene_id1 = '8c033357d15373f4079b1cecef0e065a' # one level, with yaw!=0, one wall left and right has angle (31 final walls)
       scene_id2 = '28297783bce682aac7fb35a1f35f68fa' # one level, with yaw!=0 (22 final walls)
@@ -405,6 +405,7 @@ class Suncg():
       good_samples_complex = [ '0058113bdc8bee5f387bb5ad316d7b28', '005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4','00922f91aa09dbdda3a74489ea0e21eb']
       good_samples_close_wall = ['001ef7e63573bd8fecf933f10fa4491b',]
       good_samples_angle = ['0055398beb892233e0664d843eb451ca', '00602d3d932a8d5305234360a9d1e0ad', '0067620211b8e6459ff24ebe0780a21c']
+      good_samples_notwall_butsimilar = ['0016652bf7b3ec278d54e0ef94476eb8']
 
       # hard and error_prone scenes
       scene1_id0 = '0058113bdc8bee5f387bb5ad316d7b28'  # a wall is broken by no intersection
@@ -414,12 +415,10 @@ class Suncg():
       scene1_id4 = '00466151039216eb333369aa60ea3efe'  # too long wall
       scene1_id5 = '004e36a61e574321adc8da7b48c331f2'  # complicated and wall definitoin ambiguous
 
-      err_scenes = ['0016652bf7b3ec278d54e0ef94476eb8', '0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca']
+      err_scenes = ['0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca']
 
 
-      scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
-
-      scene_id = scene1_id1
+      scene_id = err_scenes[0]
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -446,7 +445,7 @@ def parse_house_onef( house_fn):
     2. point cloud for each depth image
     3. Merge point clouds
     '''
-    is_gen_house_obj = 1
+    is_gen_house_obj = 0
     is_gen_bbox = 1
     is_gen_cam = 1
     is_gen_pcl = 1
@@ -471,7 +470,7 @@ def parse_house_onef( house_fn):
 def write_summary(base_dir, name, value, style='w'):
   summary_fn = os.path.join(base_dir, 'summary.txt')
   with open(summary_fn, style) as f:
-    f.write(f"{name}: {value}\n")
+    f.write(f"{name}: {value}\n\n")
   print(f'write summary: {summary_fn}')
 
 def read_summary(base_dir):
@@ -483,6 +482,8 @@ def read_summary(base_dir):
     for line in f:
       line = line.strip()
       items = [e for e in line.split(' ') if e!='']
+      if len(items)==0:
+          continue
       summary[items[0][:-1]] = int(items[1])
   return summary
 
@@ -518,7 +519,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug and False
+    always_gen_bbox = Debug and True
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -594,7 +595,7 @@ def gen_bbox(house_fn):
 
     #######################
     print(f'parsed_dir: {parsed_dir}')
-    write_summary(parsed_dir, 'level_num', level_num, 'w')
+    write_summary(parsed_dir, 'level_num', level_num, 'a')
     for obj in ['room', 'wall', 'window', 'door', 'floor', 'ceiling']:
         write_summary(parsed_dir, f'{obj}_num', bboxes_num[obj], 'a')
 
@@ -1140,12 +1141,12 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  suncg.parse_houses_pool()
-  #suncg.parse_houses()
+  #suncg.parse_houses_pool()
+  suncg.parse_houses()
 
 if __name__ == '__main__':
-  #parse_house()
-  gen_house_names_1level()
+  parse_house()
+  #gen_house_names_1level()
 
   #check_house_status()
 
