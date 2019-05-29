@@ -2,7 +2,7 @@ class SceneSamples():
     '''
     '''
     # bad samples: not used in the training (1) BIM definition ambiguous
-    bad_scenes = ['004e36a61e574321adc8da7b48c331f2', '00466151039216eb333369aa60ea3efe']
+    bad_scenes = ['004e36a61e574321adc8da7b48c331f2', '00466151039216eb333369aa60ea3efe', '008969b6e13d18db3abc9d954cebe6a5']
 
     # good samples
     good_samples_complex = [ '0058113bdc8bee5f387bb5ad316d7b28', '005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4','00922f91aa09dbdda3a74489ea0e21eb']
@@ -14,7 +14,6 @@ class SceneSamples():
     hard_samples_notwall_butsimilar = ['0016652bf7b3ec278d54e0ef94476eb8']
 
     #---------------------------------------------------------------------------
-
 
     # very hard
     very_hard_wall_window_close = '0055398beb892233e0664d843eb451ca' # a lot of windows are almost same with wall

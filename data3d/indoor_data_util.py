@@ -110,13 +110,17 @@ class IndoorData():
       print(f'pcl.ply not exist, skip {scene_dir}')
       return
     points_splited = IndoorData.split_pcl_plyf(pcl_fn)
+    n_block = len(points_splited)
+
     bboxes_splited = {}
     for obj in CLASSES_USED:
       bbox_fn = os.path.join(scene_dir, f'object_bbox/{obj}.txt')
       if os.path.exists(bbox_fn):
-        bboxes_splited[obj] = IndoorData.split_bbox(bbox_fn, points_splited)
+        if n_block > 1:
+            bboxes_splited[obj] = IndoorData.split_bbox(bbox_fn, points_splited)
+        else:
+            bboxes_splited[obj] = IndoorData.load_bboxes(bbox_fn)
 
-    n_block = len(points_splited)
     if not os.path.exists(splited_path):
       os.makedirs(splited_path)
 
@@ -152,6 +156,12 @@ class IndoorData():
     tmp = np.minimum(0.1, bboxes0[:,3])
     bboxes1[:,3] = np.maximum(bboxes1[:,3], tmp)
     return bboxes1
+
+  @staticmethod
+  def load_bboxes(bbox_fn):
+    # used when only one block, no need to split
+    bboxes = np.loadtxt(bbox_fn).reshape([-1,7])
+    return [bboxes]
 
   @staticmethod
   def split_bbox(bbox_fn, points_splited):
@@ -599,7 +609,7 @@ def creat_splited_pcl_box():
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']  # a lot of unseen corners
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
-  house_names = ['0058113bdc8bee5f387bb5ad316d7b28']
+  house_names = ['008969b6e13d18db3abc9d954cebe6a5']
   #house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
 

@@ -389,8 +389,8 @@ class Suncg():
       self.house_fns = house_fns[0:500]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and False:
-      scene_id = '0058113bdc8bee5f387bb5ad316d7b28'
+    if Debug and True:
+      scene_id = '008969b6e13d18db3abc9d954cebe6a5'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -1118,8 +1118,8 @@ def parse_house():
   suncg.parse_houses()
 
 if __name__ == '__main__':
-  #parse_house()
-  gen_house_names_1level()
+  parse_house()
+  #gen_house_names_1level()
 
   #check_house_status()
 

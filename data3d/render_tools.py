@@ -185,10 +185,15 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       31a69e882e51c7c5dfdc0da464c3c02d **
   '''
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
-  house_names = [SceneSamples.hard_id0]
+  house_names = ['008969b6e13d18db3abc9d954cebe6a5']
+  #house_names = [SceneSamples.hard_id0]
 
   #house_names = os.listdir(PARSED_DIR)
   house_names.sort()
+  print(f'totally {len(house_names)} houses')
+
+  #house_names = house_names[100:]
+
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
     raw_house_fn = f'{SUNCG_V1_DIR}/house/{house_name}/house.json'
