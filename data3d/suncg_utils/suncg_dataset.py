@@ -126,6 +126,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
         up_check = np.all(a < full_scale[np.newaxis,:], 1)
         if not np.all(up_check):
             max_scale = a.max(0)
+            print(f'file: {self.files[index]}')
             print(f'\nmax scale: {max_scale} > full_scale: {full_scale}, some points will be missed\n')
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             assert False

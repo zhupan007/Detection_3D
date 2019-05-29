@@ -559,6 +559,7 @@ def creat_splited_pcl_box():
   house_names = ['7411df25770eaf8d656cac2be42a9af0']
   #house_names = ['8c033357d15373f4079b1cecef0e065a']
   house_names = get_house_names_1level()
+  print(f'total {len(house_names)} houses')
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
@@ -585,7 +586,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  creat_splited_pcl_box()
-  #gen_train_list()
+  #creat_splited_pcl_box()
+  gen_train_list()
   pass
 

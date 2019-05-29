@@ -383,9 +383,9 @@ class Suncg():
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
     house_fns.sort()
     if SAGE:
-      self.house_fns = house_fns[100:1500]
+      self.house_fns = house_fns[500:1500]
     else:
-      self.house_fns = house_fns[0:100]
+      self.house_fns = house_fns[0:500]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
@@ -401,6 +401,9 @@ class Suncg():
       scene_id9 = '0a83d94e9df3a8d07c71f0fe125f4b57'
       scene_id10 =  'b021ab18bb170a167d569dcfcaf58cd4'
 
+      # good samples
+      scene0_id0 = ''
+
       # hard and error_prone scenes
       scene1_id0 = '0058113bdc8bee5f387bb5ad316d7b28'  # a wall is broken by no intersection
       scene1_id1 = '001ef7e63573bd8fecf933f10fa4491b'  # two very close walls can easily be merged as one incorrectly (very hard to detect)
@@ -408,6 +411,8 @@ class Suncg():
       scene1_id3 = '002f987c1663f188c75997593133c28f'  # very small angle walls, ambiguous in wall definition
       scene1_id4 = '00466151039216eb333369aa60ea3efe'  # too long wall
       scene1_id5 = '004e36a61e574321adc8da7b48c331f2'  # complicated and wall definitoin ambiguous
+
+      err_scenes = ['0016652bf7b3ec278d54e0ef94476eb8']
 
 
       scene2_id1 = 'a72757492213ccb8d031af9b91fdc1af' # two levels
@@ -996,7 +1001,17 @@ def add_exta_cam_locations(cam_fn, show=False):
   return cam_fn_new
 
 def gen_house_names_1level():
-  house_names = os.listdir(PARSED_DIR)
+  house_names0 = os.listdir(PARSED_DIR)
+  house_names0.sort()
+
+  house_names = []
+  for hn in house_names0:
+    house_intact, intacts = check_house_intact(os.path.join(PARSED_DIR, hn))
+    if house_intact:
+        house_names.append(hn)
+
+  print(f'totally {len(house_names0)} houses, got {len(house_names)} 1 level houses')
+
   remain_ids = []
   house_names_1l = []
   for hn in house_names:
@@ -1123,13 +1138,13 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  #suncg.parse_houses_pool()
-  suncg.parse_houses()
+  suncg.parse_houses_pool()
+  #suncg.parse_houses()
 
 if __name__ == '__main__':
-  #gen_train_eval_split()
-  parse_house()
-  #gen_house_names_1level()
+  #parse_house()
+  gen_house_names_1level()
+
   #check_house_status()
 
   cam_fn = '/home/z/SUNCG/suncg_v1/parsed/0004d52d1aeeb8ae6de39d6bd993e992/cam'

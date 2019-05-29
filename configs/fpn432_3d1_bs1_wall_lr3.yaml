@@ -2,10 +2,9 @@ DEBUG:
   DISABLE_ROILOSS: False
   eval_in_train: True
 INPUT:
-  #CLASSES: ['background', 'wall']
-  CLASSES: ['background', 'wall', 'door', 'window']
+  CLASSES: ['background', 'wall']
+  #CLASSES: ['background', 'wall', 'door', 'window']
   ELEMENTS: ['xyz', 'color', 'normal']
-  SCENES: ['8c033357d15373f4079b1cecef0e065a']
 MODEL:
   DEVICE: "cuda"
   RPN_ONLY: False
@@ -37,23 +36,22 @@ SPARSE3D:
   nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256, 256]
   KERNEL: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
   STRIDE: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
-  VOXEL_FULL_SCALE: [1536, 1536, 256]
+  VOXEL_FULL_SCALE: [1536, 1536, 512 ]
   VOXEL_SCALE: 50
-  SCENE_SIZE: [30,30,5]
 DATASETS:
   TRAIN: ("suncg_train", "suncg_val")
   TEST: ("suncg_test",)
 DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
-  EPOCHS: 300
-  EPOCHS_BETWEEN_TEST: 300
+  EPOCHS: 500
+  EPOCHS_BETWEEN_TEST: 500
   IMS_PER_BATCH: 1
-  BASE_LR: 0.005
+  BASE_LR: 0.003
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (200,)
   CHECKPOINT_PERIOD_EPOCHS: 20
   WARMUP_EPOCHS: 0.7
-OUTPUT_DIR: "res_3d_bs1_wdw_lr5"
+OUTPUT_DIR: "result_3d_bs1_wall_lr3"
 TEST:
   IMS_PER_BATCH: 1

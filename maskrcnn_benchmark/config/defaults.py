@@ -42,13 +42,12 @@ _C.MODEL.WEIGHT = ""
 # -----------------------------------------------------------------------------
 _C.SPARSE3D = CN()
 _C.SPARSE3D.VOXEL_SCALE = 50
-_C.SPARSE3D.VOXEL_FULL_SCALE = [2048, 2048, 514]
+_C.SPARSE3D.VOXEL_FULL_SCALE = [1536, 1536, 320]
 _C.SPARSE3D.VAL_REPS = 3
 _C.SPARSE3D.RESIDUAL_BLOCK = True
 _C.SPARSE3D.BLOCK_REPS = 1
 _C.SPARSE3D.nPlaneMap = 128
 _C.SPARSE3D.nPlanesFront = [32, 64, 64, 128, 128, 128, 256, 256, 256, 256]
-_C.SPARSE3D.SCENE_SIZE = [8,8,5]
 _C.SPARSE3D.KERNEL = [[2,2,4], [2,2,4], [2,2,4], [1,1,4], [2,2,4], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
 _C.SPARSE3D.STRIDE = [[2,2,2], [2,2,4], [2,2,4], [1,1,4], [2,2,1], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
 # -----------------------------------------------------------------------------

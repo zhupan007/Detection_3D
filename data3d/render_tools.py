@@ -35,7 +35,7 @@ def show_walls_offsetz(wall_bboxes):
   Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
 
 
-def cut_points_roof(points, keep_rate=0.55):
+def cut_points_roof(points, keep_rate=0.7):
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate
@@ -50,6 +50,7 @@ def down_sample_points(points, keep_rate=0.3):
   return points_d
 
 def render_parsed_house_walls(parsed_dir, show_pcl=False):
+  print(f'parsed_dir:{parsed_dir}')
   bboxes = []
   labels = []
   for obj in CLASSES:
@@ -195,6 +196,8 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['3a86005157c0acf437626cde8e26b4be']
   house_names = ['a046e442fa9c38ae063e8ea9d2ceeeea']
   house_names = ['8c033357d15373f4079b1cecef0e065a']
+  house_names = ['0005b92a9ed6349df155a462947bfdfe']
+  house_names = ['005d71f81a3c981d8a20876c8fdd1685']
 
   house_names = os.listdir(PARSED_DIR)
   house_names.sort()

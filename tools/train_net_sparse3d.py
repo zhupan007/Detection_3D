@@ -201,6 +201,7 @@ def get_train_example_num(cfg):
     return len(train_dataset)
 
 def intact_cfg(cfg):
+  cfg.SPARSE3D.SCENE_SIZE = (np.array(cfg.SPARSE3D.VOXEL_FULL_SCALE).astype(np.float) / cfg.SPARSE3D.VOXEL_SCALE).tolist()
   fpn_scalse = cfg.MODEL.RPN.RPN_SCALES_FROM_TOP
   strides = cfg.SPARSE3D.STRIDE
   nPlanesFront = cfg.SPARSE3D.nPlanesFront
