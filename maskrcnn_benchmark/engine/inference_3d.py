@@ -28,6 +28,8 @@ def compute_on_dataset(model, data_loader, device):
         with torch.no_grad():
             output = model(pcl, targets)
             output =[o.to(cpu_device) for o in output]
+            for i in range(len(output)):
+                output[i].constants['data_id'] = pcl_ids[i]
         results_dict.update(
             {img_id: result for img_id, result in zip(pcl_ids, output)}
         )

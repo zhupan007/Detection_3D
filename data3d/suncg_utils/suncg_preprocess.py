@@ -386,7 +386,7 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[500:1500]
     else:
-      self.house_fns = house_fns[0:200]
+      self.house_fns = house_fns[0:500]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
@@ -398,7 +398,7 @@ class Suncg():
 
   def parse_houses_pool(self):
     import multiprocessing as mp
-    threads = 4 if SAGE else 4
+    threads = 4 if SAGE else 2
     p = mp.Pool(processes=threads)
     p.map(parse_house_onef, self.house_fns)
     p.close()
@@ -901,11 +901,9 @@ def read_object_bbox(parsed_dir, category):
 def add_exta_cam_locations(cam_fn, show=False):
   parsed_dir = os.path.dirname(cam_fn)
   walls = read_object_bbox(parsed_dir, 'wall')
-  try:
-    walls = world2cam_box(walls)
-  except:
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      pass
+  if walls.shape[0] == 0:
+      return cam_fn
+  walls = world2cam_box(walls)
   #Bbox3D.draw_bboxes(walls, 'Y', False)
   wall_corners = Bbox3D.bboxes_corners(walls, up_axis='Y').reshape([-1,3])
   walls_min = wall_corners.min(0)

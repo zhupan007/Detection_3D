@@ -11,9 +11,22 @@ from data3d.suncg_utils.suncg_meta import SUNCG_META
 import matplotlib.pyplot as plt
 
 DEBUG = True
-SHOW_IOU = DEBUG and False
+SHOW_RES_IOU = DEBUG and False
 SHOW_GOOD_PRED = DEBUG and False
 DRAW_RECALL_PRECISION = DEBUG and False
+DRAW_REGRESSION = DEBUG and True
+
+
+def get_obj_nums(gt_boxlists):
+    batch_size = len(gt_boxlists)
+    obj_gt_nums = defaultdict(list)
+    for bi in range(batch_size):
+        labels = gt_boxlists[bi].get_field('labels').cpu().data.numpy()
+        bins = set(labels)
+        for label in set(labels):
+            obj = SUNCG_META.label_2_class[int(label)]
+            obj_gt_nums[obj].append( sum(labels==label) )
+    return obj_gt_nums
 
 def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     # TODO need to make the use_07_metric format available
@@ -31,7 +44,8 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
         gt_boxlists.append(gt_boxlist)
 
     print(f'\n{fns}')
-    gt_num_totally = sum([len(g) for g in gt_boxlists])
+    gt_nums = [len(g) for g in gt_boxlists]
+    gt_num_totally = sum(gt_nums)
     if gt_num_totally == 0:
         print(f'gt_num_totally=0, abort evalution')
         return
@@ -42,6 +56,10 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
         iou_thresh=0.5,
         use_07_metric=True,
     )
+
+    obj_gt_nums = get_obj_nums(gt_boxlists)
+    parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger)
+
     result_str = "mAP: {:.4f}\n".format(result["map"])
     for i, ap in enumerate(result["ap"]):
         if i == 0:  # skip background
@@ -50,6 +68,7 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
             dataset.map_class_id_to_class_name(i), ap
         )
     logger.info(result_str)
+
     if output_folder:
         with open(os.path.join(output_folder, "result.txt"), "w") as fid:
             fid.write(result_str)
@@ -75,6 +94,80 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     if DRAW_RECALL_PRECISION:
         draw_recall_precision(result['recall_precision'])
     return result
+
+def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
+    misses_gt_ids = defaultdict(list)
+    multi_preds_gt_ids = defaultdict(list)
+    ious = defaultdict(list)
+    scores = defaultdict(list)
+    ious_flat = {}
+    scores_flat = {}
+    regression_res = {}
+
+    for obj in pred_for_each_gt.keys():
+        batch_size = len(pred_for_each_gt[obj])
+        for bi in range(batch_size):
+            peg = pred_for_each_gt[obj][bi]
+
+            # get scores and iou
+            ious_bi = []
+            scores_bi = []
+            for pi in peg:
+                # if a gt matches multiple preds, the max score one is positive
+                # here the first one actually has the max score
+                peg_max_score = peg[pi][0]
+                scores_bi.append( peg_max_score['score'] )
+                ious_bi.append( peg_max_score['iou'] )
+            ious_bi = np.array(ious_bi)
+            scores_bi = np.array(scores_bi)
+            ious[obj].append(ious_bi)
+            scores[obj].append(scores_bi)
+
+            # get missed_gt_ids  and multi_preds_gt_ids
+            gt_ids = np.array([k for k in peg.keys()])
+            pred_num_each_gt = np.histogram(gt_ids, bins=range(obj_gt_nums[obj][bi]+1))[0]
+            pred_num_hist = np.histogram(pred_num_each_gt, bins=[0,1,2,3,4])[0]
+            print(f'{pred_num_hist[0]} gt boxes are missed \n{pred_num_hist[1]} t Boxes got one prediction')
+            print(f'{pred_num_hist[2]} gt boxes got 2 predictions')
+            missed_gt_ids_bi = np.where(pred_num_each_gt==0)[0]
+            multi_preds_gt_ids_bi = np.where(pred_num_each_gt>1)[0]
+
+            misses_gt_ids[obj].append(missed_gt_ids_bi)
+            multi_preds_gt_ids[obj].append(multi_preds_gt_ids_bi)
+
+            pass
+
+        ious_flat[obj] = np.concatenate(ious[obj], 0)
+        scores_flat[obj] = np.concatenate(scores[obj], 0)
+        ave_iou = np.mean(ious_flat[obj])
+        max_iou = np.max(ious_flat[obj])
+        min_iou = np.min(ious_flat[obj])
+        ave_score = np.mean(scores_flat[obj])
+        max_score =  np.max(scores_flat[obj])
+        min_score =  np.min(scores_flat[obj])
+        regression_res[obj] = {}
+        regression_res[obj]['min_ave_max_iou'] = [min_iou, ave_iou, max_iou]
+        regression_res[obj]['min_ave_max_score'] = [min_score, ave_score, max_score]
+
+        missed_gt_num = sum([len(gti) for gti in misses_gt_ids[obj] ])
+        multi_gt_num = sum([len(gti) for gti in multi_preds_gt_ids[obj] ])
+        gt_num_sum = sum(obj_gt_nums[obj])
+        regression_res[obj]['missed_multi_sum_gtnum'] = [missed_gt_num, multi_gt_num, gt_num_sum]
+        missed_rate = 1.0*missed_gt_num / gt_num_sum
+        multi_rate = 1.0*multi_gt_num / gt_num_sum
+        matched_rate = 1 - missed_rate - multi_rate
+        regression_res[obj]['missed_multi_rate'] = [matched_rate, missed_rate, multi_rate]
+
+    logger.info(f'regression_res: {regression_res}')
+
+    if DRAW_REGRESSION:
+        for obj in ious_flat:
+            plt.figure(1)
+            plt.plot(ious_flat[obj])
+            plt.title(f'iou of {obj} prediction')
+        plt.show()
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
 
 def draw_recall_precision(recall_precision):
     num_classes = len(recall_precision)
@@ -110,11 +203,11 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh=0.5, use_07_metr
     assert len(gt_boxlists) == len(
         pred_boxlists
     ), "Length of gt and pred lists need to be same."
-    prec, rec = calc_detection_suncg_prec_rec(
+    prec, rec, pred_for_each_gt = calc_detection_suncg_prec_rec(
         pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh
     )
     ap, recall_precision = calc_detection_suncg_ap(prec, rec, use_07_metric=use_07_metric)
-    return {"ap": ap, "map": np.nanmean(ap), "recall_precision":recall_precision}
+    return {"ap": ap, "map": np.nanmean(ap), "recall_precision":recall_precision, "pred_for_each_gt":pred_for_each_gt}
 
 
 def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
@@ -126,7 +219,13 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
    """
     n_pos = defaultdict(int)
     score = defaultdict(list)
-    match = defaultdict(list)
+    # The pred having maximum iou with a gt is matched with the gt.
+    # If multiple preds share same maximum iou gt, the one with highest score is
+    # selected. NOTICE HERE, not the one with highest iou! Because, in test,
+    # only score is available.
+    match = defaultdict(list)  # 1:true, 0:false, -1:ignore
+
+    pred_for_each_gt = defaultdict(list)
     for gt_boxlist, pred_boxlist in zip(gt_boxlists, pred_boxlists):
         pred_bbox = pred_boxlist.bbox3d.numpy()
         pred_label = pred_boxlist.get_field("labels").numpy()
@@ -136,6 +235,7 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
         gt_difficult = gt_boxlist.get_field("difficult").numpy()
 
         for l in np.unique(np.concatenate((pred_label, gt_label)).astype(int)):
+            obj_name = SUNCG_META.label_2_class[l]
             pred_mask_l = pred_label == l
             pred_bbox_l = pred_bbox[pred_mask_l]
             pred_score_l = pred_score[pred_mask_l]
@@ -166,11 +266,17 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
                 criterion = -1,
             ).numpy()
 
-            gt_index = iou.argmax(axis=1)
+            gt_index = iou.argmax(axis=1) # the gt index for each predicion
             # set -1 if there is no matching ground truth
             gt_index[iou.max(axis=1) < iou_thresh] = -1
+            iou_pred = iou.max(1)
+            pred_for_each_gt_l = defaultdict(list)
+            for pi in range(gt_index.shape[0]):
+                pis = {'pred_idx': pi, 'iou':iou[pi, gt_index[pi]], 'score':score[l][pi]}
+                pred_for_each_gt_l[gt_index[pi]].append(pis)
+            pred_for_each_gt[obj_name].append(pred_for_each_gt_l)
 
-            if SHOW_IOU:
+            if SHOW_RES_IOU:
               show_ious(pred_boxlist, gt_boxlist, iou, gt_index)
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
@@ -183,12 +289,16 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
                         match[l].append(-1)
                     else:
                         if not selec[gt_idx]:
+                            # gt_index is already sorted by scores,
+                            # thus the first pred match a gt box is set 1
                             match[l].append(1)
                         else:
                             match[l].append(0)
                     selec[gt_idx] = True
                 else:
                     match[l].append(0)
+            pass
+
 
     n_fg_class = max(n_pos.keys()) + 1
     prec = [None] * n_fg_class
@@ -211,7 +321,7 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
         if n_pos[l] > 0:
             rec[l] = tp / n_pos[l]
 
-    return prec, rec
+    return prec, rec, pred_for_each_gt
 
 
 def show_ious(pred_boxlist, gt_boxlist, iou, gt_index):
