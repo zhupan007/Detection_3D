@@ -48,7 +48,8 @@ def do_train(
     epoch_id,
     eval_in_train,
     eval_out_dir,
-    eval_in_train_per_iter
+    eval_in_train_per_iter,
+    iou_thresh_eval
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info(f"Start training {epoch_id}")
@@ -133,5 +134,5 @@ def do_train(
     )
 
     if eval_in_train:
-      eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all, output_folder=eval_out_dir, box_only=False)
+      eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all, iou_thresh_eval=iou_thresh_eval, output_folder=eval_out_dir, box_only=False)
 

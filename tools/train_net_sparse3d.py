@@ -79,6 +79,7 @@ def train(cfg, local_rank, distributed, loop, only_test):
           cfg.DEBUG.eval_in_train,
           output_dir,
           cfg.DEBUG.eval_in_train_per_iter,
+          cfg.TEST.IOU_THRESHOLD,
       )
 
     return model

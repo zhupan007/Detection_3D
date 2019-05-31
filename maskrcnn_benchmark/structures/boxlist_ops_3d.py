@@ -86,7 +86,7 @@ def iou_one_dim(targets_z, anchors_z):
     iou_z = overlap / common
     return iou_z
 
-def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False):
+def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, flag=''):
   '''
   about criterion check:
     second.core.non_max_suppression.nms_gpu/devRotateIoUEval
@@ -120,15 +120,25 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False):
   else:
       iou3d = iou2d * iouz
 
-  if DEBUG:
+  if DEBUG and flag=='eval':
     mask = iou3d == iou3d.max()
     t_i, a_i = torch.nonzero(mask)[0]
     t = targets[t_i]
     a = anchors[a_i]
-    print(f"iou: {iou3d.max()}")
+    print(f"max iou: {iou3d.max()}")
     a.show_together(t)
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    pass
+
+
+    iou_preds = iou3d.max(0)[0]
+    mask = iou3d == iou_preds.min()
+    t_i, a_i = torch.nonzero(mask)[0]
+    t = targets[t_i]
+    a = anchors[a_i]
+    print(f"min pred iou: {iou_preds.min()}")
+    a.show_together(t)
+    anchors.show_highlight([a_i])
+    targets.show_highlight([t_i])
+
   return iou3d
 
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py

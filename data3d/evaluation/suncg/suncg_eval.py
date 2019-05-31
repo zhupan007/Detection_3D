@@ -27,7 +27,7 @@ def get_obj_nums(gt_boxlists):
             obj_gt_nums[obj].append( sum(labels==label) )
     return obj_gt_nums
 
-def do_suncg_evaluation(dataset, predictions, output_folder, logger):
+def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger):
     # TODO need to make the use_07_metric format available
     # for the user to choose
     pred_boxlists = predictions
@@ -53,7 +53,7 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
     result = eval_detection_suncg(
         pred_boxlists=pred_boxlists,
         gt_boxlists=gt_boxlists,
-        iou_thresh=0.5,
+        iou_thresh=iou_thresh_eval,
         use_07_metric=True,
     )
 
@@ -99,7 +99,6 @@ def do_suncg_evaluation(dataset, predictions, output_folder, logger):
             small_ious = [p['iou'] for p in  small_iou_preds[i]]
             print(f'small iou preds: {small_iou_preds[i]}')
             preds.show_highlight(small_iou_pred_ids, points=pcl_i)
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             pass
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
@@ -274,7 +273,7 @@ def get_obejct_numbers(boxlist):
         obj_nums[SUNCG_META.label_2_class[l]] = sum(labels==l)
     return obj_nums
 
-def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh=0.5, use_07_metric=False):
+def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, use_07_metric=False):
     """Evaluate on suncg dataset.
     Args:
         pred_boxlists(list[BoxList3D]): pred boxlist, has labels and scores fields.
@@ -294,7 +293,7 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh=0.5, use_07_metr
     return {"ap": ap, "map": np.nanmean(ap), "recall_precision":recall_precision, "pred_for_each_gt":pred_for_each_gt}
 
 
-def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
+def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh):
     """Calculate precision and recall based on evaluation code of PASCAL VOC.
     This function calculates precision and recall of
     predicted bounding boxes obtained from a dataset which has :math:`N`
@@ -348,20 +347,21 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
             pred_bbox_l = pred_bbox_l.copy()
             gt_bbox_l = gt_bbox_l.copy()
             iou = boxlist_iou_3d(
-                BoxList3D(pred_bbox_l, pred_boxlist.size3d, pred_boxlist.mode, None, pred_boxlist.constants),
                 BoxList3D(gt_bbox_l, gt_boxlist.size3d, gt_boxlist.mode, None, gt_boxlist.constants),
+                BoxList3D(pred_bbox_l, pred_boxlist.size3d, pred_boxlist.mode, None, pred_boxlist.constants),
                 aug_thickness = { 'target':0, 'anchor':0},
                 criterion = -1,
+                flag='eval'
             ).numpy()
 
-            gt_index = iou.argmax(axis=1) # the gt index for each predicion
+            gt_index = iou.argmax(axis=0) # the gt index for each predicion
             # set -1 if there is no matching ground truth
-            gt_index[iou.max(axis=1) < iou_thresh] = -1
-            iou_pred = iou.max(1)
+            gt_index[iou.max(axis=0) < iou_thresh] = -1
+            iou_pred = iou.max(0)
             pred_for_each_gt_l = defaultdict(list)
             neg_count =  0
             for pi in range(gt_index.shape[0]):
-                pis = {'pred_idx': pred_ids_l[pi], 'iou':iou[pi, gt_index[pi]], 'score':score[l][pi]}
+                pis = {'pred_idx': pred_ids_l[pi], 'iou':iou[gt_index[pi], pi], 'score':score[l][pi]}
                 gt_idx = gt_index[pi]
                 neg_count += gt_index[pi] == -1
                 gt_idx -= (gt_idx==-1) * neg_count
