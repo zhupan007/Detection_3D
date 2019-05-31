@@ -375,7 +375,10 @@ class BoxList3D(object):
         labels = np.array( [0]*boxes.shape[0] + [1]*boxes_show_together.shape[0])
         boxes = np.concatenate([boxes, boxes_show_together], 0)
       else:
-        labels = None
+        if 'labels' in self.fields():
+            labels = self.get_field('labels').cpu().data.numpy().astype(np.int32)
+        else:
+            labels = None
       if points is None:
         Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', \
         labels = labels, random_color=False)
@@ -395,7 +398,7 @@ class BoxList3D(object):
       else:
         Bbox3D.draw_points_centroids(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
 
-    def show_together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None, offset_x=None):
+    def show_together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None, offset_x=None, twolabels=False):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy().copy()
@@ -403,7 +406,7 @@ class BoxList3D(object):
         ids = np.random.choice(boxes.shape[0], max_num, replace=False)
         boxes = boxes[ids]
 
-      boxes_1 = boxlist_1.bbox3d.cpu().data.numpy()
+      boxes_1 = boxlist_1.bbox3d.cpu().data.numpy().copy()
       if max_num_1 > 0 and max_num_1 < boxes_1.shape[0]:
         ids = np.random.choice(boxes_1.shape[0], max_num_1, replace=False)
         boxes_1 = boxes_1[ids]
@@ -411,7 +414,13 @@ class BoxList3D(object):
       if offset_x is not None:
           boxes_1[:,0] += offset_x
 
-      labels = np.array([0]*boxes.shape[0] + [1]*boxes_1.shape[0])
+      if not twolabels and 'labels' in self.fields():
+          labels = self.get_field('labels').cpu().data.numpy().astype(np.int32)
+          labels_1 = boxlist_1.get_field('labels').cpu().data.numpy().astype(np.int32)
+          labels = np.concatenate([labels, labels_1], 0)
+      else:
+          labels = np.array([0]*boxes.shape[0] + [1]*boxes_1.shape[0])
+
       boxes = np.concatenate([boxes, boxes_1], 0)
 
       if points is None:
@@ -425,14 +434,19 @@ class BoxList3D(object):
               points = np.concatenate([points, tp], 0)
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
-    def show_highlight(self, ids):
+    def show_highlight(self, ids, points=None):
         from utils3d.bbox3d_ops import Bbox3D
         ids = np.array(ids)
         n = len(self)
         labels = np.zeros([n]).astype(np.int)
         labels[ids] = 1
         boxes = self.bbox3d.cpu().data.numpy()
-        Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
+        if points is None:
+            Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
+        else:
+            if isinstance(points, torch.Tensor):
+                points = points.cpu().data.numpy()
+            Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
 
     def show_by_pos_anchor(self, sampled_pos_inds, sampled_neg_inds, targets=None):
       import numpy as np

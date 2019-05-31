@@ -14,7 +14,7 @@ from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 DEBUG = True
 
 FRAME_SHOW = 1
-POINTS_KEEP_RATE = 1.0
+POINTS_KEEP_RATE = 0.6
 BOX_XSURFACE_COLOR_DIF = False
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
@@ -70,7 +70,7 @@ def corners4_to_mesh2(corners, color=[255,0,0]):
   return mesh
 
 
-def cut_points_roof(points, keep_rate=0.55):
+def cut_points_roof(points, keep_rate=POINTS_KEEP_RATE):
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate

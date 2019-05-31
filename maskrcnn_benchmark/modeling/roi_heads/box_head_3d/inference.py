@@ -9,6 +9,8 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import cat_boxlist_3d
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 
 
+DEBUG = False
+
 class PostProcessor(nn.Module):
     """
     From a set of classification scores, box regression and proposals,
@@ -122,6 +124,13 @@ class PostProcessor(nn.Module):
                 "labels", torch.full((num_labels,), j, dtype=torch.int64, device=device)
             )
             result.append(boxlist_for_class)
+
+            # debuging
+            if DEBUG:
+                inds_small_scrore = (1-inds_all[:, j]).nonzero().squeeze(1)
+                scores_small_j = scores[inds_small_scrore,j]
+                max_score_abandoned = scores_small_j.max()
+                print(f'max_score_abandoned: {max_score_abandoned}')
 
         result = cat_boxlist_3d(result, per_example=False)
         number_of_detections = len(result)

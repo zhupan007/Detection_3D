@@ -491,7 +491,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug and True
+    always_gen_bbox = Debug and False
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -1112,8 +1112,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  suncg.parse_houses_pool()
-  #suncg.parse_houses()
+  #suncg.parse_houses_pool()
+  suncg.parse_houses()
 
 if __name__ == '__main__':
   parse_house()
