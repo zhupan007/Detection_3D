@@ -182,6 +182,39 @@ later, SpConv and SparseConvCnn should only need to install one
 ## Learning rate
 - maskrcnn_benchmark/solver/lr_scheduler.py
 
+## IOU augmentation
+* Aug thickness befor iou for targets preparation only. Do not aug thickness for NMS.
+* * 
+### RPN TARGET
+- \_C.MODEL.RPN.FG_IOU_THRESHOLD = 0.55
+- \_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.25
+    /home/z/Research/Detection_3D/maskrcnn_benchmark/modeling/rpn/loss_3d.py/make_rpn_loss_evaluator  
+    ~/Research/Detection_3D/maskrcnn_benchmark/modeling/matcher.py
+- \_C.MODEL.RPN.AUG_THICKNESS_TAR_ANC = [0.3,0] 
+    /home/z/Research/Detection_3D/maskrcnn_benchmark/modeling/rpn/loss_3d.py/match_targets_to_anchors
+### RPN NMS
+- \_C.MODEL.RPN.NMS_THRESH  
+    /home/z/Research/Detection_3D/maskrcnn_benchmark/modeling/rpn/inference_3d.py/forward_for_single_feature_map/boxlist_nms_3d  
+    2d iou  
+    no box aug  
+### ROI TARGET
+- \_C.MODEL.ROI_HEADS.FG_IOU_THRESHOLD = 0.5
+- \_C.MODEL.ROI_HEADS.BG_IOU_THRESHOLD = 0.5
+    modeling/roi_heads/box_head_3d/loss.py/make_roi_box_loss_evaluator  
+    ~/Research/Detection_3D/maskrcnn_benchmark/modeling/matcher.py  
+- \_C.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC = [0.2,0.2]
+        maskrcnn_benchmark/modeling/roi_heads/box_head_3d/loss.py/match_targets_to_proposals  
+### ROI NMS
+- \_C.MODEL.ROI_HEADS.NMS   = 0.3
+        ~/Research/Detection_3D/maskrcnn_benchmark/structures/boxlist_ops_3d.py  
+        modeling/roi_heads/box_head_3d/inference.py
+        This is 2d iou.   
+        No box aug
+### TEST
+- \_C.TEST.IOU_THRESHOLD = 0.1
+    suncg_eval.py/calc_detection_suncg_prec_rec   
+    no box augmentation  
+
 # Basic code structure
 - maskrcnn_benchmark/structures/bounding_box_3d.py/BoxList3D
         Box class used for training

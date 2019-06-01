@@ -33,31 +33,8 @@ def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score"):
               post_max_size=100,
               iou_threshold=nms_thresh, # 0.1
                )
-    #bbox2d = bbox2d.unsqueeze(1)
-    #keep = multiclass_nms(
-    #          nms_func = rotate_nms,
-    #          boxes = bbox2d,
-    #          scores = objectness,
-    #          num_class = 2,
-    #          pre_max_size=2000,
-    #          post_max_size=100,
-    #          iou_threshold=nms_thresh, # 0.1
-    #          )
     boxlist = boxlist[keep]
     return boxlist
-
-    if nms_thresh <= 0:
-        return boxlist
-    mode = boxlist.mode
-    boxlist = boxlist.convert("xyxy")
-    boxes = boxlist.bbox
-    score = boxlist.get_field(score_field)
-    keep = _box_nms(boxes, score, nms_thresh)
-    if max_proposals > 0:
-        keep = keep[: max_proposals]
-    boxlist = boxlist[keep]
-    return boxlist.convert(mode)
-
 
 def remove_small_boxes3d(boxlist, min_size):
     """

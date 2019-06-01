@@ -318,3 +318,4 @@ def make_roi_box_loss_evaluator(cfg):
     loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness)
 
     return loss_evaluator
+

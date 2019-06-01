@@ -72,7 +72,7 @@ class RPNLossComputation(object):
     This class computes the RPN loss.
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, aug_thickness):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -84,6 +84,7 @@ class RPNLossComputation(object):
         self.fg_bg_sampler = fg_bg_sampler
         self.box_coder = box_coder
         self.yaw_loss_mode = yaw_loss_mode
+        self.aug_thickness = aug_thickness
 
     def match_targets_to_anchors(self, anchor, target):
         from utils3d.geometric_torch import angle_dif
@@ -317,7 +318,8 @@ def make_rpn_loss_evaluator(cfg, box_coder):
     fg_bg_sampler = BalancedPositiveNegativeSampler(
         cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE, cfg.MODEL.RPN.POSITIVE_FRACTION
     )
-
-    loss_evaluator = RPNLossComputation(matcher, fg_bg_sampler, box_coder, cfg.MODEL.LOSS.YAW_MODE)
+    tmp = cfg.MODEL.RPN.AUG_THICKNESS_TAR_ANC
+    aug_thickness = {'target':tmp[0], 'anchor':tmp[1]}
+    loss_evaluator = RPNLossComputation(matcher, fg_bg_sampler, box_coder, cfg.MODEL.LOSS.YAW_MODE, aug_thickness)
     return loss_evaluator
 
