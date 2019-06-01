@@ -14,7 +14,7 @@ DEBUG = True
 SHOW_PRED = DEBUG and True
 DRAW_RECALL_PRECISION = DEBUG and False
 DRAW_REGRESSION = DEBUG and False
-
+SHOW_FNS = DEBUG and False
 
 def get_obj_nums(gt_boxlists):
     batch_size = len(gt_boxlists)
@@ -42,7 +42,8 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
         gt_boxlist = dataset.get_groundtruth(image_id)
         gt_boxlists.append(gt_boxlist)
 
-    print(f'\n{fns}')
+    if SHOW_FNS:
+        print(f'\n{fns}')
     gt_nums = [len(g) for g in gt_boxlists]
     pred_nums = [len(p) for p in pred_boxlists]
     gt_num_totally = sum(gt_nums)
@@ -240,7 +241,8 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
         regression_res[obj]['missed_multi_rate'] = [matched_rate, missed_rate, multi_rate]
         pass
 
-    logger.info(f'regression_res: {regression_res}')
+    reg_str = regression_res_str(regression_res)
+    logger.info(f'{reg_str}')
 
     if DRAW_REGRESSION:
         for obj in ious_flat:
@@ -251,6 +253,12 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
     pass
     return regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds
 
+def regression_res_str(regression_res):
+    reg_str = '\n\nregression result\n'
+    for key in regression_res:
+        value = regression_res[key]
+        reg_str += f'{key}:\n{value}\n'
+    return reg_str
 
 def draw_recall_precision(recall_precision):
     num_classes = len(recall_precision)
