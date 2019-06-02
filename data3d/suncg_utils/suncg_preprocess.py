@@ -389,8 +389,8 @@ class Suncg():
       self.house_fns = house_fns[0:1000]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and False:
-      scene_id = '008969b6e13d18db3abc9d954cebe6a5'
+    if Debug and True:
+      scene_id = '01c3dd293fc00701d2239e9e58e03967'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -417,7 +417,7 @@ def parse_house_onef( house_fn):
     2. point cloud for each depth image
     3. Merge point clouds
     '''
-    is_gen_house_obj = 0
+    is_gen_house_obj = 1
     is_gen_bbox = 1
     is_gen_cam = 1
     is_gen_pcl = 1

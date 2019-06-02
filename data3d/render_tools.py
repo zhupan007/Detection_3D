@@ -36,7 +36,7 @@ def show_walls_offsetz(wall_bboxes):
   Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
 
 
-def cut_points_roof(points, keep_rate=0.5):
+def cut_points_roof(points, keep_rate=0.7):
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate
@@ -50,7 +50,7 @@ def down_sample_points(points, keep_rate=0.3):
   points_d = points[choices]
   return points_d
 
-def render_parsed_house_walls(parsed_dir, show_pcl=False):
+def render_parsed_house_walls(parsed_dir, show_pcl=True, show_by_class=True):
   print(f'parsed_dir:{parsed_dir}')
   bboxes = []
   labels = []
@@ -65,11 +65,19 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
   scene_size = Bbox3D.boxes_size(bboxes)
   print(f'scene wall size:{scene_size}')
 
-  #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #if not show_pcl:
   #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
   Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   show_walls_offsetz(bboxes)
+
+  if show_by_class:
+        for c in range(1,max(labels)+1):
+            if c!=1:
+                continue
+            mask = labels == c
+            bboxes_c = bboxes[mask]
+            show_walls_offsetz(bboxes_c)
 
   if show_pcl:
     pcl_fn = f'{parsed_dir}/pcl_camref.ply'
@@ -91,6 +99,8 @@ def render_parsed_house_walls(parsed_dir, show_pcl=False):
     bboxes[:,2] += 0.1
     Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False)
     #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
+
+
 
 def pcl_size(pcl):
     xyz_max = pcl[:,0:3].max(0)
@@ -185,14 +195,21 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       31a69e882e51c7c5dfdc0da464c3c02d **
   '''
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
-  house_names = ['008969b6e13d18db3abc9d954cebe6a5']
+  house_names = ['0163e180b8c372c9a7f123dc01ae43ed']
   #house_names = [SceneSamples.hard_id0]
 
-  house_names = os.listdir(PARSED_DIR)
+  #house_names = os.listdir(PARSED_DIR)
+
+  with open(f'{SUNCG_V1_DIR}/house_names_1level.txt', 'r') as h1f:
+      house_names_1level = h1f.read().split('\n')
+  house_names = house_names_1level
+
   house_names.sort()
   print(f'totally {len(house_names)} houses')
 
-  #house_names = house_names[80:]
+  house_names = house_names[203:]
+
+  house_names = ['01c3dd293fc00701d2239e9e58e03967']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -205,7 +222,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       render_cam_positions(parsed_dir)
 
     if r_whole:
-      render_parsed_house_walls(parsed_dir, True)
+      render_parsed_house_walls(parsed_dir)
 
     splited_boxfn = f'{SPLITED_DIR}/houses/{house_name}/*.pth'
     pth_fns = glob.glob(splited_boxfn)
@@ -247,8 +264,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 0,
-            r_splited = 1
+            r_whole = 1,
+            r_splited = 0
     )
 
 
