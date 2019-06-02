@@ -183,7 +183,11 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
         for bi in range(batch_size):
             if len(pred_for_each_gt[obj]) == 0:
                 continue
-            peg = pred_for_each_gt[obj][bi]
+            try:
+                peg = pred_for_each_gt[obj][bi]
+            except:
+                import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                pass
 
             #-------------------------------
             # get scores and iou
@@ -258,7 +262,7 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
         pass
 
     reg_str = regression_res_str(regression_res)
-    logger.info(f'{reg_str}')
+    logger.info(reg_str)
 
     if DRAW_REGRESSION:
         for obj in ious_flat:
@@ -333,7 +337,11 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh):
     match = defaultdict(list)  # 1:true, 0:false, -1:ignore
 
     pred_for_each_gt = defaultdict(list)
+    batch_size = len(gt_boxlists)
+
+    bi = -1
     for gt_boxlist, pred_boxlist in zip(gt_boxlists, pred_boxlists):
+        bi += 1
         pred_bbox = pred_boxlist.bbox3d.numpy()
         pred_label = pred_boxlist.get_field("labels").numpy()
         pred_score = pred_boxlist.get_field("scores").numpy()
@@ -387,10 +395,15 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh):
             for pi in range(gt_index.shape[0]):
                 pis = {'pred_idx': pred_ids_l[pi], 'iou':iou[gt_index[pi], pi], 'score':score[l][pi]}
                 gt_idx = gt_index[pi]
-                neg_count += gt_index[pi] == -1
-                gt_idx -= (gt_idx==-1) * neg_count
+                if gt_idx<0:
+                    neg_count += 1
+                    gt_idx -= (gt_idx==-1) * neg_count
                 pred_for_each_gt_l[gt_idx].append(pis)
-            pred_for_each_gt[obj_name].append(pred_for_each_gt_l)
+
+            if obj_name not in pred_for_each_gt:
+                for iii in range(batch_size):
+                    pred_for_each_gt[obj_name].append(defaultdict(list))
+            pred_for_each_gt[obj_name][bi] = pred_for_each_gt_l
 
             del iou
 
