@@ -84,7 +84,8 @@ def do_train(
           predictions_all += predictions_i
 
           if eval_in_train_per_iter:
-            eval_res_i = evaluate(dataset=data_loader.dataset, predictions=predictions_i, output_folder=eval_out_dir, box_only=False)
+            eval_res_i = evaluate(dataset=data_loader.dataset, predictions=predictions_i,
+                                 iou_thresh_eval=iou_thresh_eval,  output_folder=eval_out_dir, box_only=False)
 
         # reduce losses over all GPUs for logging purposes
         loss_dict_reduced = reduce_loss_dict(loss_dict)
@@ -134,5 +135,6 @@ def do_train(
     )
 
     if eval_in_train:
-      eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all, iou_thresh_eval=iou_thresh_eval, output_folder=eval_out_dir, box_only=False)
+      eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all,
+                          iou_thresh_eval=iou_thresh_eval, output_folder=eval_out_dir, box_only=False)
 

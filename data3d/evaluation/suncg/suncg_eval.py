@@ -11,7 +11,7 @@ from data3d.suncg_utils.suncg_meta import SUNCG_META
 import matplotlib.pyplot as plt
 
 DEBUG = True
-SHOW_PRED = DEBUG and True
+SHOW_PRED = DEBUG and False
 DRAW_RECALL_PRECISION = DEBUG and False
 DRAW_REGRESSION = DEBUG and False
 SHOW_FNS = DEBUG and False
@@ -62,12 +62,15 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds = \
         parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger)
 
-    result_str = "mAP: {:.4f}\n".format(result["map"])
+    recall_precision = result["recall_precision"]
+    result_str = "\nmAP: {:.4f}\n".format(result["map"])
     for i, ap in enumerate(result["ap"]):
         if i == 0:  # skip background
             continue
-        result_str += "{:<16}: {:.4f}\n".format(
-            dataset.map_class_id_to_class_name(i), ap
+        prec_rec7 = recall_precision[i][7][1]
+        prec_rec9 = recall_precision[i][9][1]
+        result_str += "{:<16}: {:.4f}, \t(rec,prec): (0.7,{:.4f}), (0.9,{:.4f})\n".format(
+            dataset.map_class_id_to_class_name(i), ap, prec_rec7, prec_rec9
         )
     logger.info(result_str)
 
@@ -105,8 +108,19 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     if DRAW_RECALL_PRECISION:
         draw_recall_precision(result['recall_precision'])
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     return result
+
+#def performance_str(result):
+#    result_str = "\nmAP: {:.4f}\n".format(result["map"])
+#    ap = result["ap"]
+#    recall_precision = result["recall_precision"]
+#    num_classes = len(ap)
+#    for l in range(1,num_classes):
+#        obj = SUNCG_META.label_2_class[l]
+#        result_str += f"{obj}: {ap[l]:.4f} \t"
+#        result_str += f"[rec, prec] = [0.7, {recall_precision[l][7][1]:.4f}], [0.9, {recall_precision[l][9][1]:.4f}]"
+#        result_str += '\n'
+#    return result_str
 
 def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums):
     batch_size = len(pred_nums)
@@ -167,6 +181,8 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
 
     for obj in pred_for_each_gt.keys():
         for bi in range(batch_size):
+            if len(pred_for_each_gt[obj]) == 0:
+                continue
             peg = pred_for_each_gt[obj][bi]
 
             #-------------------------------
