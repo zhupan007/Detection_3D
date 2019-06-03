@@ -1,7 +1,6 @@
 # A modification version from chainercv repository.
 # (See https://github.com/chainer/chainercv/blob/master/chainercv/evaluations/eval_detection_suncg.py)
 from __future__ import division
-
 import os
 from collections import defaultdict
 import numpy as np
@@ -13,8 +12,9 @@ import matplotlib.pyplot as plt
 DEBUG = True
 SHOW_PRED = DEBUG and False
 DRAW_RECALL_PRECISION = DEBUG and False
-DRAW_REGRESSION = DEBUG and False
-SHOW_FNS = DEBUG and False
+SHOW_FILE_NAMES = DEBUG and False
+
+DRAW_REGRESSION_IOU = DEBUG and False
 
 def get_obj_nums(gt_boxlists):
     batch_size = len(gt_boxlists)
@@ -42,7 +42,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
         gt_boxlist = dataset.get_groundtruth(image_id)
         gt_boxlists.append(gt_boxlist)
 
-    if SHOW_FNS:
+    if SHOW_FILE_NAMES:
         print(f'\n{fns}')
     gt_nums = [len(g) for g in gt_boxlists]
     pred_nums = [len(p) for p in pred_boxlists]
@@ -62,16 +62,8 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds = \
         parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger)
 
-    recall_precision = result["recall_precision"]
-    result_str = "\nmAP: {:.4f}\n".format(result["map"])
-    for i, ap in enumerate(result["ap"]):
-        if i == 0:  # skip background
-            continue
-        prec_rec7 = recall_precision[i][7][1]
-        prec_rec9 = recall_precision[i][9][1]
-        result_str += "{:<16}: {:.4f}, \t(rec,prec): (0.7,{:.4f}), (0.9,{:.4f})\n".format(
-            dataset.map_class_id_to_class_name(i), ap, prec_rec7, prec_rec9
-        )
+    recall_precision_10steps = result["recall_precision_10steps"]
+    result_str = performance_str(result, dataset, regression_res)
     logger.info(result_str)
 
     if output_folder:
@@ -79,6 +71,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             fid.write(result_str)
 
     if SHOW_PRED:
+        SHOW_SMALL_IOU = False
         print('SHOW_PRED')
         ap = result['ap'][1:]
         if np.isnan(ap).all():
@@ -99,28 +92,93 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+0.3, twolabels=False)
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 
-            small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
-            small_ious = [p['iou'] for p in  small_iou_preds[i]]
-            print(f'small iou preds: {small_iou_preds[i]}')
-            preds.show_highlight(small_iou_pred_ids, points=pcl_i)
-            pass
+
+            if SHOW_SMALL_IOU:
+                small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
+                small_ious = [p['iou'] for p in  small_iou_preds[i]]
+                print(f'small iou preds: {small_iou_preds[i]}')
+                if len(small_iou_pred_ids)>0:
+                    preds.show_highlight(small_iou_pred_ids, points=pcl_i)
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     if DRAW_RECALL_PRECISION:
-        draw_recall_precision(result['recall_precision'])
+        draw_recall_precision_10steps(result['recall_precision_10steps'], '10steps')
+        draw_recall_precision_10steps(result['rec_prec_org'], 'original')
     return result
 
-#def performance_str(result):
-#    result_str = "\nmAP: {:.4f}\n".format(result["map"])
-#    ap = result["ap"]
-#    recall_precision = result["recall_precision"]
-#    num_classes = len(ap)
-#    for l in range(1,num_classes):
-#        obj = SUNCG_META.label_2_class[l]
-#        result_str += f"{obj}: {ap[l]:.4f} \t"
-#        result_str += f"[rec, prec] = [0.7, {recall_precision[l][7][1]:.4f}], [0.9, {recall_precision[l][9][1]:.4f}]"
-#        result_str += '\n'
-#    return result_str
+
+def performance_str(result, dataset, regression_res):
+    result_str = "\nmAP: {:.4f}\n".format(result["map"])
+    ap = result['ap']
+    recall_precision_10steps = result["recall_precision_10steps"]
+
+    class_num = len(ap)
+    class_names = []
+    rec7_precision = []
+    rec9_precision = []
+    ious_mean = []
+    ious_std = []
+    ious_min = []
+    scores_mean = []
+    scores_std = []
+    scores_min = []
+    for i in range(class_num):
+        clsn = dataset.map_class_id_to_class_name(i)
+        if i==0:
+            clsn = 'mean'
+        class_names.append(clsn )
+        rec7_precision.append( recall_precision_10steps[i][7][1] )
+        rec9_precision.append( recall_precision_10steps[i][9][1] )
+        if i==0:
+            ious_mean.append( np.nan )
+            ious_std.append( np.nan)
+            ious_min.append( np.nan )
+            scores_mean.append( np.nan )
+            scores_std.append( np.nan)
+            scores_min.append( np.nan )
+        else:
+            ious_mean.append( regression_res[clsn]['ave_std_iou'][0] )
+            ious_std.append( regression_res[clsn]['ave_std_iou'][1] )
+            ious_min.append( regression_res[clsn]['min_max_iou'][0] )
+            scores_mean.append( regression_res[clsn]['ave_std_score'][0] )
+            scores_std.append( regression_res[clsn] ['ave_std_score'][1] )
+            scores_min.append( regression_res[clsn] ['min_max_score'][0] )
+
+
+    ious_mean[0] = np.mean(ious_mean[1:])
+    ious_std[0] = np.mean(ious_std[1:])
+    ious_min[0] = np.min(ious_std[1:])
+
+    scores_mean[0] = np.mean(scores_mean[1:])
+    scores_std[0] =  np.mean(scores_std[1:])
+    scores_min[0] =  np.min( scores_std[1:])
+
+    result_str += f'{"class:":12}' + ' '.join([f'{c:<10}' for c in  class_names]) + '\n'
+    result_str += f'{"ap:":12}' + ' '.join([f'{p:<10.4f}' for p in ap]) + '\n'
+    result_str += f'{"r7p:":12}' + ' '.join([f'{p:<10.4f}' for p in rec7_precision]) + '\n'
+    result_str += f'{"r9p:":12}' + ' '.join([f'{p:<10.4f}' for p in rec9_precision]) + '\n'
+    result_str += f'{"iou mean:":12}' + ' '.join([f'{p:<10.4f}' for p in ious_mean]) + '\n'
+    result_str += f'{"iou std:":12}' + ' '.join([f'{p:<10.4f}' for p in ious_std]) + '\n'
+    result_str += f'{"iou min:":12}' + ' '.join([f'{p:<10.4f}' for p in ious_min]) + '\n'
+    result_str += f'{"score mean:":12}' + ' '.join([f'{p:<10.4f}' for p in scores_mean]) + '\n'
+    result_str += f'{"score std:":12}' + ' '.join([f'{p:<10.4f}' for p in  scores_std]) + '\n'
+    result_str += f'{"score min:":12}' + ' '.join([f'{p:<10.4f}' for p in  scores_min]) + '\n'
+    result_str += '\n'
+    #print(result_str)
+    return result_str
+
+def performance_str0(result):
+    result_str = "\nmAP: {:.4f}\n".format(result["map"])
+    for i, ap in enumerate(result["ap"]):
+        if i == 0:  # skip background
+            class_name = 'ave'
+        else:
+            class_name = dataset.map_class_id_to_class_name(i)
+        prec_rec7 = recall_precision_10steps[i][7][1]
+        prec_rec9 = recall_precision_10steps[i][9][1]
+        result_str += "{:<16}: {:.4f}, \t(rec,prec): (0.7,{:.4f}), (0.9,{:.4f})\n".format(
+            class_name, ap, prec_rec7, prec_rec9
+        )
 
 def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums):
     batch_size = len(pred_nums)
@@ -242,14 +300,18 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
         scores_flat[obj] = np.concatenate(scores[obj], 0)
 
         ave_iou = np.mean(ious_flat[obj])
+        std_iou = np.std(ious_flat[obj])
         max_iou = np.max(ious_flat[obj])
         min_iou = np.min(ious_flat[obj])
         ave_score = np.mean(scores_flat[obj])
+        std_score = np.std(scores_flat[obj])
         max_score =  np.max(scores_flat[obj])
         min_score =  np.min(scores_flat[obj])
         regression_res[obj] = {}
-        regression_res[obj]['min_ave_max_iou'] = [min_iou, ave_iou, max_iou]
-        regression_res[obj]['min_ave_max_score'] = [min_score, ave_score, max_score]
+        regression_res[obj]['min_max_iou'] = [min_iou, max_iou]
+        regression_res[obj]['ave_std_iou'] = [ave_iou, std_iou]
+        regression_res[obj]['min_max_score'] = [min_score, max_score]
+        regression_res[obj]['ave_std_score'] = [ave_score, std_score]
 
         missed_gt_num = sum([len(gti) for gti in missed_gt_ids[obj] ])
         multi_gt_num = sum([len(gti) for gti in multi_preds_gt_ids[obj] ])
@@ -264,13 +326,20 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
     reg_str = regression_res_str(regression_res)
     logger.info(reg_str)
 
-    if DRAW_REGRESSION:
+    if DRAW_REGRESSION_IOU:
         for obj in ious_flat:
-            plt.figure(1)
-            plt.plot(ious_flat[obj])
-            plt.title(f'iou of {obj} prediction')
-        plt.show()
-    pass
+            fig = plt.figure(1)
+            plt.plot(ious_flat[obj],'o')
+            plt.xlabel(f'{obj} index')
+            plt.ylabel('iou')
+            title = f'iou of {obj} prediction'
+            #plt.title(title)
+            plt.show()
+            fname = f'iou_{obj}.png'
+            fig.savefig(fname)
+            print(fname)
+            pass
+
     return regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds
 
 def regression_res_str(regression_res):
@@ -280,17 +349,24 @@ def regression_res_str(regression_res):
         reg_str += f'{key}:\n{value}\n'
     return reg_str
 
-def draw_recall_precision(recall_precision):
-    num_classes = len(recall_precision)
-    for i in range(1,num_classes):
+def draw_recall_precision_10steps(recall_precision_10steps, flag):
+    num_classes = len(recall_precision_10steps)
+    for i in range(num_classes):
         obj = SUNCG_META.label_2_class[i]
-        rp = recall_precision[i]
+        if i==0:
+            if flag == '10steps':
+                continue
+            obj = 'ave'
+        rp = recall_precision_10steps[i]
         print(f'\n{obj}\n{rp}')
-        plt.figure(i)
+        fig = plt.figure(i)
         plt.plot(rp[:,0], rp[:,1])
         plt.ylabel('precision')
         plt.xlabel('recall')
-        plt.title(obj)
+        title = flag+' '+obj+' recall-precision'
+        plt.title(title)
+        fig.savefig(title+'.png')
+        print('save: '+title+'.png')
     plt.show()
 
 def get_obejct_numbers(boxlist):
@@ -317,8 +393,9 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, use_07_metric=F
     prec, rec, pred_for_each_gt = calc_detection_suncg_prec_rec(
         pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh
     )
-    ap, recall_precision = calc_detection_suncg_ap(prec, rec, use_07_metric=use_07_metric)
-    return {"ap": ap, "map": np.nanmean(ap), "recall_precision":recall_precision, "pred_for_each_gt":pred_for_each_gt}
+    rec_prec_org = [np.concatenate([np.array(r).reshape([-1,1]), np.array(p).reshape([-1,1])],1) for r,p in zip(rec, prec)]
+    ap, recall_precision_10steps = calc_detection_suncg_ap(prec, rec, use_07_metric=use_07_metric)
+    return {"ap": ap, "map": np.nanmean(ap), "rec_prec_org":rec_prec_org, "recall_precision_10steps":recall_precision_10steps, "pred_for_each_gt":pred_for_each_gt}
 
 
 def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh):
@@ -475,11 +552,11 @@ def calc_detection_suncg_ap(prec, rec, use_07_metric=False):
 
     n_fg_class = len(prec)
     ap = np.empty(n_fg_class)
-    recall_precision = np.empty([n_fg_class, 11, 2])
+    recall_precision_10steps = np.empty([n_fg_class, 11, 2])
     for l in range(n_fg_class):
         if prec[l] is None or rec[l] is None:
             ap[l] = np.nan
-            recall_precision[l] = np.nan
+            recall_precision_10steps[l] = np.nan
             continue
 
         if use_07_metric:
@@ -493,7 +570,7 @@ def calc_detection_suncg_ap(prec, rec, use_07_metric=False):
                     p = np.max(np.nan_to_num(prec[l])[rec[l] >= t])
                 ap[l] += p / 11
                 rp.append([t, p])
-            recall_precision[l] = np.array(rp)
+            recall_precision_10steps[l] = np.array(rp)
         else:
             # correct AP calculation
             # first append sentinel values at the end
@@ -509,4 +586,7 @@ def calc_detection_suncg_ap(prec, rec, use_07_metric=False):
             # and sum (\Delta recall) * prec
             ap[l] = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
 
-    return ap, recall_precision
+    # set the first as average
+    recall_precision_10steps[0] = recall_precision_10steps[1:].mean(0)
+    ap[0] = ap[1:].mean()
+    return ap, recall_precision_10steps

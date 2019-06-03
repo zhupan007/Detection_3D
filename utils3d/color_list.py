@@ -4,12 +4,12 @@ IS_SHUFFLE = False
 
 COLOR_LIST = np.array( [
 [255,0,0],
+[0,0,0],
 [0,0,255],
 [0,255,0],
-[153,102,204],
 [255,127,80],
 [127,255,212],
-[0,0,0],
+[153,102,204],
 [127,255,0],
 [0,127,255],
 [137,207,240],
@@ -112,7 +112,7 @@ if __name__ == '__main__':
   print(COLOR_LIST.shape)
   n = COLOR_LIST.shape[0]
   COLOR_LIST = COLOR_LIST.reshape([1,-1,3])
-  for i in range(0,n, 10):
+  for i in range(0,n, 5):
     e = min(i+10, n)
     print(f'{i}:{e}')
     print(COLOR_LIST[:,i:e])

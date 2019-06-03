@@ -2,6 +2,7 @@
 
 
 # on going process
+- iou criterion problem
 - good rpn proposals are recognized as false negative, apply aug in iou of roi
 - 3d box encoding is not right: /home/z/Research/Detection_3D/second/pytorch/core/ box_torch_ops.py
 - (1) one anchor mathch two objects, (2) For long objects, a low iou is matched, while other close low iou is neg
@@ -212,8 +213,9 @@ later, SpConv and SparseConvCnn should only need to install one
         No box aug
 ### TEST
 - \_C.TEST.IOU_THRESHOLD = 0.1
-    suncg_eval.py/calc_detection_suncg_prec_rec   
-    no box augmentation  
+    suncg_eval.py/calc_detection_suncg_prec_rec     
+    no box augmentation    
+    criterion = -1
 
 # Basic code structure
 - maskrcnn_benchmark/structures/bounding_box_3d.py/BoxList3D

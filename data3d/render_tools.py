@@ -257,8 +257,7 @@ def render_obj_house():
 
 
 def render_fn():
-    pth_fn = '/home/z/Research/Detection_3D/data3d/suncg_utils/SuncgTorch/houses/a046e442fa9c38ae063e8ea9d2ceeeea/pcl_1.pth'
-    pth_fn = '/DS/SUNCG/suncg_v1_splited_torch_BS_30_30_BN_300K/houses/8c033357d15373f4079b1cecef0e065a/pcl_0.pth'
+    pth_fn = '/DS/SUNCG/suncg_v1_splited_torch_BS_30_30_BN_300K/houses/0005b50577f5871e1c0bb7a687f6cbc3/pcl_0.pth'
     render_pth_file(pth_fn)
 
 def main():
@@ -271,8 +270,8 @@ def main():
 
 
 if __name__ == '__main__':
-    #render_fn()
-    main()
+    render_fn()
+    #main()
 
 
 

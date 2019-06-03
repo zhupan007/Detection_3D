@@ -66,7 +66,7 @@ def iou_one_dim(targets_z, anchors_z):
 def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, flag=''):
   '''
   about criterion check:
-    second.core.non_max_suppression.nms_gpu/devRotateIoUEval
+    /home/z/Research/Detection_3D/second/core/non_max_suppression/nms_gpu.py devRotateIoUEval
   '''
   assert targets.mode == 'yx_zb'
   assert anchors.mode == 'yx_zb'
@@ -98,12 +98,31 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, fl
       iou3d = iou2d * iouz
 
   if DEBUG and flag=='eval':
+    if iou3d.max() < 1:
+        return iou3d
+
     mask = iou3d == iou3d.max()
     t_i, a_i = torch.nonzero(mask)[0]
     t = targets[t_i]
     a = anchors[a_i]
     print(f"max iou: {iou3d.max()}")
     a.show_together(t)
+
+    if iou3d.max() > 1:
+        torch.set_printoptions(precision=16)
+        print(a.bbox3d)
+        print(t.bbox3d)
+
+        #np.set_printoptions(precision=10)
+        #print(a.bbox3d.cpu().data.numpy())
+        #print(t.bbox3d.cpu().data.numpy())
+
+        areas = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=3, device_id=cuda_index)
+        ious0 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=0, device_id=cuda_index)
+        ious1 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=1, device_id=cuda_index)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        areas_max = areas[t_i, a_i]
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
 
     iou_preds = iou3d.max(0)[0]
@@ -115,6 +134,8 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, fl
     a.show_together(t)
     anchors.show_highlight([a_i])
     targets.show_highlight([t_i])
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
 
   return iou3d
 
@@ -132,7 +153,8 @@ def test_iou_3d(bbox3d0, bbox3d1, mode):
   boxlist3d0 = boxlist3d0.convert("yx_zb")
   boxlist3d1 = boxlist3d1.convert("yx_zb")
 
-  ious = boxlist_iou_3d(boxlist3d0, boxlist3d1, 0)
+  aug_thickness = {'target':0, 'anchor':0}
+  ious = boxlist_iou_3d(boxlist3d0, boxlist3d1, aug_thickness, -1)
   ious_diag = ious.diag()
 
   print(f"ious_diag: {ious_diag}")
@@ -190,7 +212,30 @@ def main_test_iou_3d():
 
   test_iou_3d(bbox3d1, bbox3d1, 'yx_zb')
 
+def main1_test_iou_3d():
+  device = torch.device('cuda:0')
+
+  bbox3d0 = torch.tensor([
+      [1.2175720215e+01, 7.8515229225e+00, 5.2835583687e-02, 9.6419714391e-02,
+         3.1705775261e+00, 2.7384383678e+00, 7.3978723958e-04]
+    ],
+   dtype=torch.float32
+  )
+
+  bbox3d1 = torch.tensor([
+      [12.1804752350,  7.8437194824,  0.0490041152,  0.0947349519,
+          3.1549880505,  2.7349998951,  0.0000000000]
+    ],
+   dtype=torch.float32
+  )
+
+  bbox3d0 = bbox3d0.to(device)
+  bbox3d1 = bbox3d1.to(device)
+
+
+  test_iou_3d(bbox3d1, bbox3d1, 'yx_zb')
+
 if __name__ == '__main__':
-  main_test_iou_3d()
+  main1_test_iou_3d()
 
 

@@ -8,6 +8,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 sys.path.append(BASE_DIR)
 sys.path.append(ROOT_DIR)
+from open3d_util import  draw_cus
 
 from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 
@@ -20,6 +21,7 @@ BOX_XSURFACE_COLOR_DIF = False
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
 SameDisThs = 1e-3 * 50 # 0.1 mm
+
 
 def same_a(x,y, threshold=SameDisThs):
   same0 = abs(x-y) < threshold
@@ -179,7 +181,8 @@ class Bbox3D():
     if points.shape[1] >= 9:
       pcl.normals = open3d.Vector3dVector(points[:,6:9])
     if show:
-      open3d.draw_geometries([pcl])
+      #open3d.draw_geometries([pcl])
+      draw_cus([pcl])
     return pcl
 
   @staticmethod
@@ -197,9 +200,11 @@ class Bbox3D():
     else:
       lineset = []
     if points is not None:
-      open3d.draw_geometries(bboxes_lineset_ls + [pcl] + lineset)
+      #open3d.draw_geometries(bboxes_lineset_ls + [pcl] + lineset)
+      draw_cus(bboxes_lineset_ls + [pcl] + lineset)
     else:
-      open3d.draw_geometries(bboxes_lineset_ls + lineset)
+      #open3d.draw_geometries(bboxes_lineset_ls + lineset)
+      draw_cus(bboxes_lineset_ls + lineset)
 
   @staticmethod
   def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None):
@@ -207,7 +212,7 @@ class Bbox3D():
     if points is not None:
       pcl = Bbox3D.draw_points_open3d(points)
       mesh.append(pcl)
-    open3d.draw_geometries(mesh)
+    draw_cus(mesh)
 
   @staticmethod
   def draw_bboxes(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True, highlight_ids=None):
@@ -216,7 +221,7 @@ class Bbox3D():
         labels = np.zeros([gt_boxes0.shape[0]], dtype=np.int32)
         labels[highlight_ids] = 1
     bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color=random_color)
-    open3d.draw_geometries(bboxes_lineset_ls)
+    draw_cus(bboxes_lineset_ls)
 
   @staticmethod
   def bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True):
@@ -285,13 +290,13 @@ class Bbox3D():
   @staticmethod
   def draw_bboxes_mesh(boxes0, up_axis, is_yx_zb, labels=None, names=None):
     mesh = Bbox3D.bboxes_mesh(boxes0, up_axis, is_yx_zb, labels, names)
-    open3d.draw_geometries(mesh)
+    draw_cus(mesh)
 
   @staticmethod
   def draw_points_lines(points, lines, color=[0,0,0], show=False):
     pcl = Bbox3D.draw_points_open3d(points)
     line_set = Bbox3D.draw_lines_open3d(lines, color)
-    open3d.draw_geometries([pcl, line_set])
+    draw_cus([pcl, line_set])
 
   @staticmethod
   def draw_lines_open3d(lines, color=[0,0,0], show=False):
@@ -314,7 +319,8 @@ class Bbox3D():
     line_set.colors = open3d.Vector3dVector(colors)
 
     if show:
-      open3d.draw_geometries([line_set])
+      draw_cus([line_set])
+      #open3d.draw_geometries([line_set])
     return line_set
 
   @staticmethod
@@ -1289,10 +1295,6 @@ def review_bbox_format():
 
 def show_bboxes():
   house_name = '0004d52d1aeeb8ae6de39d6bd993e992'
-  house_name = '28297783bce682aac7fb35a1f35f68fa'
-  house_name = '7bff414da8570ef53c87c5ce5c15bc2a'
-  house_name = 'a72757492213ccb8d031af9b91fdc1af'
-  house_name = 'ffbb0cd7ee77c6b0e5956275352704b8'
   boxes_fn = f'/home/z/SUNCG/suncg_v1/parsed/{house_name}/object_bbox/wall.txt'
   bboxes = np.loadtxt(boxes_fn)
   Bbox3D.draw_bboxes(bboxes, 'Y', False)
@@ -1330,12 +1332,13 @@ def test_merge_walls():
 
 def test_draw():
   box = np.array([[0,0,0, 2,1,2, 0]])
-  Bbox3D.draw_bboxes_mesh(box, 'Z', False)
+  #Bbox3D.draw_bboxes_mesh(box, 'Z', False)
+  Bbox3D.draw_bboxes(box, 'Z', False )
 
 
 
 if __name__ ==  '__main__':
   #test_merge_walls()
-  #show_bboxes()
-  review_bbox_format()
+  show_bboxes()
+  #review_bbox_format()
   #test_draw()
