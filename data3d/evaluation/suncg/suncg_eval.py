@@ -123,6 +123,10 @@ def performance_str(result, dataset, regression_res):
     scores_mean = []
     scores_std = []
     scores_min = []
+    missed_gt_rates = []
+    multi_gt_rates = []
+    gt_nums = []
+
     for i in range(class_num):
         clsn = dataset.map_class_id_to_class_name(i)
         if i==0:
@@ -137,6 +141,9 @@ def performance_str(result, dataset, regression_res):
             scores_mean.append( np.nan )
             scores_std.append( np.nan)
             scores_min.append( np.nan )
+            missed_gt_rates.append( np.nan )
+            multi_gt_rates.append( np.nan )
+            gt_nums.append( np.nan )
         else:
             ious_mean.append( regression_res[clsn]['ave_std_iou'][0] )
             ious_std.append( regression_res[clsn]['ave_std_iou'][1] )
@@ -144,15 +151,23 @@ def performance_str(result, dataset, regression_res):
             scores_mean.append( regression_res[clsn]['ave_std_score'][0] )
             scores_std.append( regression_res[clsn] ['ave_std_score'][1] )
             scores_min.append( regression_res[clsn] ['min_max_score'][0] )
+            missed_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][0] )
+            multi_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][1] )
+            gt_nums.append( regression_res[clsn] ['missed_multi_sum_gtnum'][2] )
 
 
     ious_mean[0] = np.mean(ious_mean[1:])
     ious_std[0] = np.mean(ious_std[1:])
-    ious_min[0] = np.min(ious_std[1:])
+    ious_min[0] = np.min(ious_min[1:])
 
     scores_mean[0] = np.mean(scores_mean[1:])
     scores_std[0] =  np.mean(scores_std[1:])
-    scores_min[0] =  np.min( scores_std[1:])
+    scores_min[0] =  np.min( scores_min[1:])
+
+    missed_gt_rates[0] = np.mean(missed_gt_rates[1:])
+    multi_gt_rates[0] = np.mean(multi_gt_rates[1:])
+    gt_nums[0] = np.mean(gt_nums[1:]).astype(np.int)
+
 
     result_str += f'{"class:":12}' + ' '.join([f'{c:<10}' for c in  class_names]) + '\n'
     result_str += f'{"ap:":12}' + ' '.join([f'{p:<10.4f}' for p in ap]) + '\n'
@@ -164,6 +179,9 @@ def performance_str(result, dataset, regression_res):
     result_str += f'{"score mean:":12}' + ' '.join([f'{p:<10.4f}' for p in scores_mean]) + '\n'
     result_str += f'{"score std:":12}' + ' '.join([f'{p:<10.4f}' for p in  scores_std]) + '\n'
     result_str += f'{"score min:":12}' + ' '.join([f'{p:<10.4f}' for p in  scores_min]) + '\n'
+    result_str += f'{"missed gt:":12}' + ' '.join([f'{p:<10.4f}' for p in  missed_gt_rates]) + '\n'
+    result_str += f'{"multi gt:":12}' + ' '.join([f'{p:<10.4f}' for p in  multi_gt_rates]) + '\n'
+    result_str += f'{"gt num:":12}' + ' '.join([f'{p:<10d}' for p in gt_nums]) + '\n'
     result_str += '\n'
     #print(result_str)
     return result_str
