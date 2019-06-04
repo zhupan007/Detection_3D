@@ -200,7 +200,7 @@ def show_mesh(vertices, triangle, color=[0,0,0], only_genmesh=False):
 
 def get_part_bbox(vertices, triangle, triangle_norms, name=''):
   '''
-    bbox: [xc, yc, zc, x_size, y_size, z_size, yaw]
+  bbox: [xc, yc, zc, x_size, y_size, z_size, yaw]
   '''
   #show_mesh(vertices, triangle)
   class_name = name.split('#')[0]
@@ -390,7 +390,7 @@ class Suncg():
       #self.house_fns = house_fns[0:1500]
 
     if Debug and True:
-      scene_id = '01b05d5581c18177f6e8444097d89db4'
+      scene_id = '01c3dd293fc00701d2239e9e58e03967'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 

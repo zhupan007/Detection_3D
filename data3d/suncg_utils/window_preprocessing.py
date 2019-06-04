@@ -11,6 +11,9 @@ def preprocess_windows(windows0, walls):
   '''
   both windows0 ad walls are standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
   '''
+  if DEBUG and False:
+      print('input')
+      show_all([windows0,walls])
   #Bbox3D.draw_bboxes(walls, 'Z', False)
   #Bbox3D.draw_bboxes(windows0, 'Z', False)
   #print(f'windows0: \n{windows0}')
@@ -31,11 +34,40 @@ def preprocess_windows(windows0, walls):
 
 def find_wall_ids_for_windows(windows, walls):
   win_in_walls = Bbox3D.points_in_bbox(windows[:,0:3], walls)
-  wall_ids = np.where(win_in_walls)[1]
-  wall_yaws = walls[wall_ids, -1]
-  yaw_bad = (np.abs(wall_yaws) / (np.pi*0.5)) % 1 > 0.01
-  win_bad_ids = np.where(yaw_bad)[0]
-  wall_ids_for_bad_win = wall_ids[win_bad_ids]
+  wall_nums_per_win = win_in_walls.sum(1)
+  assert wall_nums_per_win.max() < 2, "a window centroid is in multiple walls"
+
+  if wall_nums_per_win.min()==0:
+    # a window centroid is inside of no wall
+    missed_win_ids = np.where(wall_nums_per_win==0)[0]
+    windows_thickness_missed = windows[missed_win_ids, 4]
+    windows_thickness_rate_missed = windows[missed_win_ids, 4] / windows[missed_win_ids, 3]
+    thickness_small = windows_thickness_missed.max() < 0.3
+    thickness_rate_small = windows_thickness_rate_missed.max() < 0.2
+    assert thickness_small and thickness_rate_small, "There is a window, cannot find responding wall and thickness is not small."
+
+    #cen_lines_wall = Bbox3D.bboxes_centroid_lines(walls, 'X', 'Z')
+    #cen_lines_wall[:,:,2] = 0
+    #for i in missed_win_ids:
+    #  point_i = windows[i,0:3]
+    #  point_i[2] = 0
+    #  dis_i = vertical_dis_1point_lines(point_i, cen_lines_wall)
+    #  #show_high(windows, walls, [i], [])
+    #  pass
+
+  win_bad_ids0, wall_ids0 = np.where(win_in_walls)
+  wall_yaws0 = walls[wall_ids0, -1]
+  # when responding wall yaw is not vertical or horizonal, the window is bad
+  yaw_bad0 = (np.abs(wall_yaws0) / (np.pi*0.5)) % 1 > 0.01
+  win_bad_ids1 = np.where(yaw_bad0)[0]
+
+  win_bad_ids = win_bad_ids0[win_bad_ids1]
+  wall_ids_for_bad_win = wall_ids0[win_bad_ids1]
+
+  if DEBUG:
+    for i in range(win_bad_ids.shape[0]):
+      print(f'bad window {i}/{win_bad_ids.shape[0]}')
+      show_high(windows, walls, win_bad_ids[i], wall_ids_for_bad_win[i])
   return win_bad_ids, wall_ids_for_bad_win
 
 
@@ -53,3 +85,11 @@ def correct_bad_windows(windows_bad, walls):
 def show_all(boxes_ls):
   boxes = np.concatenate(boxes_ls, 0)
   Bbox3D.draw_points_bboxes(boxes[:,0:3], boxes, 'Z', is_yx_zb=False)
+
+def show_high(windows, walls, win_high_ids, wall_high_ids):
+    boxes = np.concatenate([windows, walls], 0)
+    win_high_ids = np.array(win_high_ids).reshape([-1])
+    wall_high_ids = np.array(wall_high_ids).reshape([-1]) + windows.shape[0]
+    high_ids = np.concatenate([win_high_ids, wall_high_ids], 0).astype(np.int)
+    Bbox3D.draw_bboxes(boxes, 'Z', False, highlight_ids=high_ids)
+    pass

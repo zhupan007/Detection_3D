@@ -1,7 +1,7 @@
 class SceneSamples():
     '''
     '''
-    err_scenes = ['01b05d5581c18177f6e8444097d89db4', '01c3dd293fc00701d2239e9e58e03967']
+    err_scenes = ['01c3dd293fc00701d2239e9e58e03967']
 
     # bad samples: not used in the training (1) BIM definition ambiguous
     bad_scenes = ['004e36a61e574321adc8da7b48c331f2', '00466151039216eb333369aa60ea3efe', '008969b6e13d18db3abc9d954cebe6a5', '0165e8534588c269219c9aafa9d888da']

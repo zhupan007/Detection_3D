@@ -210,7 +210,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = house_names[203:]
 
   house_names = SceneSamples.good_samples_complex
-  house_names = ['01b05d5581c18177f6e8444097d89db4']
+  house_names = ['01c3dd293fc00701d2239e9e58e03967']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

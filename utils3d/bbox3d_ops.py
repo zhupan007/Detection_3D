@@ -218,8 +218,8 @@ class Bbox3D():
   def draw_bboxes(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True, highlight_ids=None):
     if highlight_ids is not None:
         assert labels is None
-        labels = np.zeros([gt_boxes0.shape[0]], dtype=np.int32)
-        labels[highlight_ids] = 1
+        labels = np.ones([gt_boxes0.shape[0]], dtype=np.int32)
+        labels[highlight_ids] = 0
     bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color=random_color)
     draw_cus(bboxes_lineset_ls)
 
