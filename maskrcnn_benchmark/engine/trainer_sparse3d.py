@@ -74,7 +74,7 @@ def do_train(
 
         losses = sum(loss for loss in loss_dict.values())
 
-        if iteration % eval_in_train == 0:
+        if eval_in_train>0 and epoch_id % eval_in_train == 0:
           data_id = batch['id']
           for k in range(len(data_id)):
             predictions_i[k].constants['data_id'] = data_id[k]
@@ -83,7 +83,8 @@ def do_train(
           [p.detach() for p in predictions_i]
           predictions_all += predictions_i
 
-          if eval_in_train_per_iter:
+          if eval_in_train_per_iter>0 and epoch_id % eval_in_train_per_iter == 0:
+            logger.info(f'\nepoch {epoch_id}, data_id:{data_id}\n')
             eval_res_i = evaluate(dataset=data_loader.dataset, predictions=predictions_i,
                                  iou_thresh_eval=iou_thresh_eval,  output_folder=eval_out_dir, box_only=False)
 
@@ -134,7 +135,9 @@ def do_train(
         )
     )
 
-    if iteration % eval_in_train == 0:
+    if eval_in_train>0 and epoch_id % eval_in_train == 0:
+      logger.info(f'\nepoch {epoch_id}\n')
       eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all,
                           iou_thresh_eval=iou_thresh_eval, output_folder=eval_out_dir, box_only=False)
+      pass
 
