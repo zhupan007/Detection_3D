@@ -20,7 +20,6 @@ def preprocess_windows(windows0, walls):
   #print(f'windows1: \n{windows0}')
   win_bad_ids, wall_ids_for_bad_win  = find_wall_ids_for_windows(windows1, walls)
 
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   windows_bad = windows1[win_bad_ids].reshape(-1,7)
   walls_bw = walls[wall_ids_for_bad_win].reshape(-1,7)
   windows_corrected = correct_bad_windows(windows_bad, walls_bw)
@@ -37,7 +36,6 @@ def find_wall_ids_for_windows(windows, walls):
   yaw_bad = (np.abs(wall_yaws) / (np.pi*0.5)) % 1 > 0.01
   win_bad_ids = np.where(yaw_bad)[0]
   wall_ids_for_bad_win = wall_ids[win_bad_ids]
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   return win_bad_ids, wall_ids_for_bad_win
 
 

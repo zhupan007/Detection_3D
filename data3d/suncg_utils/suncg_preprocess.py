@@ -389,8 +389,8 @@ class Suncg():
       self.house_fns = house_fns[0:1000]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and False:
-      scene_id = '01c3dd293fc00701d2239e9e58e03967'
+    if Debug and True:
+      scene_id = '01b05d5581c18177f6e8444097d89db4'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
@@ -417,7 +417,7 @@ def parse_house_onef( house_fn):
     2. point cloud for each depth image
     3. Merge point clouds
     '''
-    is_gen_house_obj = 0
+    is_gen_house_obj = Debug and False
     is_gen_bbox = 1
     is_gen_cam = 1
     is_gen_pcl = 1
@@ -491,7 +491,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug and False
+    always_gen_bbox = Debug and True
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -610,6 +610,8 @@ def split_room_parts(house_fn, modelId):
     return room_bboxes
 
 def gen_pcl(house_fn):
+    if Debug :
+        return
     always_gen_pcl = False
     check_points_out_of_house = False
 

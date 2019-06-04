@@ -26,7 +26,7 @@ def show_walls_1by1(wall_bboxes):
     tmp = wall_bboxes.copy()
     tmp[:,2] -= 1
     show_box = np.concatenate([tmp, wall_bboxes[i:i+1]], 0)
-    print(f'wall {i}/{n}')
+    print(f'wall {i}/{n}\n{wall_bboxes[i]}')
     Bbox3D.draw_bboxes(show_box, 'Z', False)
 
 def show_walls_offsetz(wall_bboxes):
@@ -51,7 +51,7 @@ def down_sample_points(points, keep_rate=0.3):
   points_d = points[choices]
   return points_d
 
-def render_parsed_house_walls(parsed_dir, show_pcl=True, show_by_class=False):
+def render_parsed_house_walls(parsed_dir, show_pcl=0, show_by_class=1):
   print(f'parsed_dir:{parsed_dir}')
   bboxes = []
   labels = []
@@ -210,7 +210,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = house_names[203:]
 
   house_names = SceneSamples.good_samples_complex
-  #house_names = ['0067620211b8e6459ff24ebe0780a21c']
+  house_names = ['01b05d5581c18177f6e8444097d89db4']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -264,8 +264,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 0,
-            r_splited = 1
+            r_whole = 1,
+            r_splited = 0
     )
 
 

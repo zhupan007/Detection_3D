@@ -48,6 +48,6 @@ if __name__ == '__main__':
     folder = '/home/z/SUNCG/suncg_v1/parsed'
     folder = '/DS/SUNCG/suncg_v1/parsed'
     house_name = '31a69e882e51c7c5dfdc0da464c3c02d'
-    house_name = '01c3dd293fc00701d2239e9e58e03967'
+    house_name = '01b05d5581c18177f6e8444097d89db4'
     fn = f'{folder}/{house_name}/house.obj'
     read_obj(fn)

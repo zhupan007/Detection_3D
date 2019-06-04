@@ -198,14 +198,14 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
   mask = num_inters < 2
   candidate_ids = np.where(mask)[0]
 
-  show = False
+  show = DEBUG and False
   if show:
     show_boxes = wall_bboxes.copy()
     show_boxes[:,2] -= 1
     show_boxes = np.concatenate([show_boxes, wall_bboxes[candidate_ids]], 0)
+    print(f'candidate_ids:{candidate_ids}')
     Bbox3D.draw_bboxes(show_boxes, 'Z', False)
     #Bbox3D.draw_bboxes(wall_bboxes[[5,6,12]], 'Z', False)
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
 
   n = candidate_ids.shape[0]
@@ -213,29 +213,30 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
   keep_mask = np.array([True] * wall_bboxes.shape[0])
   for i in range(n-1):
     idx_i = candidate_ids[i]
-    idx_next = candidate_ids[i+1]
+    for j in range(i+1, n):
+        idx_next = candidate_ids[j]
 
-    merged_i = merge_2pieces_of_1wall(wall_bboxes[idx_i],
-                                      wall_bboxes[idx_next], 'X')
-    if merged_i is not None:
-      keep_mask[idx_i] = False
-      wall_bboxes[idx_next] = merged_i[0]
+        merged_i = merge_2pieces_of_1wall(wall_bboxes[idx_i],
+                                          wall_bboxes[idx_next], 'X')
+        if merged_i is not None:
+          keep_mask[idx_i] = False
+          wall_bboxes[idx_next] = merged_i[0]
 
-      if False:
-        show_boxes = wall_bboxes.copy()
-        show_boxes[:,2] -= 1
-        show_boxes = np.concatenate([show_boxes, wall_bboxes[[idx_i, idx_next]], merged_i],0)
-        show_boxes[-1,2] += 1
-        Bbox3D.draw_bboxes(show_boxes, 'Z', False)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        pass
+          if show:
+            show_boxes = wall_bboxes.copy()
+            show_boxes[:,2] -= 1
+            show_boxes = np.concatenate([show_boxes, wall_bboxes[[idx_i, idx_next]], merged_i],0)
+            show_boxes[-1,2] += 1
+            Bbox3D.draw_bboxes(show_boxes, 'Z', False)
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
 
   wall_bboxes = wall_bboxes[keep_mask]
 
   rm_num = np.sum(1-keep_mask)
   print(f'merge along X: rm {rm_num} walls')
 
-  if False:
+  if show:
     show_walls_offsetz(wall_bboxes)
   return wall_bboxes
 
