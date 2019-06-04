@@ -50,7 +50,7 @@ def down_sample_points(points, keep_rate=0.3):
   points_d = points[choices]
   return points_d
 
-def render_parsed_house_walls(parsed_dir, show_pcl=True, show_by_class=True):
+def render_parsed_house_walls(parsed_dir, show_pcl=True, show_by_class=False):
   print(f'parsed_dir:{parsed_dir}')
   bboxes = []
   labels = []
@@ -65,11 +65,11 @@ def render_parsed_house_walls(parsed_dir, show_pcl=True, show_by_class=True):
   scene_size = Bbox3D.boxes_size(bboxes)
   print(f'scene wall size:{scene_size}')
 
-  Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #if not show_pcl:
   #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
   Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
-  show_walls_offsetz(bboxes)
+  #show_walls_offsetz(bboxes)
 
   if show_by_class:
         for c in range(1,max(labels)+1):
@@ -196,7 +196,6 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   '''
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
   house_names = ['0163e180b8c372c9a7f123dc01ae43ed']
-  #house_names = [SceneSamples.hard_id0]
 
   #house_names = os.listdir(PARSED_DIR)
 
@@ -209,7 +208,8 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   house_names = house_names[203:]
 
-  house_names = ['01c3dd293fc00701d2239e9e58e03967']
+  #house_names = ['01c3dd293fc00701d2239e9e58e03967']
+  house_names = SceneSamples.good_samples_complex
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -270,8 +270,8 @@ def main():
 
 
 if __name__ == '__main__':
-    render_fn()
-    #main()
+    #render_fn()
+    main()
 
 
 

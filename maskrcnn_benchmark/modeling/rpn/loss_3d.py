@@ -15,7 +15,7 @@ from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d, cat_boxlist_3d
 import numpy as np
 
-from data3d.suncg_utils.suncg_meta import SUNCG_META
+#from data3d.suncg_utils.suncg_meta import SUNCG_META
 
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False

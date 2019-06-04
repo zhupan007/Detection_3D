@@ -1,13 +1,15 @@
 import torch
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
-from .suncg_meta import SUNCG_META
+from .suncg_metas import SUNCG_METAS
 from utils3d.bbox3d_ops import Bbox3D
 import numpy as np
 import logging
 
 import os, glob
 
-DEBUG = False
+DEBUG = True
+SHOW_RAW_INPUT = DEBUG and False
+SHOW_AUG_INPUT = DEBUG and False
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
@@ -22,6 +24,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
     batch_size = cfg.SOLVER.IMS_PER_BATCH if is_train else cfg.TEST.IMS_PER_BATCH
     self.objects_to_detect = cfg.INPUT.CLASSES
     dimension=3
+    self.dset_metas = SUNCG_METAS(cfg.INPUT.CLASSES)
 
     self.full_scale = np.array(full_scale)
     assert self.full_scale.shape == (3,)
@@ -73,7 +76,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
         for obj in bboxes_dic_i_0:
           if ('all' in objects_to_detect) or (obj in objects_to_detect):
             bboxes_dic_i[obj] = Bbox3D.convert_to_yx_zb_boxes(bboxes_dic_i_0[obj])
-        if DEBUG and False:
+        if SHOW_RAW_INPUT:
           show_pcl_boxdic(pcl_i, bboxes_dic_i)
 
         #---------------------------------------------------------------------
@@ -141,9 +144,9 @@ class SUNCGDataset(torch.utils.data.Dataset):
         feats = torch.from_numpy(b)
 
         #---------------------------------------------------------------------
-        bboxlist3d = bbox_dic_to_BoxList3D(bboxes_dic_i, size3d)
+        bboxlist3d = bbox_dic_to_BoxList3D(bboxes_dic_i, size3d, self.dset_metas)
         labels = bboxlist3d
-        if DEBUG and False:
+        if SHOW_AUG_INPUT:
           show_pcl_boxdic(pcl_i, bboxes_dic_i)
           bboxlist3d.show()
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -165,7 +168,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
   def __len__(self):
     return len(self.files)
   def map_class_id_to_class_name(self, class_id):
-    class_name = SUNCG_META.label_2_class[class_id]
+    class_name = self.dset_metas.label_2_class[class_id]
     return class_name
 
 #Elastic distortion
@@ -189,12 +192,12 @@ def elastic(x,gran,mag):
     return x+g(x)*mag
 
 
-def bbox_dic_to_BoxList3D(bbox_dic, size3d):
+def bbox_dic_to_BoxList3D(bbox_dic, size3d, dset_metas):
   bboxes = []
   labels = []
   for obj in bbox_dic:
     bboxes.append(bbox_dic[obj])
-    label_i = SUNCG_META.class_2_label[obj]
+    label_i = dset_metas.class_2_label[obj]
     assert np.all(label_i>0), "label >1, 0 is for negative, -1 is ignore"
     labels.append(np.array([label_i]*bbox_dic[obj].shape[0]))
   bboxes = np.concatenate(bboxes, 0)
@@ -235,7 +238,8 @@ def show_pcl_boxdic(pcl, bboxes_dic):
   from utils3d.bbox3d_ops import Bbox3D
   boxes = []
   for obj in bboxes_dic:
+    print(f'{obj}: {len(bboxes_dic[obj])}')
     boxes.append(bboxes_dic[obj])
   boxes = np.concatenate(boxes, 0)
-  Bbox3D.draw_points_bboxes(pcl[:,0:3], boxes, 'Z', is_yx_zb=True)
+  Bbox3D.draw_points_bboxes(pcl[:,0:6], boxes, 'Z', is_yx_zb=True)
 

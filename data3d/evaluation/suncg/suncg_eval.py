@@ -6,7 +6,6 @@ from collections import defaultdict
 import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
-from data3d.suncg_utils.suncg_meta import SUNCG_META
 import matplotlib.pyplot as plt
 
 DEBUG = True
@@ -16,20 +15,21 @@ SHOW_FILE_NAMES = DEBUG and False
 
 DRAW_REGRESSION_IOU = DEBUG and False
 
-def get_obj_nums(gt_boxlists):
+def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
     obj_gt_nums = defaultdict(list)
     for bi in range(batch_size):
         labels = gt_boxlists[bi].get_field('labels').cpu().data.numpy()
         bins = set(labels)
         for label in set(labels):
-            obj = SUNCG_META.label_2_class[int(label)]
+            obj = dset_metas.label_2_class[int(label)]
             obj_gt_nums[obj].append( sum(labels==label) )
     return obj_gt_nums
 
 def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger):
     # TODO need to make the use_07_metric format available
     # for the user to choose
+    dset_metas = dataset.dset_metas
     pred_boxlists = predictions
     gt_boxlists = []
     image_ids = []
@@ -55,10 +55,11 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
         pred_boxlists=pred_boxlists,
         gt_boxlists=gt_boxlists,
         iou_thresh=iou_thresh_eval,
+        dset_metas = dset_metas,
         use_07_metric=True,
     )
 
-    obj_gt_nums = get_obj_nums(gt_boxlists)
+    obj_gt_nums = get_obj_nums(gt_boxlists, dset_metas)
     regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds = \
         parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger)
 
@@ -77,7 +78,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
         if np.isnan(ap).all():
             return result
         gt_boxlists_ = modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums)
-        pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums)
+        pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas)
         for i in range(len(pred_boxlists)):
             pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
             #preds = pred_boxlists[i].remove_low('scores', 0.5)
@@ -102,8 +103,8 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     if DRAW_RECALL_PRECISION:
-        draw_recall_precision_10steps(result['recall_precision_10steps'], '10steps')
-        draw_recall_precision_10steps(result['rec_prec_org'], 'original')
+        draw_recall_precision_10steps(result['recall_precision_10steps'], dset_metas, '10steps')
+        draw_recall_precision_10steps(result['rec_prec_org'], dset_metas, 'original')
     return result
 
 
@@ -180,17 +181,19 @@ def performance_str0(result):
             class_name, ap, prec_rec7, prec_rec9
         )
 
-def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums):
+def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
+    # incorrect pred: 0,  others: class label + 1
+
     batch_size = len(pred_nums)
     pred_labels = []
     new_pred_boxlists = []
     for bi in range(batch_size):
-        # incorrect pred: 0,  others: class label + 1
         #labels_i = pred_boxlists[bi].get_field('labels') + 1
         labels_i = np.zeros([pred_nums[bi]], dtype=np.int32)
         for obj in good_pred_ids:
-            l = SUNCG_META.class_2_label[obj]
-            labels_i[good_pred_ids[obj][bi]] = l + 1
+            l = dset_metas.class_2_label[obj]
+            if good_pred_ids[obj][bi].shape[0] > 0:
+                labels_i[good_pred_ids[obj][bi]] = l + 1
         pred_labels.append(labels_i)
 
         pred = pred_boxlists[bi].copy()
@@ -199,17 +202,18 @@ def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums):
     return new_pred_boxlists
 
 def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums):
+    # missed:0, multi: 1, matched: class label + 1
+
     batch_size = len(gt_nums)
     gt_labels = []
     new_gt_boxlists = []
     for bi in range(batch_size):
-        # missed:0, multi: 1, matched: class label + 1
         #labels_i = np.zeros([gt_nums[bi]], dtype=np.int32)
         labels_i = gt_boxlists[bi].get_field('labels') + 1
         #labels_i = np.random.choice(gt_nums[bi], gt_nums[bi], replace=False)+2
         start = 0 # the gt_ids is only of one class (TAG: GT_MASK)
         for obj in missed_gt_ids:
-            #gt_label_i = SUNCG_META.class_2_label[obj]
+            #gt_label_i = dset_metas.class_2_label[obj]
             labels_i[ missed_gt_ids[obj][bi] + start ] = 0
             labels_i[ multi_preds_gt_ids[obj][bi] + start ] = 1
             start += obj_gt_nums[obj][bi]
@@ -230,7 +234,9 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger):
     ious_flat = {}
     scores_flat = {}
     regression_res = {}
-    batch_size = len(pred_for_each_gt['wall'])
+    batch_sizes = [len(v) for v in pred_for_each_gt.values()]
+    assert min(batch_sizes) == max(batch_sizes)
+    batch_size = batch_sizes[0]
 
     small_iou_preds = []
     for bi in range(batch_size):
@@ -349,10 +355,10 @@ def regression_res_str(regression_res):
         reg_str += f'{key}:\n{value}\n'
     return reg_str
 
-def draw_recall_precision_10steps(recall_precision_10steps, flag):
+def draw_recall_precision_10steps(recall_precision_10steps, dset_metas, flag):
     num_classes = len(recall_precision_10steps)
     for i in range(num_classes):
-        obj = SUNCG_META.label_2_class[i]
+        obj = dset_metas.label_2_class[i]
         if i==0:
             if flag == '10steps':
                 continue
@@ -369,15 +375,15 @@ def draw_recall_precision_10steps(recall_precision_10steps, flag):
         print('save: '+title+'.png')
     plt.show()
 
-def get_obejct_numbers(boxlist):
-    labels = boxlist.get_field('labels').data.numpy()
-    lset = list(set(labels))
-    obj_nums = {}
-    for l in lset:
-        obj_nums[SUNCG_META.label_2_class[l]] = sum(labels==l)
-    return obj_nums
+#def get_obejct_numbers(boxlist, dset_metas):
+#    labels = boxlist.get_field('labels').data.numpy()
+#    lset = list(set(labels))
+#    obj_nums = {}
+#    for l in lset:
+#        obj_nums[dset_metas.label_2_class[l]] = sum(labels==l)
+#    return obj_nums
 
-def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, use_07_metric=False):
+def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use_07_metric=False):
     """Evaluate on suncg dataset.
     Args:
         pred_boxlists(list[BoxList3D]): pred boxlist, has labels and scores fields.
@@ -391,14 +397,14 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, use_07_metric=F
         pred_boxlists
     ), "Length of gt and pred lists need to be same."
     prec, rec, pred_for_each_gt = calc_detection_suncg_prec_rec(
-        pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh
+        pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh, dset_metas=dset_metas
     )
     rec_prec_org = [np.concatenate([np.array(r).reshape([-1,1]), np.array(p).reshape([-1,1])],1) for r,p in zip(rec, prec)]
     ap, recall_precision_10steps = calc_detection_suncg_ap(prec, rec, use_07_metric=use_07_metric)
     return {"ap": ap, "map": np.nanmean(ap), "rec_prec_org":rec_prec_org, "recall_precision_10steps":recall_precision_10steps, "pred_for_each_gt":pred_for_each_gt}
 
 
-def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh):
+def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_metas):
     """Calculate precision and recall based on evaluation code of PASCAL VOC.
     This function calculates precision and recall of
     predicted bounding boxes obtained from a dataset which has :math:`N`
@@ -427,7 +433,7 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh):
         gt_difficult = gt_boxlist.get_field("difficult").numpy()
 
         for l in np.unique(np.concatenate((pred_label, gt_label)).astype(int)):
-            obj_name = SUNCG_META.label_2_class[l]
+            obj_name = dset_metas.label_2_class[l]
             pred_mask_l = pred_label == l
             pred_ids_l = np.where(pred_mask_l)[0]
             pred_bbox_l = pred_bbox[pred_mask_l]

@@ -34,7 +34,7 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
     return data
 
   train_data_loader = torch.utils.data.DataLoader(
-      dataset_, batch_size=batch_size, collate_fn=trainMerge, num_workers=20*(1-DEBUG), shuffle=is_train)
+      dataset_, batch_size=batch_size, collate_fn=trainMerge, num_workers=10*(1-DEBUG), shuffle=is_train)
 
 
   return train_data_loader
