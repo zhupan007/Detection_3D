@@ -1,6 +1,6 @@
 DEBUG:
   DISABLE_ROILOSS: False
-  eval_in_train: True
+  eval_in_train: 10
   eval_in_train_per_iter: False
 INPUT:
   #CLASSES: ['background', 'wall']
