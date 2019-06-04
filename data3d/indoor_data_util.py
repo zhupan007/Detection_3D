@@ -28,6 +28,7 @@ MAX_FLOAT_DRIFT = 1e-6
 DATASET = 'SUNCG'
 CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
 CLASSES_USED = ['wall', 'window', 'door']
+MIN_BOXES_NUM = 10
 
 def points2pcd_open3d(points):
   assert points.shape[-1] == 3
@@ -113,6 +114,7 @@ class IndoorData():
     n_block = len(points_splited)
 
     bboxes_splited = {}
+    boxes_nums = {}
     for obj in CLASSES_USED:
       bbox_fn = os.path.join(scene_dir, f'object_bbox/{obj}.txt')
       if os.path.exists(bbox_fn):
@@ -120,11 +122,17 @@ class IndoorData():
             bboxes_splited[obj] = IndoorData.split_bbox(bbox_fn, points_splited)
         else:
             bboxes_splited[obj] = IndoorData.load_bboxes(bbox_fn)
+        boxes_nums[obj]  = []
+        for ii in range(n_block):
+            boxes_nums[obj].append( len(bboxes_splited[obj][ii]) )
 
     if not os.path.exists(splited_path):
       os.makedirs(splited_path)
 
     for i in range(n_block):
+      boxes_num_all_classes = sum([bn[i] for bn in boxes_nums.values()])
+      if boxes_num_all_classes < MIN_BOXES_NUM:
+          continue
       fni = splited_path + '/pcl_%d.pth'%(i)
       pcl_i = points_splited[i].astype(np.float32)
 
@@ -609,7 +617,8 @@ def creat_splited_pcl_box():
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']  # a lot of unseen corners
   #house_names = ['001188c384dd72ce2c2577d034b5cc92']
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
-  house_names = ['008969b6e13d18db3abc9d954cebe6a5']
+  house_names = ['0067620211b8e6459ff24ebe0780a21c']
+
   #house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
 

@@ -6,7 +6,7 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
 import torch
 from collections import defaultdict
-from suncg_utils.suncg_meta import SUNCG_META
+from suncg_utils.suncg_metas import SUNCG_META0
 from suncg_utils.scene_samples import SceneSamples
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
@@ -18,6 +18,7 @@ CLASSES = ['wall', 'window', 'door']
 #CLASSES = ['ceiling', 'floor']
 CLASSES += ['floor']
 #CLASSES += ['room']
+
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -58,7 +59,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=True, show_by_class=False):
     bbox_fn_ = f'{parsed_dir}/object_bbox/{obj}.txt'
     bboxes_  = np.loadtxt(bbox_fn_).reshape([-1,7])
     bboxes.append(bboxes_)
-    label = SUNCG_META.class_2_label[obj]
+    label = SUNCG_META0.class_2_label[obj]
     labels += [label] * bboxes_.shape[0]
   bboxes = np.concatenate(bboxes, 0)
   labels = np.array(labels).astype(np.int8)
@@ -125,7 +126,7 @@ def render_pth_file(pth_fn):
   print(f'\nclasses: {num_classes}\n\n')
 
   all_bboxes = np.concatenate([boxes for boxes in bboxes.values()], 0)
-  show_walls_offsetz(all_bboxes)
+  #show_walls_offsetz(all_bboxes)
   Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False)
 
   #for clas in bboxes.keys():
@@ -208,8 +209,8 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   house_names = house_names[203:]
 
-  #house_names = ['01c3dd293fc00701d2239e9e58e03967']
   house_names = SceneSamples.good_samples_complex
+  #house_names = ['0067620211b8e6459ff24ebe0780a21c']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -263,8 +264,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 

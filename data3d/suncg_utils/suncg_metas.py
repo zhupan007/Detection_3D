@@ -9,6 +9,8 @@ class SUNCG_METAS:
         classes_order.append( label_2_class0[l] )
 
     def __init__(self, classes):
+        if classes is None:
+            classes = self.classes_order
         self.classes = classes
         class_2_label = {}
         label_2_class = {}
@@ -27,3 +29,4 @@ class SUNCG_METAS:
         self.class_2_label = class_2_label
         self.label_2_class = label_2_class
 
+SUNCG_META0 = SUNCG_METAS(SUNCG_METAS.classes_order)
