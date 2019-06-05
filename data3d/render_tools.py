@@ -33,11 +33,11 @@ def show_walls_offsetz(wall_bboxes):
   n = wall_bboxes.shape[0]
   wall_bboxes = wall_bboxes.copy()
   wall_bboxes[:,2] += np.random.rand(n)*1
-  print(f'totally {n} walls')
+  print(f'totally {n} boxes')
   Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
 
 
-def cut_points_roof(points, keep_rate=0.7):
+def cut_points_roof(points, keep_rate=0.9):
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate
@@ -51,7 +51,7 @@ def down_sample_points(points, keep_rate=0.3):
   points_d = points[choices]
   return points_d
 
-def render_parsed_house_walls(parsed_dir, show_pcl=0, show_by_class=1):
+def render_parsed_house_walls(parsed_dir, show_pcl=1, show_by_class=1):
   print(f'parsed_dir:{parsed_dir}')
   bboxes = []
   labels = []
@@ -74,8 +74,10 @@ def render_parsed_house_walls(parsed_dir, show_pcl=0, show_by_class=1):
 
   if show_by_class:
         for c in range(1,max(labels)+1):
-            if c!=1:
-                continue
+            cs = SUNCG_META0.label_2_class[c]
+            print(cs)
+            if cs not in ['wall', 'window', 'door']:
+              continue
             mask = labels == c
             bboxes_c = bboxes[mask]
             show_walls_offsetz(bboxes_c)
@@ -95,7 +97,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=0, show_by_class=1):
     print(f'scene pcl size:{scene_size}')
     print(f'point num: {pcl.shape[0]}')
 
-    pcl = cut_points_roof(pcl)
+    #pcl = cut_points_roof(pcl)
 
     bboxes[:,2] += 0.1
     Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False)
@@ -119,7 +121,7 @@ def render_pth_file(pth_fn):
   print(f'scene pcl size:{scene_size}')
   print(f'point num: {pcl.shape[0]}')
 
-  pcl = cut_points_roof(pcl)
+  #pcl = cut_points_roof(pcl)
 
   classes = [k for k in bboxes.keys()]
   num_classes = {k:bboxes[k].shape[0] for k in bboxes.keys()}
@@ -210,7 +212,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = house_names[203:]
 
   house_names = SceneSamples.good_samples_complex
-  house_names = ['01c3dd293fc00701d2239e9e58e03967']
+  house_names = ['001e3c88f922f42b5a3f546def6eb83f']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

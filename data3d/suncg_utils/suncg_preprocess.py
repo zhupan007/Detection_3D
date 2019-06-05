@@ -351,6 +351,14 @@ def cam2world_box(box):
   box = np.matmul(box, R)
   return box
 
+def rm_bad_scenes(house_fns):
+    house_fns_new = []
+    for fn in house_fns:
+        hn = os.path.basename(os.path.dirname(fn))
+        if hn not in SceneSamples.bad_scenes:
+            house_fns_new.append(fn)
+    return house_fns_new
+
 def cam2world_pcl(points):
   assert points.shape[1] == 3
   R = np.eye(3)
@@ -389,10 +397,11 @@ class Suncg():
       self.house_fns = house_fns[0:1000]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and True:
-      scene_id = '01c3dd293fc00701d2239e9e58e03967'
+    if Debug and False:
+      scene_id = '020179798688014a482f483e1a5debe5'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
+    self.house_fns = rm_bad_scenes(self.house_fns)
 
     print(f'house num: {len(self.house_fns)}')
 
@@ -610,8 +619,6 @@ def split_room_parts(house_fn, modelId):
     return room_bboxes
 
 def gen_pcl(house_fn):
-    if Debug :
-        return
     always_gen_pcl = False
     check_points_out_of_house = False
 
