@@ -19,6 +19,7 @@ CLASSES = ['wall', 'window', 'door']
 CLASSES += ['floor']
 #CLASSES += ['room']
 
+SHOW_PCL = 1
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -51,7 +52,8 @@ def down_sample_points(points, keep_rate=0.3):
   points_d = points[choices]
   return points_d
 
-def render_parsed_house_walls(parsed_dir, show_pcl=1, show_by_class=1):
+
+def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=1):
   print(f'parsed_dir:{parsed_dir}')
   bboxes = []
   labels = []
@@ -63,24 +65,26 @@ def render_parsed_house_walls(parsed_dir, show_pcl=1, show_by_class=1):
     labels += [label] * bboxes_.shape[0]
   bboxes = np.concatenate(bboxes, 0)
   labels = np.array(labels).astype(np.int8)
-  scene_size = Bbox3D.boxes_size(bboxes)
-  print(f'scene wall size:{scene_size}')
+  if bboxes.shape[0] > 0:
+    scene_size = Bbox3D.boxes_size(bboxes)
+    print(f'scene wall size:{scene_size}')
 
-  #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
-  #if not show_pcl:
-  #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
-  Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
-  #show_walls_offsetz(bboxes)
+    #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+    #if not show_pcl:
+    #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+    Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+    #show_walls_offsetz(bboxes)
 
-  if show_by_class:
-        for c in range(1,max(labels)+1):
-            cs = SUNCG_META0.label_2_class[c]
-            print(cs)
-            if cs not in ['wall', 'window', 'door']:
-              continue
-            mask = labels == c
-            bboxes_c = bboxes[mask]
-            show_walls_offsetz(bboxes_c)
+    if show_by_class:
+          for c in range(1,max(labels)+1):
+              cs = SUNCG_META0.label_2_class[c]
+              print(cs)
+              if cs not in ['wall', 'window', 'door']:
+              #if cs not in ['wall']:
+                continue
+              mask = labels == c
+              bboxes_c = bboxes[mask]
+              show_walls_offsetz(bboxes_c)
 
   if show_pcl:
     pcl_fn = f'{parsed_dir}/pcl_camref.ply'
@@ -209,10 +213,10 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names.sort()
   print(f'totally {len(house_names)} houses')
 
-  house_names = house_names[203:]
+  house_names = house_names[320:]
 
-  house_names = SceneSamples.good_samples_complex
-  house_names = ['001e3c88f922f42b5a3f546def6eb83f']
+  #house_names = SceneSamples.good_samples_complex
+  house_names = ['032263b2cbfb990da2107da76a2a9328']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -233,30 +237,6 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       for i,pth_fn in enumerate( pth_fns ):
         print(f'\nThe {i}-th / {len(pth_fns)} splited scene')
         render_pth_file(pth_fn)
-
-
-def render_obj_house():
-    import pymesh
-    folder = '/DS/SUNCG/suncg_v1/parsed/31a69e882e51c7c5dfdc0da464c3c02d'
-    folder = '/home/z/SUNCG/suncg_v1/parsed/31a69e882e51c7c5dfdc0da464c3c02d'
-    fn = f'{folder}/house.obj'
-    mesh = pymesh.load_mesh(fn)
-    new_mesh_fn = f'{folder}/new_house.obj'
-
-    vertices = mesh.vertices
-    faces = mesh.faces
-    attributes = {}
-
-    mask = np.arange(10000)
-    faces = faces[mask]
-    for an in mesh.get_attribute_names():
-        attributes[an] = mesh.get_face_attribute(an)[mask]
-
-    new_mesh = pymesh.form_mesh(vertices, faces)
-    for an in attributes:
-        new_mesh.add_attribute(an)
-        new_mesh.set_attribute(an, attributes[an])
-    pymesh.save_mesh(new_mesh_fn, new_mesh, use_float=True)
 
 
 def render_fn():

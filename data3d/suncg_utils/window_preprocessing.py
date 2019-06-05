@@ -11,7 +11,7 @@ def preprocess_windows(windows0, walls):
   '''
   both windows0 ad walls are standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
   '''
-  if DEBUG and False:
+  if DEBUG and True:
       print('input')
       show_all([windows0,walls])
   #Bbox3D.draw_bboxes(walls, 'Z', False)
@@ -29,6 +29,7 @@ def preprocess_windows(windows0, walls):
   windows1[win_bad_ids] = windows_corrected
 
   if DEBUG:
+    print('out')
     show_all([windows1,walls])
   return windows1
 

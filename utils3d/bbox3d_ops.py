@@ -15,7 +15,7 @@ from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 DEBUG = True
 
 FRAME_SHOW = 1
-POINTS_KEEP_RATE = 0.7
+POINTS_KEEP_RATE = 0.8
 BOX_XSURFACE_COLOR_DIF = False
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
