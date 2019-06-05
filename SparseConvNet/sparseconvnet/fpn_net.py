@@ -12,11 +12,13 @@ class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
     def __init__(self, full_scale, dimension, raw_elements, reps, nPlanesF, nPlaneM, residual_blocks,
                   fpn_scales_from_top, roi_scales_from_top, downsample, rpn_map_sizes,
-                  rpn_3d_2d_selector, leakiness=0, voxel_scale=None, ):
+                  rpn_3d_2d_selector, leakiness=0, voxel_scale=None, bn_momentum=0.9):
         '''
         downsample:[kernel, stride] :[[2,2,2], [2,2,2]]
         '''
         nn.Module.__init__(self)
+
+        self.bn_momentum = bn_momentum
 
         self.dimension = dimension
         self.down_kernels =  downsample[0]
@@ -37,7 +39,7 @@ class FPN_Net(torch.nn.Module):
                 scn.SubmanifoldConvolution(dimension, in_channels, nPlanesF[0], 3, False))
 
         self.layers_out = scn.Sequential(
-            scn.BatchNormReLU(nPlanesF[0]),
+            scn.BatchNormReLU(nPlanesF[0], momentum=bn_momentum),
             scn.OutputLayer(dimension))
 
         self.linear = nn.Linear(nPlanesF[0], 20)
@@ -55,14 +57,14 @@ class FPN_Net(torch.nn.Module):
                 m.add(scn.ConcatTable()
                       .add(scn.Identity() if a == b else scn.NetworkInNetwork(a, b, False))
                       .add(scn.Sequential()
-                        .add(scn.BatchNormLeakyReLU(a,leakiness=leakiness))
+                        .add(scn.BatchNormLeakyReLU(a, momentum=bn_momentum,leakiness=leakiness))
                         .add(scn.SubmanifoldConvolution(dimension, a, b, 3, False))
-                        .add(scn.BatchNormLeakyReLU(b,leakiness=leakiness))
+                        .add(scn.BatchNormLeakyReLU(b, momentum=bn_momentum,leakiness=leakiness))
                         .add(scn.SubmanifoldConvolution(dimension, b, b, 3, False)))
                  ).add(scn.AddTable())
             else: #VGG style blocks
                 m.add(scn.Sequential()
-                     .add(scn.BatchNormLeakyReLU(a,leakiness=leakiness))
+                     .add(scn.BatchNormLeakyReLU(a, momentum=bn_momentum,leakiness=leakiness))
                      .add(scn.SubmanifoldConvolution(dimension, a, b, 3, False)))
             operation = {'kernel':[1,1,1], 'stride':[1,1,1]}
             return operation
@@ -70,7 +72,7 @@ class FPN_Net(torch.nn.Module):
         def down(m, nPlane_in, nPlane_downed, scale):
           #print(f'down, scale={scale}, feature={nPlane_in}->{nPlane_downed}, kernel={self.down_kernels[scale]},stride={self.down_strides[scale]}')
           m.add(scn.Sequential()
-                  .add(scn.BatchNormLeakyReLU(nPlane_in,leakiness=leakiness))
+                  .add(scn.BatchNormLeakyReLU(nPlane_in, momentum=bn_momentum,leakiness=leakiness))
                   .add(scn.Convolution(dimension, nPlane_in, nPlane_downed,
                           self.down_kernels[scale], self.down_strides[scale], False)))
           operation = {'kernel':self.down_kernels[scale], 'stride':self.down_strides[scale]}
@@ -78,7 +80,7 @@ class FPN_Net(torch.nn.Module):
 
         def up(m, nPlane_in, nPlane_uped, scale):
           #print(f'up, scale={scale}, feature={nPlane_in}->{nPlane_uped}, kernel={self.down_kernels[scale]}, stride={self.down_strides[scale]}')
-          m.add( scn.BatchNormLeakyReLU(nPlane_in, leakiness=leakiness)).add(
+          m.add( scn.BatchNormLeakyReLU(nPlane_in, momentum=bn_momentum, leakiness=leakiness)).add(
                       scn.Deconvolution(dimension, nPlane_in, nPlane_uped,
                       self.down_kernels[scale], self.down_strides[scale], False))
           operation = {'kernel':self.down_kernels[scale], 'stride':self.down_strides[scale]}

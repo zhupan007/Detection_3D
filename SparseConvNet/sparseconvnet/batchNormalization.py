@@ -100,7 +100,8 @@ class BatchNormalizationFunction(Function):
             eps,
             momentum,
             train,
-            leakiness):
+            leakiness,
+    ):
         ctx.nPlanes = running_mean.shape[0]
         ctx.train = train
         ctx.leakiness = leakiness
@@ -119,7 +120,8 @@ class BatchNormalizationFunction(Function):
             eps,
             momentum,
             ctx.train,
-            ctx.leakiness)
+            ctx.leakiness,
+        )
         ctx.save_for_backward(input_features,
                               output_features,
                               weight,
