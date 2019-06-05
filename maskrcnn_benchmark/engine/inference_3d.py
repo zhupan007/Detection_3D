@@ -67,6 +67,7 @@ def inference_3d(
         device="cuda",
         expected_results=(),
         expected_results_sigma_tol=4,
+        iou_thresh_eval = 0.5,
         output_folder=None,
 ):
     # convert to a torch.device for efficiency
@@ -107,5 +108,6 @@ def inference_3d(
 
     return evaluate(dataset=dataset,
                     predictions=predictions,
+                    iou_thresh_eval = iou_thresh_eval,
                     output_folder=output_folder,
                     **extra_args)

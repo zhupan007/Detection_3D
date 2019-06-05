@@ -1,7 +1,7 @@
 DEBUG:
   DISABLE_ROILOSS: False
-  eval_in_train: 10
-  eval_in_train_per_iter: -1
+  eval_in_train: 1
+  eval_in_train_per_iter: 1
 INPUT:
   CLASSES: ['background', 'wall']
   #CLASSES: ['background', 'wall', 'door', 'window']
@@ -51,9 +51,9 @@ SOLVER:
   IMS_PER_BATCH: 1
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
-  LR_STEP_EPOCHS: (50,)
+  LR_STEP_EPOCHS: (70,)
   CHECKPOINT_PERIOD_EPOCHS: 20
-  WARMUP_EPOCHS: 0.7
+  WARMUP_EPOCHS: 2.0
 OUTPUT_DIR: "res_3d_bs1_wall_lr10_2S"
 TEST:
   IMS_PER_BATCH: 1

@@ -33,9 +33,9 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
     data = {'x': [locs,feats], 'y': labels, 'id': ids}
     return data
 
-  train_data_loader = torch.utils.data.DataLoader(
+  data__loader = torch.utils.data.DataLoader(
       dataset_, batch_size=batch_size, collate_fn=trainMerge, num_workers=10*(1-DEBUG), shuffle=is_train)
 
 
-  return train_data_loader
+  return data__loader
 

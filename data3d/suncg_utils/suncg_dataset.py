@@ -34,7 +34,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
       scene_names = [l.strip() for l in f.readlines()]
     files = []
     small_scenes = cfg.INPUT.SCENES
-    if len(small_scenes)>0:
+    if is_train and len(small_scenes)>0:
         logger.info(f'\nsmall scenes:\n{small_scenes}\n')
         scene_names = small_scenes
     for scene in scene_names:

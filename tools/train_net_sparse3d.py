@@ -110,6 +110,7 @@ def test(cfg, model, distributed):
             device=cfg.MODEL.DEVICE,
             expected_results=cfg.TEST.EXPECTED_RESULTS,
             expected_results_sigma_tol=cfg.TEST.EXPECTED_RESULTS_SIGMA_TOL,
+            iou_thresh_eval = cfg.TEST.IOU_THRESHOLD,
             output_folder=output_folder,
         )
         synchronize()
