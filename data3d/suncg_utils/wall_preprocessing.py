@@ -34,12 +34,18 @@ def preprocess_walls(wall_bboxes):
     print('merge_pieces_of_same_walls_alongY')
     show_walls_offsetz(wall_bboxes)
 
+  if DEBUG and np.isnan(wall_bboxes).any():
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
   wall_bboxes = merge_pieces_of_same_walls_alongX(wall_bboxes)
   if show_pro:
     print('merge_pieces_of_same_walls_alongX')
     show_walls_offsetz(wall_bboxes)
 
 
+  if np.isnan(wall_bboxes).any():
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
   wall_bboxes = crop_walls(wall_bboxes)
   if show_pro:
     print('crop_walls')
@@ -176,6 +182,9 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
     merged[0,0:3] = new_centroid
     merged[0,3+dim] = new_size_dim
 
+  if DEBUG and np.isnan(merged).any():
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
   #
   show = False
   if show:
@@ -198,6 +207,7 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
   mask = num_inters < 2
   candidate_ids = np.where(mask)[0]
 
+
   show = DEBUG and False
   if show:
     show_boxes = wall_bboxes.copy()
@@ -219,6 +229,7 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
         merged_i = merge_2pieces_of_1wall(wall_bboxes[idx_i],
                                           wall_bboxes[idx_next], 'X')
         if merged_i is not None:
+
           keep_mask[idx_i] = False
           wall_bboxes[idx_next] = merged_i[0]
 
@@ -231,7 +242,12 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             pass
 
+  if DEBUG and np.isnan(wall_bboxes).any():
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
+
   wall_bboxes = wall_bboxes[keep_mask]
+
 
   rm_num = np.sum(1-keep_mask)
   print(f'merge along X: rm {rm_num} walls')

@@ -90,6 +90,7 @@ def angle_of_2lines(line0, line1, scope_id=0):
 
   norm0 = np.linalg.norm(line0, axis=1, keepdims=True)
   norm1 = np.linalg.norm(line1, axis=1, keepdims=True)
+  #assert norm0.min() > 1e-4 and norm1.min() > 1e-4 # return nan
   line0 = line0 / norm0
   line1 = line1 / norm1
   angle = np.arccos( np.sum(line0 * line1, axis=1) )
@@ -172,6 +173,8 @@ def vertical_dis_1point_lines(point, lines):
   direc_l = lines[:,1,:] - lines[:,0,:]
   angles = angle_of_2lines(direc_p, direc_l, scope_id=0)
   dis = np.sin(angles) * np.linalg.norm(direc_p, axis=1)
+  mask = np.isnan(dis)
+  dis[mask] = 0
   return dis
 
 def cam2world_pcl(points):
