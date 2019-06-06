@@ -3,7 +3,7 @@ export PYTHONPATH=$PWD
 #export CUDA_VISIBLE_DEVICES=1
 
 TEST='--skip-test'
-TEST='--only-test'
+#TEST='--only-test'
 
 CONFIG_FILE='fpn432_3d1_bs1_wd_lr10_2S.yaml'
 #CONFIG_FILE='fpn432_3d1_bs1_wall_lr10_2S.yaml'

@@ -42,6 +42,7 @@ class BatchNormalization(Module):
             self.bias = Parameter(torch.Tensor(nPlanes).fill_(0))
         self.track_running_stats = track_running_stats
 
+
     def forward(self, input):
         assert input.features.nelement() == 0 or input.features.size(1) == self.nPlanes, (self.nPlanes, input.features.shape)
         output = SparseConvNetTensor()
@@ -79,7 +80,7 @@ class BatchNormalization(Module):
 
 class BatchNormReLU(BatchNormalization):
     def __init__(self, nPlanes, eps=1e-4, momentum=0.9, track_running_stats=True):
-        BatchNormalization.__init__(self, nPlanes, eps, momentum, True, 0)
+        BatchNormalization.__init__(self, nPlanes, eps, momentum, True, 0, track_running_stats)
 
     def __repr__(self):
         s = 'BatchNormReLU(' + str(self.nPlanes) + ',eps=' + str(self.eps) + \
@@ -89,7 +90,7 @@ class BatchNormReLU(BatchNormalization):
 
 class BatchNormLeakyReLU(BatchNormalization):
     def __init__(self, nPlanes, eps=1e-4, momentum=0.9, leakiness=0.333, track_running_stats=True):
-        BatchNormalization.__init__(self, nPlanes, eps, momentum, True, leakiness)
+        BatchNormalization.__init__(self, nPlanes, eps, momentum, True, leakiness, track_running_stats)
 
     def __repr__(self):
         s = 'BatchNormLeakyReLU(' + str(self.nPlanes) + ',eps=' + str(self.eps) + \
