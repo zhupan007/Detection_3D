@@ -34,18 +34,12 @@ def preprocess_walls(wall_bboxes):
     print('merge_pieces_of_same_walls_alongY')
     show_walls_offsetz(wall_bboxes)
 
-  if DEBUG and np.isnan(wall_bboxes).any():
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    pass
   wall_bboxes = merge_pieces_of_same_walls_alongX(wall_bboxes)
   if show_pro:
     print('merge_pieces_of_same_walls_alongX')
     show_walls_offsetz(wall_bboxes)
 
 
-  if np.isnan(wall_bboxes).any():
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    pass
   wall_bboxes = crop_walls(wall_bboxes)
   if show_pro:
     print('crop_walls')
@@ -182,9 +176,6 @@ def merge_2pieces_of_1wall(bbox0, bbox1, dim):
     merged[0,0:3] = new_centroid
     merged[0,3+dim] = new_size_dim
 
-  if DEBUG and np.isnan(merged).any():
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            pass
   #
   show = False
   if show:
@@ -242,9 +233,6 @@ def merge_pieces_of_same_walls_alongX(wall_bboxes):
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             pass
 
-  if DEBUG and np.isnan(wall_bboxes).any():
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    pass
 
   wall_bboxes = wall_bboxes[keep_mask]
 
