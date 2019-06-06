@@ -4,7 +4,7 @@ from torch import nn
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 from torch.nn.modules.utils import _pair
-from sparseconvnet.tools_3d_2d import sparse_3d_to_dense_2d
+from SparseConvNet.sparseconvnet.tools_3d_2d import sparse_3d_to_dense_2d
 import _C
 
 
