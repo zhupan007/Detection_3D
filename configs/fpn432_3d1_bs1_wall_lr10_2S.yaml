@@ -1,7 +1,7 @@
 DEBUG:
   DISABLE_ROILOSS: False
-  eval_in_train: 1
-  eval_in_train_per_iter: 1
+  eval_in_train: 10
+  eval_in_train_per_iter: 0
 INPUT:
   CLASSES: ['background', 'wall']
   #CLASSES: ['background', 'wall', 'door', 'window']
@@ -46,8 +46,8 @@ DATASETS:
 DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
-  EPOCHS: 300
-  EPOCHS_BETWEEN_TEST: 300
+  EPOCHS: 500
+  EPOCHS_BETWEEN_TEST: 500
   IMS_PER_BATCH: 1
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000

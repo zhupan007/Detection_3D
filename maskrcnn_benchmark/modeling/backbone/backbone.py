@@ -52,6 +52,7 @@ def build_sparse_resnet_fpn_backbone(cfg):
   rpn_map_sizes = cfg.MODEL.RPN.RPN_MAP_SIZES
   rpn_3d_2d_selector = cfg.MODEL.RPN.RPN_3D_2D_SELECTOR
   bn_momentum = cfg.SOLVER.BN_MOMENTUM
+  track_running_stats = cfg.SOLVER.TRACK_RUNNING_STATS
 
   fpn = scn.FPN_Net(full_scale, dimension, raw_elements, block_reps, nPlanesF,
                     nPlaneM = nPlaneM,
@@ -63,6 +64,7 @@ def build_sparse_resnet_fpn_backbone(cfg):
                     voxel_scale = voxel_scale,
                     rpn_3d_2d_selector = rpn_3d_2d_selector,
                     bn_momentum=bn_momentum,
+                    track_running_stats=track_running_stats,
                     )
   return fpn
 

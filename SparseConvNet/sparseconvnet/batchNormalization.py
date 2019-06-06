@@ -27,7 +27,8 @@ class BatchNormalization(Module):
             eps=1e-4,
             momentum=0.9,
             affine=True,
-            leakiness=1):
+            leakiness=1,
+            track_running_stats=True):
         Module.__init__(self)
         self.nPlanes = nPlanes
         self.eps = eps
@@ -39,18 +40,25 @@ class BatchNormalization(Module):
         if affine:
             self.weight = Parameter(torch.Tensor(nPlanes).fill_(1))
             self.bias = Parameter(torch.Tensor(nPlanes).fill_(0))
+        self.track_running_stats = track_running_stats
 
     def forward(self, input):
         assert input.features.nelement() == 0 or input.features.size(1) == self.nPlanes, (self.nPlanes, input.features.shape)
         output = SparseConvNetTensor()
         output.metadata = input.metadata
         output.spatial_size = input.spatial_size
+        if self.track_running_stats:
+          _mean = self.running_mean
+          _var = self.running_var
+        else:
+          _mean = input.features.mean(0)
+          _var = input.features.var(0)
         output.features = BatchNormalizationFunction.apply(
             input.features,
             optionalTensor(self, 'weight'),
             optionalTensor(self, 'bias'),
-            self.running_mean,
-            self.running_var,
+            _mean,
+            _var,
             self.eps,
             self.momentum,
             self.training,
@@ -70,7 +78,7 @@ class BatchNormalization(Module):
 
 
 class BatchNormReLU(BatchNormalization):
-    def __init__(self, nPlanes, eps=1e-4, momentum=0.9):
+    def __init__(self, nPlanes, eps=1e-4, momentum=0.9, track_running_stats=True):
         BatchNormalization.__init__(self, nPlanes, eps, momentum, True, 0)
 
     def __repr__(self):
@@ -80,7 +88,7 @@ class BatchNormReLU(BatchNormalization):
 
 
 class BatchNormLeakyReLU(BatchNormalization):
-    def __init__(self, nPlanes, eps=1e-4, momentum=0.9, leakiness=0.333):
+    def __init__(self, nPlanes, eps=1e-4, momentum=0.9, leakiness=0.333, track_running_stats=True):
         BatchNormalization.__init__(self, nPlanes, eps, momentum, True, leakiness)
 
     def __repr__(self):
