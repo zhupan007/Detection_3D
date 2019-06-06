@@ -426,7 +426,7 @@ def parse_house_onef( house_fn):
     2. point cloud for each depth image
     3. Merge point clouds
     '''
-    is_gen_house_obj = Debug and True
+    is_gen_house_obj = Debug and False
     is_gen_bbox = 1
     is_gen_cam = 1
     is_gen_pcl = 1
