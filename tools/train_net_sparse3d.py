@@ -27,6 +27,7 @@ from maskrcnn_benchmark.utils.logger import setup_logger
 from maskrcnn_benchmark.utils.miscellaneous import mkdir
 
 from data3d.data import make_data_loader
+from data3d.dataset_metas import DSET_METAS
 
 def train(cfg, local_rank, distributed, loop, only_test):
     model = build_detection_model(cfg)
@@ -237,6 +238,11 @@ def intact_cfg(cfg):
   #  assert anchor_size[0][0] > anchor_size[1][0], "ANCHOR_SIZES_3D should set from small to large after reversed, to match scale order of feature map"
 
   check_roi_parameters(cfg)
+
+  # ----------------------
+  dset_metas = DSET_METAS(cfg.INPUT.CLASSES)
+  spec_classifier = [dset_metas.class_2_label[c] for c in cfg.MODEL.SEPERATE_CLASSIFIER]
+  cfg.MODEL.SEPERATE_CLASSIFIER = spec_classifier
 
 
 def check_roi_parameters(cfg):

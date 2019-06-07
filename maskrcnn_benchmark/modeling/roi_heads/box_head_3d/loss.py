@@ -23,7 +23,7 @@ class FastRCNNLossComputation(object):
     Also supports FPN
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -39,7 +39,7 @@ class FastRCNNLossComputation(object):
         self.low_threshold = proposal_matcher.low_threshold
         self.add_gt_proposals = add_gt_proposals
         self.aug_thickness = aug_thickness
-
+        self.seperate_classifier = seperate_classifier
 
     def match_targets_to_proposals(self, proposal, target):
         match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness=self.aug_thickness, criterion=-1)
@@ -187,7 +187,10 @@ class FastRCNNLossComputation(object):
         regression_targets = proposals.get_field("regression_targets")
         bbox3ds = proposals.bbox3d
 
-        classification_loss = F.cross_entropy(class_logits, labels)
+        if len(self.seperate_classifier) == 0:
+          classification_loss = F.cross_entropy(class_logits, labels)
+        else:
+          classification_loss = self.cross_entropy_seperated(class_logits, labels)
 
         # get indices that correspond to the regression targets for
         # the corresponding ground truth labels, to be used with
@@ -205,6 +208,7 @@ class FastRCNNLossComputation(object):
             assert roi_target_yaw.max() < 1.5
             assert roi_target_yaw.min() > -1.5
 
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         box_loss = smooth_l1_loss(
             box_regression_pos,
             regression_targets_pos,
@@ -220,6 +224,34 @@ class FastRCNNLossComputation(object):
 
         return classification_loss, box_loss
 
+    def cross_entropy_seperated(self, class_logits, labels):
+      '''
+      class_logits: [n, num_classes+1]
+      labels: [n]
+      self.seperate_classifier: [num_classes0] (not include 0)
+
+      In the (num_classes+1) dims of class_logits, the first (num_classes0+1) dims are for self.seperate_classifier,
+      the following (num_classes1+1) are for the remianing.
+      '''
+      num_classes = class_logits.shape[1]
+      remain_classifier = [l for l in range(num_classes) if l not in self.seperate_classifier ][1:]
+      labels0 = labels * 0
+      labels1 = labels * 0
+      for l, sc in enumerate(self.seperate_classifier):
+        mask = labels == self.seperate_classifier[l]
+        labels0[mask] = l + 1 # the first one is 0: background
+      for l, sc in enumerate(remain_classifier):
+        mask = labels == remain_classifier[l]
+        labels1[mask] = l + 1 # the first one is 0: background
+
+      seperate_classifier_num = len(self.seperate_classifier) + 1
+      class_logits0 = class_logits[:,0:seperate_classifier_num]
+      class_logits1 = class_logits[:,seperate_classifier_num:]
+
+      loss0 = F.cross_entropy(class_logits0, labels0)
+      loss1 = F.cross_entropy(class_logits1, labels1)
+
+      return loss0 + loss1
 
     def show_roi_cls_regs(self, proposals, classification_loss, box_loss,
               class_logits, targets,  box_regression, regression_targets):
@@ -314,8 +346,9 @@ def make_roi_box_loss_evaluator(cfg):
     add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
     tmp = cfg.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC
     aug_thickness = {'target':tmp[0], 'anchor':tmp[1]}
+    seperate_classifier = cfg.MODEL.SEPERATE_CLASSIFIER
 
-    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness)
+    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier)
 
     return loss_evaluator
 

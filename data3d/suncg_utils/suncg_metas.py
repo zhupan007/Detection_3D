@@ -29,4 +29,4 @@ class SUNCG_METAS:
         self.class_2_label = class_2_label
         self.label_2_class = label_2_class
 
-SUNCG_META0 = SUNCG_METAS(SUNCG_METAS.classes_order)
+SUNCG_METAS0 = SUNCG_METAS(SUNCG_METAS.classes_order)
