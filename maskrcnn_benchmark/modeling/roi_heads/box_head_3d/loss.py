@@ -26,6 +26,7 @@ class SeperateClassifier():
       self.remaining_classes = [i for i in range(num_input_classes) if i not in seperate_classes]
       assert 0 not in seperate_classes
       assert 0 in self.remaining_classes
+      self.need_seperate = len(seperate_classes) > 0
 
       self.org_labels_to_labels0 = torch.ones([num_input_classes], dtype=torch.int32) * (-1)
       self.labels0_to_org_labels = torch.ones([self.num_classes0], dtype=torch.int32) * (-1)
@@ -81,6 +82,12 @@ class SeperateClassifier():
         labels_new.append( org_to_new[ls].to(device).long() )
       return labels_new
 
+    def clean_predictions(self, proposals):
+      for pro in proposals:
+        labels = pro.get_field('labels')
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
+
 
 class FastRCNNLossComputation(object):
     """
@@ -88,7 +95,7 @@ class FastRCNNLossComputation(object):
     Also supports FPN
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classes, num_input_classes):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -104,8 +111,8 @@ class FastRCNNLossComputation(object):
         self.low_threshold = proposal_matcher.low_threshold
         self.add_gt_proposals = add_gt_proposals
         self.aug_thickness = aug_thickness
-        self.need_seperate = len(seperate_classes) > 0
-        self.seperate_classifier = SeperateClassifier( seperate_classes, num_input_classes )
+        self.seperate_classifier = seperate_classifier
+        self.need_seperate = seperate_classifier.need_seperate
 
     def match_targets_to_proposals(self, proposal, target):
         match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness=self.aug_thickness, criterion=-1)
@@ -482,7 +489,9 @@ def make_roi_box_loss_evaluator(cfg):
     in_classes = cfg.INPUT.CLASSES
     num_input_classes = len(in_classes)
 
-    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classes, num_input_classes)
+    seperate_classifier = SeperateClassifier( seperate_classes, num_input_classes )
 
-    return loss_evaluator
+    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier)
+
+    return loss_evaluator, seperate_classifier
 
