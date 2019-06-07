@@ -36,8 +36,8 @@ class FPNPredictor(nn.Module):
         classes_names = cfg.INPUT.CLASSES
         num_classes = len(classes_names)
         representation_size = cfg.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM
-        seperate_classifier = cfg.MODEL.SEPERATE_CLASSIFIER
-        if len(seperate_classifier) > 0:
+        seperate_classes = cfg.MODEL.SEPERATE_CLASSES
+        if len(seperate_classes) > 0:
           num_classes += 1
 
         self.cls_score = nn.Linear(representation_size, num_classes)

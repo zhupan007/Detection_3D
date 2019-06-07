@@ -18,7 +18,7 @@ from wall_preprocessing import preprocess_walls
 from window_preprocessing import preprocess_windows
 from door_preprocessing import preprocess_doors
 from utils3d.bbox3d_ops import Bbox3D
-from suncg_metas import SUNCG_META0
+from data3d.dataset_metas import DSET_METAS0
 from scene_samples import SceneSamples
 
 
@@ -394,7 +394,7 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[1000:1500]
     else:
-      self.house_fns = house_fns[514:1000]
+      self.house_fns = house_fns[500:600]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
@@ -549,7 +549,7 @@ def gen_bbox(house_fn):
 
       bboxes[obj] = cam2world_box(bboxes[obj])
 
-    for obj in SUNCG_META0.class_2_label:
+    for obj in DSET_METAS0.class_2_label:
         if obj == 'background':
             continue
         if obj not in bboxes:

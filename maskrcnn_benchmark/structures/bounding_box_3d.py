@@ -277,6 +277,8 @@ class BoxList3D(object):
       items: [n] torch.Tensor or list or numpy
           like: 2, [52,35,231], np.array([52,4,46]), torch.Tensor([101,23,45])
 
+      mask not supported
+
       No matter if items contain all the examples or not, always keep the batch_size same.
       '''
       if not isinstance(items, torch.Tensor):

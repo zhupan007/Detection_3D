@@ -6,8 +6,8 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
 import torch
 from collections import defaultdict
-from suncg_utils.suncg_metas import SUNCG_META0
 from suncg_utils.scene_samples import SceneSamples
+from data3d.dataset_metas import DSET_METAS0
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
@@ -61,7 +61,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=1):
     bbox_fn_ = f'{parsed_dir}/object_bbox/{obj}.txt'
     bboxes_  = np.loadtxt(bbox_fn_).reshape([-1,7])
     bboxes.append(bboxes_)
-    label = SUNCG_META0.class_2_label[obj]
+    label = DSET_METAS0.class_2_label[obj]
     labels += [label] * bboxes_.shape[0]
   bboxes = np.concatenate(bboxes, 0)
   labels = np.array(labels).astype(np.int8)
@@ -77,7 +77,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=1):
 
     if show_by_class:
           for c in range(1,max(labels)+1):
-              cs = SUNCG_META0.label_2_class[c]
+              cs = DSET_METAS0.label_2_class[c]
               print(cs)
               if cs not in ['wall', 'window', 'door']:
               #if cs not in ['wall']:

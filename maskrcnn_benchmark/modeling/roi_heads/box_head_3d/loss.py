@@ -17,13 +17,77 @@ SHOW_ROI_CLASSFICATION = DEBUG and False
 CHECK_IOU = False
 CHECK_REGRESSION_TARGET_YAW = False
 
+class SeperateClassifier():
+    def __init__(self, seperate_classes, num_input_classes):
+      self.seperate_classes = seperate_classes
+      self.num_input_classes = num_input_classes # include background
+      self.num_classes0 = len(seperate_classes) + 1
+      self.num_classes1 = num_input_classes - len(seperate_classes)
+      self.remaining_classes = [i for i in range(num_input_classes) if i not in seperate_classes]
+      assert 0 not in seperate_classes
+      assert 0 in self.remaining_classes
+
+      self.org_labels_to_labels0 = torch.ones([num_input_classes], dtype=torch.int32) * (-1)
+      self.labels0_to_org_labels = torch.ones([self.num_classes0], dtype=torch.int32) * (-1)
+      self.org_labels_to_labels0[0] = 0
+      self.labels0_to_org_labels[0] = 0
+      for i, c in enumerate(seperate_classes):
+        self.org_labels_to_labels0[c] = i+1
+        self.labels0_to_org_labels[i+1] = c
+
+      self.org_labels_to_labels1 = torch.ones([num_input_classes], dtype=torch.int32) * (-1)
+      self.labels1_to_org_labels = torch.ones([self.num_classes1], dtype=torch.int32) * (-1)
+      self.org_labels_to_labels1[0] = 0
+      self.labels1_to_org_labels[0] = 0
+      for i, c in enumerate(self.remaining_classes):
+        self.org_labels_to_labels1[c] = i
+        self.labels1_to_org_labels[i] = c
+
+
+    def seperating_ids(self, labels):
+      assert isinstance(labels, torch.Tensor)
+      ids_0s = []
+      for c in self.seperate_classes:
+        ids_c = torch.nonzero(labels==c).view([-1])
+        ids_0s.append(ids_c)
+      ids_0 = torch.cat(ids_0s, 0)
+      n = labels.shape[0]
+      tmp = torch.ones([n])
+      tmp[ids_0] = 0
+      ids_1 = torch.nonzero(tmp).view([-1])
+      return ids_0, ids_1
+
+    def seperate_targets(self, targets):
+        assert isinstance(targets, list)
+        targets_0 = []
+        targets_1 = []
+        for tar in targets:
+          labels = tar.get_field('labels')
+          ids_0, ids_1 = self.seperating_ids(labels)
+          tar0 = tar[ids_0]
+          tar1 = tar[ids_1]
+          targets_0.append( tar0 )
+          targets_1.append( tar1 )
+        return targets_0, targets_1
+
+    def update_labels(self, labels_seperated_org, id):
+      labels_new = []
+      if id==0:
+        org_to_new = self.org_labels_to_labels0
+      elif id==1:
+        org_to_new = self.org_labels_to_labels1
+      for ls in labels_seperated_org:
+        labels_new.append( org_to_new[ls] )
+      return labels_new
+
+
 class FastRCNNLossComputation(object):
     """
     Computes the loss for Faster R-CNN.
     Also supports FPN
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classes, num_input_classes):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -39,7 +103,8 @@ class FastRCNNLossComputation(object):
         self.low_threshold = proposal_matcher.low_threshold
         self.add_gt_proposals = add_gt_proposals
         self.aug_thickness = aug_thickness
-        self.seperate_classifier = seperate_classifier
+        self.need_seperate = len(seperate_classes) > 0
+        self.seperate_classifier = SeperateClassifier( seperate_classes, num_input_classes )
 
     def match_targets_to_proposals(self, proposal, target):
         match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness=self.aug_thickness, criterion=-1)
@@ -114,18 +179,36 @@ class FastRCNNLossComputation(object):
         #  pass
         return labels, regression_targets
 
-    def subsample(self, proposals, targets):
-        """
-        This method performs the positive/negative sampling, and return
-        the sampled proposals.
-        Note: this function keeps a state.
 
-        Arguments:
-            proposals (list[BoxList])
-            targets (list[BoxList])
-        """
-        labels, regression_targets = self.prepare_targets(proposals, targets)
-        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
+    def subsample(self, proposals, targets):
+      if self.need_seperate:
+        return self.subsample_seperated(proposals, targets)
+      else:
+        return self.subsample_standard(proposals, targets)
+
+    def subsample_seperated(self, proposals, targets):
+        targets0, targets1 = self.seperate_classifier.seperate_targets(targets)
+        labels0_org, regression_targets0 = self.prepare_targets(proposals, targets0)
+        labels1_org, regression_targets1 = self.prepare_targets(proposals, targets1)
+        labels0 = self.seperate_classifier.update_labels(labels0_org, 0)
+        labels1 = self.seperate_classifier.update_labels(labels1_org, 1)
+        sampled_pos_inds0, sampled_neg_inds0 = self.fg_bg_sampler(labels0)
+        sampled_pos_inds1, sampled_neg_inds1 = self.fg_bg_sampler(labels1)
+
+        batch_size = len(proposals)
+        labels = []
+        regression_targets = []
+        sampled_pos_inds = []
+        sampled_neg_inds = []
+        for bi in range(batch_size):
+          labels_i = torch.cat([labels0[bi].unsqueeze(-1), labels1[bi].unsqueeze(-1) ], -1)
+          reg_i = torch.cat([regression_targets0[bi].unsqueeze(-1), regression_targets1[bi].unsqueeze(-1) ], -1)
+          pos_inds_i = sampled_pos_inds0[bi] | sampled_pos_inds1[bi]
+          neg_inds_i = sampled_neg_inds0[bi] * sampled_neg_inds1[bi]
+          labels.append( labels_i )
+          regression_targets.append(reg_i)
+          sampled_pos_inds.append(pos_inds_i)
+          sampled_neg_inds.append(neg_inds_i)
 
         proposals = list(proposals)
         # add corresponding label and regression_targets information to the bounding boxes
@@ -140,8 +223,45 @@ class FastRCNNLossComputation(object):
                 "regression_targets", regression_targets_per_image
             )
 
-        # distributed sampled proposals, that were obtained on all feature maps
-        # concatenated via the fg_bg_sampler, into individual feature map levels
+        # rm ignored proposals
+        for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
+            zip(sampled_pos_inds, sampled_neg_inds)
+        ):
+            img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
+            proposals_per_image = proposals[img_idx][img_sampled_inds]
+            proposals[img_idx] = proposals_per_image
+
+        self._proposals = proposals
+        return proposals
+
+    def subsample_standard(self, proposals, targets):
+        """
+        This method performs the positive/negative sampling, and return
+        the sampled proposals.
+        Note: this function keeps a state.
+
+        Arguments:
+            proposals (list[BoxList])
+            targets (list[BoxList])
+        """
+        labels, regression_targets = self.prepare_targets(proposals, targets)
+
+        proposals = list(proposals)
+        # add corresponding label and regression_targets information to the bounding boxes
+        for labels_per_image, regression_targets_per_image, proposals_per_image in zip(
+            labels, regression_targets, proposals
+        ):
+            if labels_per_image.shape[0] != proposals_per_image.bbox3d.shape[0]:
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
+            proposals_per_image.add_field("labels", labels_per_image)
+            proposals_per_image.add_field(
+                "regression_targets", regression_targets_per_image
+            )
+
+        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
+
+        # rm ignored proposals
         for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
             zip(sampled_pos_inds, sampled_neg_inds)
         ):
@@ -170,6 +290,7 @@ class FastRCNNLossComputation(object):
         class_logits = cat(class_logits, dim=0)
         box_regression = cat(box_regression, dim=0)
         device = class_logits.device
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
         if not hasattr(self, "_proposals"):
             raise RuntimeError("subsample needs to be called before")
@@ -187,7 +308,7 @@ class FastRCNNLossComputation(object):
         regression_targets = proposals.get_field("regression_targets")
         bbox3ds = proposals.bbox3d
 
-        if len(self.seperate_classifier) == 0:
+        if len(self.seperate_classes) == 0:
           classification_loss = F.cross_entropy(class_logits, labels)
         else:
           classification_loss = self.cross_entropy_seperated(class_logits, labels)
@@ -228,25 +349,25 @@ class FastRCNNLossComputation(object):
       '''
       class_logits: [n, num_classes+1]
       labels: [n]
-      self.seperate_classifier: [num_classes0] (not include 0)
+      self.seperate_classes: [num_classes0] (not include 0)
 
-      In the (num_classes+1) dims of class_logits, the first (num_classes0+1) dims are for self.seperate_classifier,
+      In the (num_classes+1) dims of class_logits, the first (num_classes0+1) dims are for self.seperate_classes,
       the following (num_classes1+1) are for the remianing.
       '''
       num_classes = class_logits.shape[1]
-      remain_classifier = [l for l in range(num_classes) if l not in self.seperate_classifier ][1:]
+      remain_classifier = [l for l in range(num_classes) if l not in self.seperate_classes ][1:]
       labels0 = labels * 0
       labels1 = labels * 0
-      for l, sc in enumerate(self.seperate_classifier):
-        mask = labels == self.seperate_classifier[l]
+      for l, sc in enumerate(self.seperate_classes):
+        mask = labels == self.seperate_classes[l]
         labels0[mask] = l + 1 # the first one is 0: background
       for l, sc in enumerate(remain_classifier):
         mask = labels == remain_classifier[l]
         labels1[mask] = l + 1 # the first one is 0: background
 
-      seperate_classifier_num = len(self.seperate_classifier) + 1
-      class_logits0 = class_logits[:,0:seperate_classifier_num]
-      class_logits1 = class_logits[:,seperate_classifier_num:]
+      seperate_classes_num = len(self.seperate_classes) + 1
+      class_logits0 = class_logits[:,0:seperate_classes_num]
+      class_logits1 = class_logits[:,seperate_classes_num:]
 
       loss0 = F.cross_entropy(class_logits0, labels0)
       loss1 = F.cross_entropy(class_logits1, labels1)
@@ -346,9 +467,11 @@ def make_roi_box_loss_evaluator(cfg):
     add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
     tmp = cfg.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC
     aug_thickness = {'target':tmp[0], 'anchor':tmp[1]}
-    seperate_classifier = cfg.MODEL.SEPERATE_CLASSIFIER
+    seperate_classes = cfg.MODEL.SEPERATE_CLASSES
+    in_classes = cfg.INPUT.CLASSES
+    num_input_classes = len(in_classes)
 
-    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier)
+    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classes, num_input_classes)
 
     return loss_evaluator
 
