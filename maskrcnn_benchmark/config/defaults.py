@@ -36,7 +36,7 @@ _C.MODEL.META_ARCHITECTURE = "SparseRCNN"
 # path
 _C.MODEL.WEIGHT = ""
 
-_C.MODEL.SEPERATE_CLASSES = ['window']
+_C.MODEL.SEPERATE_CLASSES = ['door', 'wall']
 # -----------------------------------------------------------------------------
 # Sparse 3D
 # -----------------------------------------------------------------------------
@@ -201,7 +201,7 @@ _C.MODEL.ROI_HEADS.SCORE_THRESH = 0.05
 _C.MODEL.ROI_HEADS.NMS = 0.3 # 0.5
 # Maximum number of detections to return per image (100 is based on the limit
 # established for the COCO dataset)
-_C.MODEL.ROI_HEADS.DETECTIONS_PER_IMG = 100
+_C.MODEL.ROI_HEADS.DETECTIONS_PER_IMG = 200
 _C.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC = [0.2,0.2]
 
 

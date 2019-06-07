@@ -89,12 +89,14 @@ class ROIBoxHead3D(torch.nn.Module):
             result = self.post_processor((class_logits, box_regression), proposals)
             result = self.seperate_classifier.clean_predictions(result)
             return x, result, {}
-        if self.eval_in_train:
+        if self.eval_in_train > 0:
             if self.add_gt_proposals:
                 class_logits_, box_regression_, proposals_ = rm_gt_from_proposals(
                     class_logits, box_regression, proposals,
                     self.detections_per_img, targets)
             proposals = self.post_processor((class_logits_, box_regression_), proposals_)
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
 
         loss_classifier, loss_box_reg = self.loss_evaluator(
             [class_logits], [box_regression], targets
