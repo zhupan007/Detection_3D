@@ -72,12 +72,13 @@ class SeperateClassifier():
 
     def update_labels(self, labels_seperated_org, id):
       labels_new = []
+      device = labels_seperated_org[0].device
       if id==0:
         org_to_new = self.org_labels_to_labels0
       elif id==1:
         org_to_new = self.org_labels_to_labels1
       for ls in labels_seperated_org:
-        labels_new.append( org_to_new[ls] )
+        labels_new.append( org_to_new[ls].to(device).long() )
       return labels_new
 
 
@@ -289,8 +290,6 @@ class FastRCNNLossComputation(object):
 
         class_logits = cat(class_logits, dim=0)
         box_regression = cat(box_regression, dim=0)
-        device = class_logits.device
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
         if not hasattr(self, "_proposals"):
             raise RuntimeError("subsample needs to be called before")
@@ -308,14 +307,29 @@ class FastRCNNLossComputation(object):
         regression_targets = proposals.get_field("regression_targets")
         bbox3ds = proposals.bbox3d
 
-        if len(self.seperate_classes) == 0:
+        if not self.need_seperate:
           classification_loss = F.cross_entropy(class_logits, labels)
+          box_loss = self.box_loss(labels, box_regression, regression_targets, bbox3ds)
         else:
           classification_loss = self.cross_entropy_seperated(class_logits, labels)
+          box_loss = self.box_loss_seperated(labels, box_regression, regression_targets, bbox3ds)
 
+        if SHOW_ROI_CLASSFICATION:
+          self.show_roi_cls_regs(proposals, classification_loss, box_loss, class_logits,  targets, box_regression, regression_targets)
+
+        return classification_loss, box_loss
+
+    def box_loss_seperated(self, labels, box_regression, regression_targets, bbox3ds):
+        box_loss0 = self.box_loss(labels[:,0], box_regression, regression_targets[:,:,0], bbox3ds)
+        box_loss1 = self.box_loss(labels[:,1], box_regression, regression_targets[:,:,1], bbox3ds)
+        box_loss = box_loss0 + box_loss1
+        return box_loss
+
+    def box_loss(self, labels, box_regression, regression_targets, bbox3ds):
         # get indices that correspond to the regression targets for
         # the corresponding ground truth labels, to be used with
         # advanced indexing
+        device = box_regression.device
         sampled_pos_inds_subset = torch.nonzero(labels > 0).squeeze(1)
         labels_pos = labels[sampled_pos_inds_subset]
         map_inds = 7 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3, 4, 5, 6], device=device)
@@ -329,7 +343,6 @@ class FastRCNNLossComputation(object):
             assert roi_target_yaw.max() < 1.5
             assert roi_target_yaw.min() > -1.5
 
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         box_loss = smooth_l1_loss(
             box_regression_pos,
             regression_targets_pos,
@@ -339,11 +352,7 @@ class FastRCNNLossComputation(object):
             yaw_loss_mode = self.yaw_loss_mode
         )
         box_loss = box_loss / labels.numel()
-
-        if SHOW_ROI_CLASSFICATION:
-          self.show_roi_cls_regs(proposals, classification_loss, box_loss, class_logits,  targets, box_regression, regression_targets)
-
-        return classification_loss, box_loss
+        return box_loss
 
     def cross_entropy_seperated(self, class_logits, labels):
       '''
@@ -354,23 +363,25 @@ class FastRCNNLossComputation(object):
       In the (num_classes+1) dims of class_logits, the first (num_classes0+1) dims are for self.seperate_classes,
       the following (num_classes1+1) are for the remianing.
       '''
-      num_classes = class_logits.shape[1]
-      remain_classifier = [l for l in range(num_classes) if l not in self.seperate_classes ][1:]
-      labels0 = labels * 0
-      labels1 = labels * 0
-      for l, sc in enumerate(self.seperate_classes):
-        mask = labels == self.seperate_classes[l]
-        labels0[mask] = l + 1 # the first one is 0: background
-      for l, sc in enumerate(remain_classifier):
-        mask = labels == remain_classifier[l]
-        labels1[mask] = l + 1 # the first one is 0: background
+      #num_classes = class_logits.shape[1]
+      #import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      #remain_classifier = [l for l in range(num_classes) if l not in self.seperate_classes ][1:]
+      #import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      #labels0 = labels * 0
+      #labels1 = labels * 0
+      #for l, sc in enumerate(self.seperate_classes):
+      #  mask = labels == self.seperate_classes[l]
+      #  labels0[mask] = l + 1 # the first one is 0: background
+      #for l, sc in enumerate(remain_classifier):
+      #  mask = labels == remain_classifier[l]
+      #  labels1[mask] = l + 1 # the first one is 0: background
 
-      seperate_classes_num = len(self.seperate_classes) + 1
+      seperate_classes_num = self.seperate_classifier.num_classes0
       class_logits0 = class_logits[:,0:seperate_classes_num]
       class_logits1 = class_logits[:,seperate_classes_num:]
 
-      loss0 = F.cross_entropy(class_logits0, labels0)
-      loss1 = F.cross_entropy(class_logits1, labels1)
+      loss0 = F.cross_entropy(class_logits0, labels[:,0])
+      loss1 = F.cross_entropy(class_logits1, labels[:,1])
 
       return loss0 + loss1
 
