@@ -26,6 +26,7 @@ def cat_boxlist_3d(bboxes_ls, per_example, use_constants0=False):
     Arguments:
         bboxes_ls (list[BoxList])
         per_example: if True, each element in bboxes_ls is an example, combine to a batch
+        use_constants0: sometimes, the constants in each elements are different, if True, enable use the first one and do not check equality.
     """
     assert isinstance(bboxes_ls, (list, tuple))
     assert all(isinstance(bbox, BoxList3D) for bbox in bboxes_ls)

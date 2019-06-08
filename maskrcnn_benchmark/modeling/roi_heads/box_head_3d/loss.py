@@ -21,6 +21,8 @@ class SeperateClassifier():
     def __init__(self, seperate_classes, num_input_classes):
       '''
       Add a background label for the seperated classes at the end
+      0: the seperated classes
+      1: the remaining classes
       '''
       self.need_seperate = len(seperate_classes) > 0
       if not self.need_seperate:
@@ -38,11 +40,6 @@ class SeperateClassifier():
 
       self.org_labels_to_labels0 = torch.ones([num_input_classes+1], dtype=torch.int32) * (-1)
       self.labels0_to_org_labels = torch.ones([self.num_classes0], dtype=torch.int32) * (-1)
-      # the seperated special background is expanded at the end
-      #self.org_labels_to_labels0[num_input_classes] = 0
-
-      #self.org_labels_to_labels0[0] = 0
-      #self.labels0_to_org_labels[0] = 0
       for i, c in enumerate([0]+seperate_classes[:-1]):
         self.org_labels_to_labels0[c] = i # 0 not in seperate_classes
         self.labels0_to_org_labels[i] = c
@@ -52,8 +49,6 @@ class SeperateClassifier():
       self.labels1_to_org_labels = torch.ones([self.num_classes1], dtype=torch.int32) * (-1)
       # the 0(background) of org_labels is the 0 for remaining classes
 
-      #self.org_labels_to_labels1[0] = 0
-      #self.labels1_to_org_labels[0] = 0
       for i, c in enumerate(self.remaining_classes):
         self.org_labels_to_labels1[c] = i
         self.labels1_to_org_labels[i] = c
@@ -72,6 +67,23 @@ class SeperateClassifier():
       box_regression0 = box_regression.view([n,-1,7])[:, self.seperate_classes, :].view([n,-1])
       box_regression1 = box_regression.view([n,-1,7])[:, self.remaining_classes, :].view([n,-1])
       return box_regression0, box_regression1
+
+    def seperate_boxes(self, boxes_ls):
+      boxes_ls0 = []
+      boxes_ls1 = []
+      for boxes in boxes_ls:
+          boxes0 = boxes.copy()
+          assert boxes0.fields() == ['objectness', 'labels', 'regression_targets']
+          boxes0.extra_fields['labels'] = boxes0.extra_fields['labels'][:,0]
+          boxes0.extra_fields['regression_targets'] = boxes0.extra_fields['regression_targets'][:,:,0]
+
+          boxes1 = boxes.copy()
+          boxes1.extra_fields['labels'] = boxes1.extra_fields['labels'][:,1]
+          boxes1.extra_fields['regression_targets'] = boxes1.extra_fields['regression_targets'][:,:,1]
+
+          boxes_ls0.append(boxes0)
+          boxes_ls1.append(boxes1)
+      return boxes_ls0, boxes_ls1
 
     def _seperating_ids(self, labels):
       assert isinstance(labels, torch.Tensor)
@@ -114,12 +126,24 @@ class SeperateClassifier():
         assert labels_new[-1].min() >= 0
       return labels_new
 
-    def clean_predictions(self, proposals):
-      return proposals
-      for pro in proposals:
-        labels = pro.get_field('labels')
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        pass
+    def post_processor(self, class_logits, box_regression, proposals, post_processor_fn):
+      class_logits0, class_logits1 = self.seperate_pred_logits(class_logits)
+      box_regression0, box_regression1 = self.seperate_pred_box(box_regression)
+      proposals0, proposals1 = self.seperate_boxes(proposals)
+
+      result0 = post_processor_fn( (class_logits0, box_regression0), proposals0 )
+      result1 = post_processor_fn( (class_logits1, box_regression1), proposals1 )
+
+      batch_size = len(proposals)
+      result = []
+      for b in range(batch_size):
+        result0[b].extra_fields['labels'] = self.labels0_to_org_labels[result0[b].extra_fields['labels']]
+        result1[b].extra_fields['labels'] = self.labels1_to_org_labels[result1[b].extra_fields['labels']]
+        result_b = cat_boxlist_3d([result0[b], result1[b]], per_example=False)
+        result.append(result_b)
+
+      #print(result[0].fields())
+      return result
 
 
 class FastRCNNLossComputation(object):

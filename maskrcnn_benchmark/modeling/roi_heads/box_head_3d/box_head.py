@@ -43,11 +43,20 @@ class ROIBoxHead3D(torch.nn.Module):
         super(ROIBoxHead3D, self).__init__()
         self.feature_extractor = make_roi_box_feature_extractor(cfg)
         self.predictor = make_roi_box_predictor(cfg)
-        self.post_processor = make_roi_box_post_processor(cfg)
+        self.post_processor_0 = make_roi_box_post_processor(cfg)
         self.loss_evaluator, self.seperate_classifier = make_roi_box_loss_evaluator(cfg)
+        self.need_seperate = self.seperate_classifier.need_seperate
         self.eval_in_train = cfg.DEBUG.eval_in_train
         self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
         self.detections_per_img = cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG
+
+    def post_processor(self, log_reg, proposals):
+        class_logits, box_regression = log_reg
+        if not self.need_seperate:
+          proposals = self.post_processor_0((class_logits, box_regression), proposals)
+        else:
+          proposals = self.seperate_classifier.post_processor(class_logits, box_regression, proposals, self.post_processor_0)
+        return proposals
 
     def forward(self, features, proposals, targets=None):
         """
@@ -91,6 +100,7 @@ class ROIBoxHead3D(torch.nn.Module):
             result = self.post_processor((class_logits, box_regression), proposals)
             result = self.seperate_classifier.clean_predictions(result)
             return x, result, {}
+
         if self.eval_in_train > 0:
             if self.add_gt_proposals:
                 class_logits_, box_regression_, proposals_ = rm_gt_from_proposals(
@@ -107,7 +117,6 @@ class ROIBoxHead3D(torch.nn.Module):
           proposals[0].show_by_objectness(0.5, targets[0])
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
-        proposals = self.seperate_classifier.clean_predictions(proposals)
         return (
             x,
             proposals,
