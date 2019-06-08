@@ -21,10 +21,12 @@ def rm_gt_from_proposals(class_logits, box_regression, proposals, detections_per
     s = 0
     for b in range(batch_size):
         #print(f's:{s}')
-        real_proposal_num = len(proposals[b]) - len(targets[b])
+        pro_num_b = len(proposals[b])
+        real_proposal_num = pro_num_b - len(targets[b])
         class_logits_.append( class_logits[s:s+real_proposal_num,:] )
         box_regression_.append( box_regression[s:s+real_proposal_num,:] )
-        s += len(proposals[b])
+        #gt_reg = box_regression[s+real_proposal_num:s+pro_num_b]
+        s += pro_num_b
 
         ids = range( real_proposal_num )
         proposals_.append(proposals[b][ids])
@@ -95,8 +97,6 @@ class ROIBoxHead3D(torch.nn.Module):
                     class_logits, box_regression, proposals,
                     self.detections_per_img, targets)
             proposals = self.post_processor((class_logits_, box_regression_), proposals_)
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            pass
 
         loss_classifier, loss_box_reg = self.loss_evaluator(
             [class_logits], [box_regression], targets

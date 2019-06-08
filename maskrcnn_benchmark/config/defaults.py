@@ -36,7 +36,8 @@ _C.MODEL.META_ARCHITECTURE = "SparseRCNN"
 # path
 _C.MODEL.WEIGHT = ""
 
-_C.MODEL.SEPERATE_CLASSES = ['door', 'wall']
+#_C.MODEL.SEPERATE_CLASSES = ['door', 'wall']
+_C.MODEL.SEPERATE_CLASSES = []
 # -----------------------------------------------------------------------------
 # Sparse 3D
 # -----------------------------------------------------------------------------
@@ -148,11 +149,11 @@ _C.MODEL.RPN.BATCH_SIZE_PER_IMAGE = 256
 _C.MODEL.RPN.POSITIVE_FRACTION = 0.5
 # Number of top scoring RPN proposals to keep before applying NMS
 # When FPN is used, this is *per FPN level* (not total)
-_C.MODEL.RPN.PRE_NMS_TOP_N_TRAIN = 1000 # 12000
-_C.MODEL.RPN.PRE_NMS_TOP_N_TEST = 600 # 6000
+_C.MODEL.RPN.PRE_NMS_TOP_N_TRAIN = 2000 # 12000
+_C.MODEL.RPN.PRE_NMS_TOP_N_TEST = 1000 # 6000
 # Number of top scoring RPN proposals to keep after applying NMS
-_C.MODEL.RPN.POST_NMS_TOP_N_TRAIN = 1000 #  2000
-_C.MODEL.RPN.POST_NMS_TOP_N_TEST = 600 # 1000
+_C.MODEL.RPN.POST_NMS_TOP_N_TRAIN = 500 #  2000
+_C.MODEL.RPN.POST_NMS_TOP_N_TEST = 500 # 1000
 # NMS threshold used on RPN proposals
 _C.MODEL.RPN.NMS_THRESH = 0.5 # 0.7
 _C.MODEL.RPN.AUG_THICKNESS_TAR_ANC = [0.3,0]

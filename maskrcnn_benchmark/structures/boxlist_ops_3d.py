@@ -24,13 +24,15 @@ def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score"):
             after non-maxium suppression
         score_field (str)
     """
+    if max_proposals<0:
+      max_proposals = 500
     bbox2d = boxlist.bbox3d[:,[0,1,3,4,6]]
     objectness = boxlist.get_field(score_field)
     keep = rotate_nms(
               bbox2d,
               objectness,
               pre_max_size=2000,
-              post_max_size=100,
+              post_max_size=max_proposals,
               iou_threshold=nms_thresh, # 0.1
                )
     boxlist = boxlist[keep]
