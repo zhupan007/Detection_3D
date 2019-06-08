@@ -36,7 +36,7 @@ _C.MODEL.META_ARCHITECTURE = "SparseRCNN"
 # path
 _C.MODEL.WEIGHT = ""
 
-_C.MODEL.SEPERATE_CLASSES = ['wall']
+_C.MODEL.SEPERATE_CLASSES = []
 #_C.MODEL.SEPERATE_CLASSES = []
 # -----------------------------------------------------------------------------
 # Sparse 3D
