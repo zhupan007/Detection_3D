@@ -145,6 +145,7 @@ def performance_str(result, dataset, regression_res):
             multi_gt_rates.append( np.nan )
             gt_nums.append( np.nan )
         else:
+            assert clsn in regression_res, f'{clsn} not in {regression_res.keys()}'
             ious_mean.append( regression_res[clsn]['ave_std_iou'][0] )
             ious_std.append( regression_res[clsn]['ave_std_iou'][1] )
             ious_min.append( regression_res[clsn]['min_max_iou'][0] )
