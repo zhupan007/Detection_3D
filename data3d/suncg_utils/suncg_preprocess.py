@@ -394,7 +394,7 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[1000:1500]
     else:
-      self.house_fns = house_fns[600:800]
+      self.house_fns = house_fns[600:1000]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:

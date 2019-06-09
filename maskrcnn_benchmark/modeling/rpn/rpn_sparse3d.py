@@ -9,6 +9,7 @@ from .loss_3d import make_rpn_loss_evaluator
 from .anchor_generator_sparse3d import make_anchor_generator
 from .inference_3d import make_rpn_postprocessor
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_scales_anchor, cat_boxlist_3d
+from maskrcnn_benchmark.modeling.seperate_classifier import SeperateClassifier
 
 DEBUG = True
 SHOW_TARGETS_ANCHORS = DEBUG and False
@@ -37,15 +38,16 @@ def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
     rpn_box_regression_new.append([])
 
   for s in range(scale_num):
-    assert objectness[s].shape[0] == objectness[s].shape[-1] == 1
+    assert objectness[s].shape[0] == 1
+    seperate_rpn = objectness[s].shape[-1]
     assert rpn_box_regression[s].shape[0] == 1
-    assert rpn_box_regression[s].shape[-1] == 7
+    assert rpn_box_regression[s].shape[-1] == 7 * seperate_rpn
 
     yaws_num = objectness[s].shape[2]
     examples_idxscope = anchors[s].examples_idxscope
 
-    objectness_s = objectness[s].reshape(-1)
-    rpn_box_regression_s = rpn_box_regression[s].reshape(-1,7)
+    objectness_s = objectness[s].reshape(-1, seperate_rpn)
+    rpn_box_regression_s = rpn_box_regression[s].reshape(-1,7*seperate_rpn)
     regression_flag = 'yaws_num_first'
     for b in range(batch_size):
       begin,end = examples_idxscope[b]
@@ -90,12 +92,14 @@ class RPNHead(nn.Module):
         """
         super(RPNHead, self).__init__()
         self.num_anchors_per_location = num_anchors_per_location
+        seperate_rpn = int(len(cfg.MODEL.SEPERATE_CLASSES)>0 and cfg.MODEL.SEPERATE_RPN) + 1
+        self.seperate_rpn = seperate_rpn
         self.conv = nn.Conv2d(
                 in_channels, in_channels, kernel_size=1, stride=1, padding=0  )
                 #in_channels, in_channels, kernel_size=3, stride=1, padding=1  )
-        self.cls_logits = nn.Conv2d(in_channels, num_anchors_per_location, kernel_size=1, stride=1)
+        self.cls_logits = nn.Conv2d(in_channels, num_anchors_per_location * self.seperate_rpn, kernel_size=1, stride=1)
         self.bbox_pred = nn.Conv2d(
-            in_channels, num_anchors_per_location * 7, kernel_size=1, stride=1
+            in_channels, num_anchors_per_location * 7 * self.seperate_rpn, kernel_size=1, stride=1
         )
 
         for l in [self.conv, self.cls_logits, self.bbox_pred]:
@@ -112,11 +116,12 @@ class RPNHead(nn.Module):
             # yaws_num: self.num_anchors_per_location
             logit = self.cls_logits(t) # [1,yaws_num, sparse_location_num, 1]
             logit = logit.permute(0,2,1,3) # [1,sparse_location_num, yaws_num,1]
+            logit = logit.reshape(1, logit.shape[1], self.num_anchors_per_location, self.seperate_rpn)
             logits.append(logit)
             reg = self.bbox_pred(t) # [1,7*yaws_num, sparse_location_num,1]
             reg = reg.permute(0,2,1,3) # [1,sparse_location_num, yaws_num*7,1]
             if reg_shape_method == 'box_toghter':
-              reg = reg.reshape(1,reg.shape[1],self.num_anchors_per_location,7) # [1,sparse_location_num, yaws_num,7]
+              reg = reg.reshape(1,reg.shape[1],self.num_anchors_per_location,7*self.seperate_rpn) # [1,sparse_location_num, yaws_num,7]
             elif reg_shape_method == 'yaws_toghter':
               reg = reg.reshape(1,reg.shape[1],7,self.num_anchors_per_location) # [1,sparse_location_num, yaws_num,7]
               reg = reg.permute(0,1,3,2)
@@ -149,8 +154,8 @@ class RPNModule(torch.nn.Module):
 
         box_selector_train = make_rpn_postprocessor(cfg, rpn_box_coder, is_train=True)
         box_selector_test = make_rpn_postprocessor(cfg, rpn_box_coder, is_train=False)
-
         loss_evaluator = make_rpn_loss_evaluator(cfg, rpn_box_coder)
+        self.seperate_classifier = SeperateClassifier(cfg.MODEL.SEPERATE_CLASSES_ID, len(cfg.INPUT.CLASSES))
 
         self.box_coder = rpn_box_coder
         self.anchor_generator = anchor_generator
@@ -245,17 +250,28 @@ class RPNModule(torch.nn.Module):
             # For end-to-end models, anchors must be transformed into boxes and
             # sampled into a training batch.
             with torch.no_grad():
-                boxes = self.box_selector_train(
-                    anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals
-                )
-        loss_objectness, loss_rpn_box_reg = self.loss_evaluator(
-            anchors, objectness, rpn_box_regression, targets
-        )
+                if not self.seperate_classifier.need_seperate:
+                  boxes = self.box_selector_train(anchors, objectness.squeeze(1), rpn_box_regression, targets, self.add_gt_proposals)
+                else:
+                  boxes = self.seperate_classifier.seperate_selector(self.box_selector_train, anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals)
+
+        if not self.seperate_classifier.need_seperate:
+          loss_objectness, loss_rpn_box_reg = self.loss_evaluator(
+              anchors, objectness.squeeze(1), rpn_box_regression, targets
+          )
+          boxes.set_as_prediction()
+        else:
+          loss_objectness0, loss_rpn_box_reg0 = self.loss_evaluator( anchors, objectness[:,0], rpn_box_regression[:,0:7], targets )
+          loss_objectness1, loss_rpn_box_reg1 = self.loss_evaluator( anchors, objectness[:,1], rpn_box_regression[:,7:14], targets )
+          loss_objectness = loss_objectness0 + loss_objectness1
+          loss_rpn_box_reg = loss_rpn_box_reg0 + loss_rpn_box_reg1
+          boxes[0].set_as_prediction()
+          boxes[1].set_as_prediction()
+
         losses = {
             "loss_objectness": loss_objectness,
             "loss_rpn_box_reg": loss_rpn_box_reg,
         }
-        boxes.set_as_prediction()
         return boxes, losses
 
     def _forward_test(self, anchors, objectness, rpn_box_regression, targets=None):

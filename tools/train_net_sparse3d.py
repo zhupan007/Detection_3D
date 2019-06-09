@@ -241,8 +241,10 @@ def intact_cfg(cfg):
 
   # ----------------------
   dset_metas = DSET_METAS(cfg.INPUT.CLASSES)
-  spec_classes = [dset_metas.class_2_label[c] for c in cfg.MODEL.SEPERATE_CLASSES]
-  cfg.MODEL.SEPERATE_CLASSES = spec_classes
+  spec_classes_id = [dset_metas.class_2_label[c] for c in cfg.MODEL.SEPERATE_CLASSES]
+  cfg.MODEL.SEPERATE_CLASSES_ID = spec_classes_id
+  remaining_classes = [c for c in cfg.INPUT.CLASSES if c not in cfg.MODEL.SEPERATE_CLASSES ]
+  cfg.MODEL.REMAIN_CLASSES = remaining_classes
 
 
 def check_roi_parameters(cfg):

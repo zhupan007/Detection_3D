@@ -11,6 +11,7 @@ from maskrcnn_benchmark.structures.image_list import to_image_list
 from ..backbone import build_backbone
 from ..rpn.rpn_sparse3d import build_rpn
 from ..roi_heads.roi_heads_3d import build_roi_heads
+from maskrcnn_benchmark.modeling.seperate_classifier import SeperateClassifier
 
 DEBUG = False
 
@@ -29,9 +30,10 @@ class SparseRCNN(nn.Module):
 
         self.backbone = build_backbone(cfg)
         self.rpn = build_rpn(cfg)
-        self.roi_heads = build_roi_heads(cfg)
+        self.roi_heads0, self.roi_heads1 = build_roi_heads(cfg)
         self.DISABLE_ROILOSS = cfg.DEBUG.DISABLE_ROILOSS
         self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
+        self.seperate_classifier = SeperateClassifier(cfg.MODEL.SEPERATE_CLASSES_ID, len(cfg.INPUT.CLASSES))
 
     def forward(self, points, targets=None):
         """
@@ -50,9 +52,16 @@ class SparseRCNN(nn.Module):
             raise ValueError("In training mode, targets should be passed")
         rpn_features, roi_features = self.backbone(points)
         proposals, proposal_losses = self.rpn(points, rpn_features, targets)
-        proposals.clamp_size()
+        if isinstance(proposals, tuple):
+          proposals[0].clamp_size()
+          proposals[1].clamp_size()
+        else:
+          proposals.clamp_size()
         if not self.DISABLE_ROILOSS:
-            x, result, detector_losses = self.roi_heads(roi_features, proposals, targets)
+            if not self.seperate_classifier.need_seperate:
+              x, result, detector_losses = self.roi_heads0(roi_features, proposals, targets)
+            else:
+              x, result, detector_losses = self.seperate_classifier.sep_roi_heads( self.roi_heads0, self.roi_heads1, roi_features, proposals, targets)
         else:
             # RPN-only models don't have roi_heads
             x = rpn_features
@@ -67,3 +76,4 @@ class SparseRCNN(nn.Module):
             return losses, result
 
         return result
+

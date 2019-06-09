@@ -39,6 +39,21 @@ class CombinedROIHeads(torch.nn.ModuleDict):
 
 
 def build_roi_heads(cfg):
+  sep_classes = cfg.MODEL.SEPERATE_CLASSES
+  if len(cfg.MODEL.SEPERATE_CLASSES) == 0:
+    return build_roi_heads_(cfg), _
+  else:
+    cfg0 = cfg.clone()
+    cfg1 = cfg.clone()
+    cfg0['INPUT']['CLASSES'] = ['background'] + sep_classes
+    cfg1['INPUT']['CLASSES'] = cfg.MODEL.REMAIN_CLASSES
+    cfg0['MODEL']['SEPERATE_CLASSES'] = []
+    cfg1['MODEL']['SEPERATE_CLASSES'] = []
+    roi_heads0 = build_roi_heads_(cfg0)
+    roi_heads1 = build_roi_heads_(cfg1)
+    return roi_heads0, roi_heads1
+
+def build_roi_heads_(cfg):
     # individually create the heads, that will be combined together
     # afterwards
     roi_heads = []

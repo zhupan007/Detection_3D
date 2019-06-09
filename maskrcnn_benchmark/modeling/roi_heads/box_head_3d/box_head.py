@@ -46,7 +46,7 @@ class ROIBoxHead3D(torch.nn.Module):
         self.predictor = make_roi_box_predictor(cfg)
         self.post_processor_0 = make_roi_box_post_processor(cfg)
         self.loss_evaluator, self.seperate_classifier = make_roi_box_loss_evaluator(cfg)
-        self.need_seperate = self.seperate_classifier.need_seperate
+        self.need_seperate = self.seperate_classifier.need_seperate and False
         self.eval_in_train = cfg.DEBUG.eval_in_train
         self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
         self.detections_per_img = cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG
@@ -105,6 +105,7 @@ class ROIBoxHead3D(torch.nn.Module):
             result = self.post_processor((class_logits, box_regression), proposals)
             if SHOW_PRO_NUMS:
                 print(f'Test post proposals num: {len(result[0])}')
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             result = self.seperate_classifier.clean_predictions(result)
             return x, result, {}
 
