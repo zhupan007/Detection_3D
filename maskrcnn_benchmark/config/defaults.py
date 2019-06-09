@@ -37,7 +37,6 @@ _C.MODEL.META_ARCHITECTURE = "SparseRCNN"
 _C.MODEL.WEIGHT = ""
 
 _C.MODEL.SEPERATE_CLASSES = []
-#_C.MODEL.SEPERATE_CLASSES = []
 # -----------------------------------------------------------------------------
 # Sparse 3D
 # -----------------------------------------------------------------------------
@@ -78,9 +77,9 @@ _C.INPUT.SCENES = []
 # -----------------------------------------------------------------------------
 _C.DATASETS = CN()
 # List of the dataset names for training, as present in paths_catalog.py
-_C.DATASETS.TRAIN = ()
+_C.DATASETS.TRAIN = ("suncg_train", "suncg_val")
 # List of the dataset names for testing, as present in paths_catalog.py
-_C.DATASETS.TEST = ()
+_C.DATASETS.TEST = ("suncg_test",)
 
 # -----------------------------------------------------------------------------
 # DataLoader
@@ -147,22 +146,19 @@ _C.MODEL.RPN.YAW_THRESHOLD = 0.7
 _C.MODEL.RPN.BATCH_SIZE_PER_IMAGE = 256
 # Target fraction of foreground (positive) examples per RPN minibatch (->BalancedPositiveNegativeSampler)
 _C.MODEL.RPN.POSITIVE_FRACTION = 0.5
-# Number of top scoring RPN proposals to keep before applying NMS
-# When FPN is used, this is *per FPN level* (not total)
-_C.MODEL.RPN.PRE_NMS_TOP_N_TRAIN = 2000 # 12000
-_C.MODEL.RPN.PRE_NMS_TOP_N_TEST = 1000 # 6000
-# Number of top scoring RPN proposals to keep after applying NMS
-_C.MODEL.RPN.POST_NMS_TOP_N_TRAIN = 500 #  2000
-_C.MODEL.RPN.POST_NMS_TOP_N_TEST = 500 # 1000
 # NMS threshold used on RPN proposals
 _C.MODEL.RPN.NMS_THRESH = 0.5 # 0.7
 _C.MODEL.RPN.AUG_THICKNESS_TAR_ANC = [0.3,0]
 # Proposal height and width both need to be greater than RPN_MIN_SIZE
 # (a the scale used during training or inference)
 _C.MODEL.RPN.MIN_SIZE = 0
+# Number of top scoring RPN proposals to keep before applying NMS from all FPN
+# levels
+_C.MODEL.RPN.FPN_PRE_NMS_TOP_N_TRAIN = 2000 # 12000
+_C.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST = 2000 # 6000
 # Number of top scoring RPN proposals to keep after combining proposals from
 # all FPN levels
-_C.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN = 2000
+_C.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN = 1000
 _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 1000 #  2000
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"

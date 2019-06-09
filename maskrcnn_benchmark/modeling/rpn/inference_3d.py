@@ -9,9 +9,10 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import remove_small_boxes3d
 from ..utils import cat
 
 
-DEBUG = False
-SHOW_RPN_OUT_BEFORE_NMS = DEBUG and True
-SHOW_NMS_OUT = DEBUG and True
+DEBUG = True
+SHOW_RPN_OUT_BEFORE_NMS = DEBUG and False
+SHOW_NMS_OUT = DEBUG and False
+SHOW_PRO_NUMS = DEBUG and False
 
 class RPNPostProcessor(torch.nn.Module):
     """
@@ -22,36 +23,30 @@ class RPNPostProcessor(torch.nn.Module):
     def __init__(
         self,
         batch_size,
-        pre_nms_top_n,
-        post_nms_top_n,
+        fpn_pre_nms_top_n,
+        fpn_post_nms_top_n,
         nms_thresh,
         min_size,
         box_coder=None,
-        fpn_post_nms_top_n=None,
     ):
         """
         Arguments:
-            pre_nms_top_n (int)
-            post_nms_top_n (int)
+            fpn_pre_nms_top_n (int)
+            fpn_post_nms_top_n (int)
             nms_thresh (float)
             min_size (int)
             box_coder (BoxCoder)
-            fpn_post_nms_top_n (int)
         """
         super(RPNPostProcessor, self).__init__()
         self.batch_size = batch_size
-        self.pre_nms_top_n = pre_nms_top_n
-        self.post_nms_top_n = post_nms_top_n
+        self.fpn_pre_nms_top_n = fpn_pre_nms_top_n
+        self.fpn_post_nms_top_n = fpn_post_nms_top_n
         self.nms_thresh = nms_thresh
         self.min_size = min_size
 
         if box_coder is None:
             box_coder = BoxCoder()
         self.box_coder = box_coder
-
-        if fpn_post_nms_top_n is None:
-            fpn_post_nms_top_n = post_nms_top_n
-        self.fpn_post_nms_top_n = fpn_post_nms_top_n
 
     def add_gt_proposals(self, proposals, targets):
         """
@@ -95,6 +90,8 @@ class RPNPostProcessor(torch.nn.Module):
         for bi in range(batch_size):
           # split examples in the batch
           s,e = examples_idxscope[bi]
+          if SHOW_PRO_NUMS:
+            print(f'\n\nRPN input anchor num: {e-s}')
           objectness_i0 = objectness[s:e]
           box_regression_i = box_regression[s:e]
 
@@ -103,8 +100,8 @@ class RPNPostProcessor(torch.nn.Module):
 
           # only choose top 2000 proposals for nms
           num_anchors = e-s
-          pre_nms_top_n = min(self.pre_nms_top_n, num_anchors)
-          objectness_i, topk_idx = objectness_i1.topk(pre_nms_top_n, dim=0, sorted=True)
+          fpn_pre_nms_top_n = min(self.fpn_pre_nms_top_n, num_anchors)
+          objectness_i, topk_idx = objectness_i1.topk(fpn_pre_nms_top_n, dim=0, sorted=True)
 
           #batch_idx = torch.arange(N, device=device)[:, None]
           box_regression_i = box_regression_i[topk_idx]
@@ -132,13 +129,17 @@ class RPNPostProcessor(torch.nn.Module):
 
           #boxlist = boxlist.clip_to_pcl(remove_empty=False)
           #boxlist = remove_small_boxes3d(boxlist, self.min_size)
+          if SHOW_PRO_NUMS:
+            print(f'before nms box num: {len(boxlist)}')
           boxlist_new = boxlist_nms_3d(
               boxlist,
               self.nms_thresh,
-              max_proposals=self.post_nms_top_n,
+              max_proposals=self.fpn_post_nms_top_n,
               score_field="objectness",
           )
           result.append(boxlist_new)
+          if SHOW_PRO_NUMS:
+            print(f'RPN out, after nms box num: {len(boxlist_new)}\n\n')
 
           if SHOW_NMS_OUT:
             print(f'\n\n------------------------------------\n RPN out after NMS ')
@@ -165,16 +166,6 @@ class RPNPostProcessor(torch.nn.Module):
         """
         #print(anchors.batch_size())
         boxlists = self.forward_for_single_feature_map(anchors, objectness, box_regression, targets)
-        #sampled_boxes = []
-        #num_levels = len(objectness)
-        #for a, o, b in zip(anchors, objectness, box_regression):
-        #    sampled_boxes.append(self.forward_for_single_feature_map(a, o, b))
-
-        #boxlists = list(zip(*sampled_boxes))
-        #boxlists = [cat_boxlist_3d(boxlist) for boxlist in boxlists]
-
-        #if num_levels > 1:
-        #    boxlists = self.select_over_all_levels(boxlists)
 
         # append ground-truth bboxes to proposals
         if self.training and add_gt_proposals:
@@ -183,57 +174,24 @@ class RPNPostProcessor(torch.nn.Module):
 
         return boxlists
 
-    def select_over_all_levels(self, boxlists):
-        num_images = len(boxlists)
-        # different behavior during training and during testing:
-        # during training, post_nms_top_n is over *all* the proposals combined, while
-        # during testing, it is over the proposals for each image
-        # TODO resolve this difference and make it consistent. It should be per image,
-        # and not per batch
-        if self.training:
-            objectness = torch.cat(
-                [boxlist.get_field("objectness") for boxlist in boxlists], dim=0
-            )
-            box_sizes = [len(boxlist) for boxlist in boxlists]
-            post_nms_top_n = min(self.fpn_post_nms_top_n, len(objectness))
-            _, inds_sorted = torch.topk(objectness, post_nms_top_n, dim=0, sorted=True)
-            inds_mask = torch.zeros_like(objectness, dtype=torch.uint8)
-            inds_mask[inds_sorted] = 1
-            inds_mask = inds_mask.split(box_sizes)
-            for i in range(num_images):
-                boxlists[i] = boxlists[i][inds_mask[i]]
-        else:
-            for i in range(num_images):
-                objectness = boxlists[i].get_field("objectness")
-                post_nms_top_n = min(self.fpn_post_nms_top_n, len(objectness))
-                _, inds_sorted = torch.topk(
-                    objectness, post_nms_top_n, dim=0, sorted=True
-                )
-                boxlists[i] = boxlists[i][inds_sorted]
-        return boxlists
-
-
 
 def make_rpn_postprocessor(config, rpn_box_coder, is_train):
     fpn_post_nms_top_n = config.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN
     if not is_train:
         fpn_post_nms_top_n = config.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST
 
-    pre_nms_top_n = config.MODEL.RPN.PRE_NMS_TOP_N_TRAIN
-    post_nms_top_n = config.MODEL.RPN.POST_NMS_TOP_N_TRAIN
+    fpn_pre_nms_top_n = config.MODEL.RPN.FPN_PRE_NMS_TOP_N_TRAIN
     if not is_train:
-        pre_nms_top_n = config.MODEL.RPN.PRE_NMS_TOP_N_TEST
-        post_nms_top_n = config.MODEL.RPN.POST_NMS_TOP_N_TEST
+        fpn_pre_nms_top_n = config.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST
     nms_thresh = config.MODEL.RPN.NMS_THRESH
     min_size = config.MODEL.RPN.MIN_SIZE
     batch_size = config.SOLVER.IMS_PER_BATCH
     box_selector = RPNPostProcessor(
         batch_size = batch_size,
-        pre_nms_top_n=pre_nms_top_n,
-        post_nms_top_n=post_nms_top_n,
+        fpn_pre_nms_top_n=fpn_pre_nms_top_n,
+        fpn_post_nms_top_n=fpn_post_nms_top_n,
         nms_thresh=nms_thresh,
         min_size=min_size,
         box_coder=rpn_box_coder,
-        fpn_post_nms_top_n=fpn_post_nms_top_n,
     )
     return box_selector

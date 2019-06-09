@@ -9,6 +9,7 @@ from .loss import make_roi_box_loss_evaluator
 
 DEBUG = True
 SHOW_ROI_INPUT = DEBUG and False
+SHOW_PRO_NUMS = DEBUG and False
 
 def rm_gt_from_proposals(class_logits, box_regression, proposals, detections_per_img, targets):
     class_logits = class_logits.clone().detach()
@@ -83,12 +84,16 @@ class ROIBoxHead3D(torch.nn.Module):
           proposals[0].show_by_objectness(bgt, targets[0], below=True)
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
+        if SHOW_PRO_NUMS:
+          print(f'\n\nRPN out proposals num: {len(proposals[0])}')
 
         if self.training:
             # Faster R-CNN subsamples during training the proposals with a fixed
             # positive / negative ratio
             with torch.no_grad():
                 proposals = self.loss_evaluator.subsample(proposals, targets)
+            if SHOW_PRO_NUMS:
+                print(f'Train subsample proposals num: {len(proposals[0])}')
 
         # extract features that will be fed to the final classifier. The
         # feature_extractor generally corresponds to the pooler + heads
@@ -98,6 +103,8 @@ class ROIBoxHead3D(torch.nn.Module):
 
         if not self.training:
             result = self.post_processor((class_logits, box_regression), proposals)
+            if SHOW_PRO_NUMS:
+                print(f'Test post proposals num: {len(result[0])}')
             result = self.seperate_classifier.clean_predictions(result)
             return x, result, {}
 
@@ -106,7 +113,11 @@ class ROIBoxHead3D(torch.nn.Module):
                 class_logits_, box_regression_, proposals_ = rm_gt_from_proposals(
                     class_logits, box_regression, proposals,
                     self.detections_per_img, targets)
+                if SHOW_PRO_NUMS:
+                  print(f'Eval in train rm gt proposals num: {len(proposals_[0])}')
             proposals = self.post_processor((class_logits_, box_regression_), proposals_)
+            if SHOW_PRO_NUMS:
+                  print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
         loss_classifier, loss_box_reg = self.loss_evaluator(
             [class_logits], [box_regression], targets

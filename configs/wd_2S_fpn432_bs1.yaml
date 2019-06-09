@@ -1,23 +1,15 @@
 DEBUG:
-  DISABLE_ROILOSS: False
   eval_in_train: 5
   eval_in_train_per_iter: -1
 INPUT:
-  #CLASSES: ['background', 'wall']
-  CLASSES: ['background', 'wall', 'door', 'window']
-  ELEMENTS: ['xyz', 'color', 'normal']
+  CLASSES: ['background', 'window', 'door']
+  #CLASSES: ['background', 'wall', 'door', 'window']
   SCENES: ['00602d3d932a8d5305234360a9d1e0ad', '0058113bdc8bee5f387bb5ad316d7b28']
 MODEL:
-  DEVICE: "cuda"
-  RPN_ONLY: False
-  META_ARCHITECTURE: "SparseRCNN"
-  SEPERATE_CLASSES: ['window', 'door']
+  #SEPERATE_CLASSES: ['window', 'door']
   BACKBONE:
-    CONV_BODY: "Sparse-R-50-FPN"
     OUT_CHANNELS: 128
   RPN:
-    USE_FPN: True
-    RPN_HEAD: "SingleConvRPNHead_Sparse3D"
     ANCHOR_SIZES_3D: [[0.4,1.5,1.5], [0.2,0.5,3], [0.4,1.5,3], [0.6,2.5,3]]
     YAWS:  (0, -1.57, -0.785, 0.785)
     RPN_SCALES_FROM_TOP: [4,3,2] 
@@ -36,9 +28,6 @@ SPARSE3D:
   STRIDE: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
   VOXEL_FULL_SCALE: [1536, 1536, 512 ]
   VOXEL_SCALE: 50
-DATASETS:
-  TRAIN: ("suncg_train", "suncg_val")
-  TEST: ("suncg_test",)
 DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
@@ -51,6 +40,6 @@ SOLVER:
   CHECKPOINT_PERIOD_EPOCHS: 20
   WARMUP_EPOCHS: 2.0
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "res_3d_bs1_4c_lr10_2S_Swd"
+OUTPUT_DIR: "res_wd_2S_fpn432_bs1"
 TEST:
   IMS_PER_BATCH: 1
