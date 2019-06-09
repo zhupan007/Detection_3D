@@ -41,7 +41,7 @@ class CombinedROIHeads(torch.nn.ModuleDict):
 def build_roi_heads(cfg):
   sep_classes = cfg.MODEL.SEPERATE_CLASSES
   if len(cfg.MODEL.SEPERATE_CLASSES) == 0:
-    return build_roi_heads_(cfg), _
+    return build_roi_heads_(cfg), None
   else:
     cfg0 = cfg.clone()
     cfg1 = cfg.clone()
