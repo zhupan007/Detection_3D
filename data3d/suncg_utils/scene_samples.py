@@ -10,7 +10,7 @@ class SceneSamples():
     # bad samples: not used in the training (1) BIM definition ambiguous
     bad_scenes_BIM_ambiguous = ['004e36a61e574321adc8da7b48c331f2', '00466151039216eb333369aa60ea3efe', '008969b6e13d18db3abc9d954cebe6a5', '0165e8534588c269219c9aafa9d888da']
     bad_scenes_raw_bad = ['0320272d1b3c30e2d9f897ff917cef15']
-    bad_scenes_cannot_parse = ['032e05d444b03cc1c80c0700ad4238b1']
+    bad_scenes_cannot_parse = ['032e05d444b03cc1c80c0700ad4238b1', '0382e82fab999376ef880fcff345090d']
     bad_scenes = bad_scenes_curved_walls + bad_scenes_BIM_ambiguous + bad_scenes_raw_bad + err_scenes + bad_scenes_cannot_parse
 
     #---------------------------------------------------------------------------
