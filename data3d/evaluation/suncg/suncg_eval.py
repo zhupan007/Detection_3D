@@ -90,6 +90,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             xyz_size = xyz_max - xyz_min
             print(f'xyz_size:{xyz_size}')
 
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+0.3, twolabels=False)
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 

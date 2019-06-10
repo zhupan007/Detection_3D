@@ -170,8 +170,8 @@ class Bbox3D():
       return xyz_size
 
   @staticmethod
-  def draw_points_open3d(points, color=[0,1,1], show=False):
-    points = cut_points_roof(points, POINTS_KEEP_RATE)
+  def draw_points_open3d(points, color=[0,1,1], show=False, points_keep_rate=POINTS_KEEP_RATE):
+    points = cut_points_roof(points, points_keep_rate)
     pcl = open3d.PointCloud()
     pcl.points = open3d.Vector3dVector(points[:,0:3])
     if points.shape[1] >= 6:
@@ -186,12 +186,12 @@ class Bbox3D():
     return pcl
 
   @staticmethod
-  def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, random_color=True):
+  def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, random_color=True, points_keep_rate=POINTS_KEEP_RATE):
     '''
     points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None)
     '''
     if points is not None:
-      pcl = Bbox3D.draw_points_open3d(points)
+      pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate)
 
     bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color)
 
@@ -207,10 +207,10 @@ class Bbox3D():
       draw_cus(bboxes_lineset_ls + lineset)
 
   @staticmethod
-  def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None):
+  def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, points_keep_rate=POINTS_KEEP_RATE):
     mesh = Bbox3D.bboxes_mesh(gt_boxes0, up_axis, is_yx_zb, labels, names)
     if points is not None:
-      pcl = Bbox3D.draw_points_open3d(points)
+      pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate)
       mesh.append(pcl)
     draw_cus(mesh)
 

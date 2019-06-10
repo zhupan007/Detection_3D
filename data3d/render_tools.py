@@ -20,6 +20,7 @@ CLASSES += ['floor']
 #CLASSES += ['room']
 
 SHOW_PCL = 1
+POINTS_KEEP_RATE = 0.3
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -115,7 +116,7 @@ def pcl_size(pcl):
     xyz_size = xyz_max - xyz_min
     return xyz_size
 
-def render_pth_file(pth_fn):
+def render_pth_file(pth_fn, show_by_class=False):
   pcl, bboxes = torch.load(pth_fn)
   #points = pcl[:,0:3]
   #colors = pcl[:,3:6]
@@ -132,15 +133,23 @@ def render_pth_file(pth_fn):
   print(f'\nclasses: {num_classes}\n\n')
 
   all_bboxes = np.concatenate([boxes for boxes in bboxes.values()], 0)
+  nums = [boxes.shape[0] for boxes in bboxes.values()]
+  labels = []
+  for i, n in enumerate(nums):
+    labels += [i]*n
+  labels = np.array(labels)
   #show_walls_offsetz(all_bboxes)
-  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False)
+  Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
 
-  #for clas in bboxes.keys():
-  #  if clas not in CLASSES:
-  #    continue
-  #  boxes = bboxes[clas]
-  #  Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
-  #  #Bbox3D.draw_points_bboxes_mesh(points, boxes, up_axis='Z', is_yx_zb=False)
+  if show_by_class:
+    for clas in bboxes.keys():
+      print(clas)
+      #if clas not in CLASSES:
+      #  continue
+      boxes = bboxes[clas]
+      #Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
+      Bbox3D.draw_points_bboxes_mesh(pcl, boxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
 
 def render_suncg_raw_house_walls(house_fn):
     from suncg import split_room_parts, Suncg
@@ -215,8 +224,8 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   house_names = house_names[320:]
 
-  #house_names = SceneSamples.good_samples_complex
-  house_names = ['032263b2cbfb990da2107da76a2a9328']
+  house_names = SceneSamples.very_hard_wall_window_close
+  #house_names = ['032263b2cbfb990da2107da76a2a9328']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -246,8 +255,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 
