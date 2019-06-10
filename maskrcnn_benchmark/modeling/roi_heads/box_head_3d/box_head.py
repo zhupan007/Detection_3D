@@ -105,8 +105,6 @@ class ROIBoxHead3D(torch.nn.Module):
             result = self.post_processor((class_logits, box_regression), proposals)
             if SHOW_PRO_NUMS:
                 print(f'Test post proposals num: {len(result[0])}')
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            result = self.seperate_classifier.clean_predictions(result)
             return x, result, {}
 
         if self.eval_in_train > 0:

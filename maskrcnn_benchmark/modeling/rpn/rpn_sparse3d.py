@@ -275,7 +275,13 @@ class RPNModule(torch.nn.Module):
         return boxes, losses
 
     def _forward_test(self, anchors, objectness, rpn_box_regression, targets=None):
-        boxes = self.box_selector_test(anchors, objectness, rpn_box_regression, targets)
+        if not self.seperate_classifier.need_seperate:
+            boxes = self.box_selector_test(anchors, objectness.squeeze(1), rpn_box_regression, targets)
+            boxes.set_as_prediction()
+        else:
+            boxes = self.seperate_classifier.seperate_selector(self.box_selector_test, anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals)
+            boxes[0].set_as_prediction()
+            boxes[1].set_as_prediction()
         if self.cfg.MODEL.RPN_ONLY:
             # For end-to-end models, the RPN proposals are an intermediate state
             # and don't bother to sort them in decreasing score order. For RPN-only
@@ -287,7 +293,6 @@ class RPNModule(torch.nn.Module):
             ]
             boxes = [box[ind] for box, ind in zip(boxes, inds)]
             #boxes = cat_boxlist_3d(boxes, per_example=True)
-        boxes.set_as_prediction()
         return boxes, {}
 
 

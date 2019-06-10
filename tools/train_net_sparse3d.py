@@ -115,7 +115,6 @@ def test(cfg, model, distributed):
             output_folder=output_folder,
         )
         synchronize()
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
 
 
