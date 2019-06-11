@@ -9,7 +9,7 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 import matplotlib.pyplot as plt
 
 DEBUG = True
-SHOW_PRED = DEBUG and True
+SHOW_PRED = DEBUG and False
 DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -319,6 +319,10 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
         ious_flat[obj] = np.concatenate(ious[obj], 0)
         scores_flat[obj] = np.concatenate(scores[obj], 0)
 
+        if ious_flat[obj].shape[0] == 0:
+           ious_flat[obj] = np.array(np.nan)
+           scores_flat[obj] = np.array(np.nan)
+
         ave_iou = np.mean(ious_flat[obj])
         std_iou = np.std(ious_flat[obj])
         max_iou = np.max(ious_flat[obj])
@@ -327,6 +331,7 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
         std_score = np.std(scores_flat[obj])
         max_score =  np.max(scores_flat[obj])
         min_score =  np.min(scores_flat[obj])
+
         regression_res[obj] = {}
         regression_res[obj]['min_max_iou'] = [min_iou, max_iou]
         regression_res[obj]['ave_std_iou'] = [ave_iou, std_iou]

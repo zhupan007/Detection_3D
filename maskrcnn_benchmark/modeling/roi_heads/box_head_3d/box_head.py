@@ -9,9 +9,9 @@ from .loss import make_roi_box_loss_evaluator
 
 DEBUG = True
 SHOW_ROI_INPUT = DEBUG and False
-SHOW_PRO_NUMS = DEBUG and False
+SHOW_PRO_NUMS = DEBUG and True
 
-def rm_gt_from_proposals(class_logits, box_regression, proposals, detections_per_img, targets):
+def rm_gt_from_proposals(class_logits, box_regression, proposals, targets):
     class_logits = class_logits.clone().detach()
     box_regression = box_regression.clone().detach()
 
@@ -46,7 +46,7 @@ class ROIBoxHead3D(torch.nn.Module):
         self.predictor = make_roi_box_predictor(cfg)
         self.post_processor_0 = make_roi_box_post_processor(cfg)
         self.loss_evaluator, self.seperate_classifier = make_roi_box_loss_evaluator(cfg)
-        self.need_seperate = self.seperate_classifier.need_seperate and False
+        self.need_seperate = self.seperate_classifier.need_seperate
         self.eval_in_train = cfg.DEBUG.eval_in_train
         self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
         self.detections_per_img = cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG
@@ -110,8 +110,7 @@ class ROIBoxHead3D(torch.nn.Module):
         if self.eval_in_train > 0:
             if self.add_gt_proposals:
                 class_logits_, box_regression_, proposals_ = rm_gt_from_proposals(
-                    class_logits, box_regression, proposals,
-                    self.detections_per_img, targets)
+                    class_logits, box_regression, proposals, targets)
                 if SHOW_PRO_NUMS:
                   print(f'Eval in train rm gt proposals num: {len(proposals_[0])}')
             proposals = self.post_processor((class_logits_, box_regression_), proposals_)
@@ -119,7 +118,7 @@ class ROIBoxHead3D(torch.nn.Module):
                   print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
         loss_classifier, loss_box_reg = self.loss_evaluator(
-            [class_logits], [box_regression], targets
+            [class_logits], [box_regression], targets, proposals
         )
         if DEBUG and False:
           print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")

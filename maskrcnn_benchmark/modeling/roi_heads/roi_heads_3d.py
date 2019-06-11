@@ -38,7 +38,7 @@ class CombinedROIHeads(torch.nn.ModuleDict):
         return x, detections, losses
 
 
-def build_roi_heads(cfg):
+def build_roi_heads__(cfg):
   sep_classes = cfg.MODEL.SEPERATE_CLASSES
   if len(cfg.MODEL.SEPERATE_CLASSES) == 0:
     return build_roi_heads_(cfg), None
@@ -53,14 +53,12 @@ def build_roi_heads(cfg):
     roi_heads1 = build_roi_heads_(cfg1)
     return roi_heads0, roi_heads1
 
-def build_roi_heads_(cfg):
+def build_roi_heads(cfg):
     # individually create the heads, that will be combined together
     # afterwards
     roi_heads = []
     if not cfg.MODEL.RPN_ONLY:
         roi_heads.append(("box", build_roi_box_head(cfg)))
-    if cfg.MODEL.MASK_ON:
-        roi_heads.append(("mask", build_roi_mask_head(cfg)))
 
     # combine individual heads in a single module
     if roi_heads:

@@ -244,6 +244,14 @@ def intact_cfg(cfg):
   cfg.MODEL.SEPERATE_CLASSES_ID = spec_classes_id
   remaining_classes = [c for c in cfg.INPUT.CLASSES if c not in cfg.MODEL.SEPERATE_CLASSES ]
   cfg.MODEL.REMAIN_CLASSES = remaining_classes
+  if len(spec_classes_id) > 0:
+    sep_r = 0.7
+    cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TRAIN =   int(sep_r * cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TRAIN)
+    cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST =    int(sep_r * cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST)
+    cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN =  int(sep_r * cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN)
+    cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST =   int(sep_r * cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST)
+    cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE= int(sep_r * cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE)
+    cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG =  int(sep_r * cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG)
 
 
 def check_roi_parameters(cfg):

@@ -5,6 +5,7 @@ INPUT:
   #CLASSES: ['background', 'wall']
   CLASSES: ['background', 'wall', 'door', 'window']
   SCENES: ['00602d3d932a8d5305234360a9d1e0ad', '0058113bdc8bee5f387bb5ad316d7b28']
+  #SCENES: ['00602d3d932a8d5305234360a9d1e0ad', '0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca']
 MODEL:
   SEPERATE_CLASSES: ['wall']
   BACKBONE:
