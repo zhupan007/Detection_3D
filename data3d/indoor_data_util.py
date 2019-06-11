@@ -403,6 +403,15 @@ class IndoorData():
       block_size = autoadjust_block_size(xyz_scope, num_vertex0)
     else:
       block_size = block_size0
+
+    # only split when xy area is large enough
+    if block_size[2] == -1:
+      area_thres = block_size[0] * block_size[1]
+      area = xyz_scope[0] * xyz_scope[1]
+      if area < area_thres:
+        return [None], block_size
+
+
     if block_size[2] == -1:
       block_size[2] = np.ceil(xyz_scope[-1])
     block_stride = block_stride_rate * block_size
