@@ -65,8 +65,7 @@ class RPNPostProcessor(torch.nn.Module):
             gt_box.add_field("is_gt", torch.ones(len(gt_box), device=device))
             gt_box.constants = proposals.constants
 
-        for pro in proposals:
-            pro.add_field("is_gt", torch.zeros(len(pro), device=device))
+        proposals.add_field("is_gt", torch.zeros(len(proposals), device=device))
 
         batch_size = proposals.batch_size()
         proposals = proposals.seperate_examples()
@@ -76,7 +75,6 @@ class RPNPostProcessor(torch.nn.Module):
           ]
         proposals = cat_boxlist_3d(proposals, per_example=True)
 
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return proposals
 
     def forward_for_single_feature_map(self, anchors, objectness, box_regression, targets=None):

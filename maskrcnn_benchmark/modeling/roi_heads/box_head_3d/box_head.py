@@ -16,25 +16,20 @@ def rm_gt_from_proposals_(class_logits, box_regression, proposals, targets):
     box_regression = box_regression.clone().detach()
 
     batch_size = len(proposals)
-    class_logits_ = []
-    box_regression_ = []
     proposals_ = []
-    s = 0
+    notgt_mask_all = []
     for b in range(batch_size):
         #print(f's:{s}')
         is_gt = proposals[b].get_field('is_gt')
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        pro_num_b = len(proposals[b])
-        real_proposal_num = pro_num_b - len(targets[b])
-        class_logits_.append( class_logits[s:s+real_proposal_num,:] )
-        box_regression_.append( box_regression[s:s+real_proposal_num,:] )
-        #gt_reg = box_regression[s+real_proposal_num:s+pro_num_b]
-        s += pro_num_b
+        notgt_mask = is_gt == 0
+        notgt_mask_all.append(notgt_mask)
+        notgt_ids = torch.nonzero(notgt_mask).squeeze(1)
 
-        ids = range( real_proposal_num )
-        proposals_.append(proposals[b][ids])
-    class_logits_ = torch.cat(class_logits_, 0)
-    box_regression_ = torch.cat(box_regression_, 0)
+        proposals_.append(proposals[b][notgt_ids])
+    notgt_mask_all = torch.cat(notgt_mask_all, 0)
+    class_logits_ = class_logits[notgt_mask_all]
+    box_regression_ = box_regression[notgt_mask_all]
+
     return class_logits_, box_regression_, proposals_
 
 class ROIBoxHead3D(torch.nn.Module):

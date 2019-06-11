@@ -9,7 +9,7 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 import matplotlib.pyplot as plt
 
 DEBUG = True
-SHOW_PRED = DEBUG and True
+SHOW_PRED = DEBUG and False
 DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
