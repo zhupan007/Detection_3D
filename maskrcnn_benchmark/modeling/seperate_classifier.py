@@ -6,7 +6,12 @@ from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 class SeperateClassifier():
     def __init__(self, seperate_classes, num_input_classes):
       '''
-      Add a background label for the seperated classes at the end
+      (1) For RPN
+      Each feature predict two proposals, one for seperated classes, the other one for remaining classes
+      (2) For ROI
+      Add a background label for the seperated classes at the end. As a result, the dimension of predicted classes increases by 1.
+      The dimension of predicted boxes increases by 7.
+
       0: the seperated classes
       1: the remaining classes
       '''
@@ -42,60 +47,32 @@ class SeperateClassifier():
       pass
 
     #---------------------------------------------------------------------------
+    # For RPN
+    #---------------------------------------------------------------------------
+    def seperate_rpn_selector(self, box_selector_fn, anchors, objectness, rpn_box_regression, targets, add_gt_proposals):
+      self.targets0, self.targets1 = self.seperate_targets_and_update_labels(targets)
+      boxes0 = box_selector_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], self.targets0, add_gt_proposals)
+      boxes1 = box_selector_fn(anchors, objectness[:,1], rpn_box_regression[:,7:14], self.targets1, add_gt_proposals)
+      boxes = [boxes0, boxes1]
+      return boxes
+
+    def seperate_rpn_loss_evaluator(self, loss_evaluator_fn, anchors, objectness, rpn_box_regression, targets):
+      #targets0, targets1 = self.seperate_targets(targets)
+      loss_objectness0, loss_rpn_box_reg0 = loss_evaluator_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], self.targets0)
+      loss_objectness1, loss_rpn_box_reg1 = loss_evaluator_fn(anchors, objectness[:,1], rpn_box_regression[:,7:14], self.targets1)
+      #loss_objectness = loss_objectness0 + loss_objectness1
+      #loss_rpn_box_reg = loss_rpn_box_reg0 + loss_rpn_box_reg1
+
+      loss_objectness = [loss_objectness0, loss_objectness1]
+      loss_rpn_box_reg = [loss_rpn_box_reg0, loss_rpn_box_reg1]
+      return loss_objectness, loss_rpn_box_reg
+
+    #---------------------------------------------------------------------------
     # For Detector
     #---------------------------------------------------------------------------
     def sep_roi_heads( self, roi_heads_fn, roi_features, proposals, targets):
       proposals = self.cat_boxlist_3d_seperated(proposals)
       return roi_heads_fn(roi_features, proposals, targets)
-
-    def sep_roi_heads_( self, roi_heads_fn0, roi_heads_fn1, roi_features, proposals, targets):
-      #assert isinstance(roi_heads_fns, tuple)
-      targets0, targets1 = self.seperate_targets_and_update_labels(targets)
-      #print(targets[0].get_field('labels'))
-      #print(targets0[0].get_field('labels'))
-      #print(targets1[0].get_field('labels'))
-      x0, result0, detector_losses0 = roi_heads_fn0( roi_features, proposals[0], targets0)
-      x1, result1, detector_losses1 = roi_heads_fn1( roi_features, proposals[1], targets1)
-
-      #print(result0[0].fields())
-      #print(result0[0].get_field('labels'))
-      #print(result1[0].get_field('labels'))
-
-      for key in detector_losses0:
-        detector_losses0[key] += detector_losses1[key]
-      detector_losses = detector_losses0
-
-      result0 = self.turn_labels_back_to_org(result0, 0)
-      result1 = self.turn_labels_back_to_org(result1, 1)
-
-      #print(result0[0].get_field('labels'))
-      #print(result1[0].get_field('labels'))
-
-      bs = len(targets)
-      result = []
-      for i in range(bs):
-        result.append( cat_boxlist_3d([result0[i], result1[i]], per_example=False) )
-      return x0, result, detector_losses
-
-    #---------------------------------------------------------------------------
-    # For RPN
-    #---------------------------------------------------------------------------
-    def seperate_selector(self, box_selector_fn, anchors, objectness, rpn_box_regression, targets, add_gt_proposals):
-      targets0, targets1 = self.seperate_targets(targets)
-      boxes0 = box_selector_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], targets0, add_gt_proposals)
-      boxes1 = box_selector_fn(anchors, objectness[:,1], rpn_box_regression[:,7:14], targets1, add_gt_proposals)
-      #boxes = cat_boxlist_3d([boxes0, boxes1], per_example=False)
-      boxes = [boxes0, boxes1]
-      return boxes
-
-    def loss_evaluator(self, loss_evaluator_fn, anchors, objectness, rpn_box_regression, targets):
-      targets0, targets1 = self.seperate_targets(targets)
-      loss_objectness0, loss_rpn_box_reg0 = loss_evaluator_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], targets0)
-      loss_objectness1, loss_rpn_box_reg1 = loss_evaluator_fn(anchors, objectness[:,1], rpn_box_regression[:,7:14], targets0)
-      loss_objectness = loss_objectness0 + loss_objectness1
-      loss_rpn_box_reg = loss_rpn_box_reg0 + loss_rpn_box_reg1
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      return loss_objectness, loss_rpn_box_reg
 
 
     #---------------------------------------------------------------------------
@@ -184,15 +161,18 @@ class SeperateClassifier():
       In the (num_classes+1) dims of class_logits, the first (num_classes0+1) dims are for self.seperate_classes,
       the following (num_classes1+1) are for the remianing.
       '''
-      self.sep_ids0_all, self.sep_ids1_all = self.get_sep_ids_from_proposals(proposals)
-      class_logits0, class_logits1 = self.seperate_pred_logits(class_logits, self.sep_ids0_all, self.sep_ids1_all)
-      self.labels0 = labels[self.sep_ids0_all]
-      self.labels1 = labels[self.sep_ids1_all]
+      self.sep_ids0_all_roi, self.sep_ids1_all_roi = self.get_sep_ids_from_proposals(proposals)
+      class_logits0, class_logits1 = self.seperate_pred_logits(class_logits, self.sep_ids0_all_roi, self.sep_ids1_all_roi)
+      self.labels0_roi = labels[self.sep_ids0_all_roi]
+      self.labels1_roi = labels[self.sep_ids1_all_roi]
 
-      loss0 = F.cross_entropy(class_logits0, self.labels0)
-      loss1 = F.cross_entropy(class_logits1, self.labels1)
+      assert self.labels0_roi.max() == self.num_classes0 - 1
+      assert self.labels1_roi.max() == self.num_classes1 - 1
 
-      return loss0 + loss1
+      loss0 = F.cross_entropy(class_logits0, self.labels0_roi)
+      loss1 = F.cross_entropy(class_logits1, self.labels1_roi)
+
+      return [loss0, loss1]
 
     def box_loss_seperated(self, box_loss_fn, labels, box_regression, regression_targets, pro_bbox3ds):
         '''
@@ -201,13 +181,15 @@ class SeperateClassifier():
         regression_targets:[n,7,2]
         pro_bbox3ds:[n,7]
         '''
-        box_regression0, box_regression1 = self.seperate_pred_box(box_regression, self.sep_ids0_all, self.sep_ids1_all)
-        regression_targets_0 = regression_targets[self.sep_ids0_all]
-        regression_targets_1 = regression_targets[self.sep_ids1_all]
-        pro_bbox3ds_0 = pro_bbox3ds[self.sep_ids0_all]
-        pro_bbox3ds_1 = pro_bbox3ds[self.sep_ids1_all]
-        box_loss0 = box_loss_fn(self.labels0, box_regression0, regression_targets_0, pro_bbox3ds_0)
-        box_loss1 = box_loss_fn(self.labels1, box_regression1, regression_targets_1, pro_bbox3ds_1)
+        box_regression0, box_regression1 = self.seperate_pred_box(box_regression,
+                                    self.sep_ids0_all_roi, self.sep_ids1_all_roi)
+        regression_targets_0 = regression_targets[self.sep_ids0_all_roi]
+        regression_targets_1 = regression_targets[self.sep_ids1_all_roi]
+        pro_bbox3ds_0 = pro_bbox3ds[self.sep_ids0_all_roi]
+        pro_bbox3ds_1 = pro_bbox3ds[self.sep_ids1_all_roi]
+        box_loss0 = box_loss_fn(self.labels0_roi, box_regression0, regression_targets_0, pro_bbox3ds_0)
+        box_loss1 = box_loss_fn(self.labels1_roi, box_regression1, regression_targets_1, pro_bbox3ds_1)
+        return [box_loss0, box_loss1]
         box_loss = box_loss0 + box_loss1
         return box_loss
 

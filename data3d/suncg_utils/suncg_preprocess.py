@@ -892,7 +892,11 @@ def add_extra_cam_orientations(cam_fn, show=False):
     extra_cams.append(extra_cam_i0)
     extra_cams.append(extra_cam_i1)
 
-  extra_cams = np.concatenate(extra_cams, 0)
+  try:
+    extra_cams = np.concatenate(extra_cams, 0)
+  except:
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
   cam_pos_new = np.concatenate([cam_pos, extra_cams], 0)
   cam_fn_new = os.path.dirname(cam_fn) +'/cam'
   np.savetxt(cam_fn_new, cam_pos_new, fmt='%.5f')

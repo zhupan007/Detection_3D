@@ -165,7 +165,7 @@ class FastRCNNLossComputation(object):
         self._proposals = proposals
         return proposals
 
-    def __call__(self, class_logits, box_regression, targets=None, proposals=None):
+    def __call__(self, class_logits, box_regression, targets=None):
         """
         Computes the loss for Faster R-CNN.
         This requires that the subsample method has been called beforehand.
@@ -198,7 +198,8 @@ class FastRCNNLossComputation(object):
           box_loss = self.box_loss(labels, box_regression, regression_targets, pro_bbox3ds)
         else:
           classification_loss = self.seperate_classifier.cross_entropy_seperated(class_logits, labels, proposals)
-          box_loss = self.seperate_classifier.box_loss_seperated(self.box_loss, labels, box_regression, regression_targets, pro_bbox3ds)
+          box_loss = self.seperate_classifier.box_loss_seperated(self.box_loss,
+                              labels, box_regression, regression_targets, pro_bbox3ds)
 
         if SHOW_ROI_CLASSFICATION:
           self.show_roi_cls_regs(proposals, classification_loss, box_loss, class_logits,  targets, box_regression, regression_targets)
@@ -334,7 +335,8 @@ def make_roi_box_loss_evaluator(cfg):
     seperate_classes = cfg.MODEL.SEPERATE_CLASSES_ID
     seperate_classifier = SeperateClassifier( seperate_classes, num_input_classes )
 
-    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier)
+    loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder,
+                    yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier)
 
     return loss_evaluator, seperate_classifier
 

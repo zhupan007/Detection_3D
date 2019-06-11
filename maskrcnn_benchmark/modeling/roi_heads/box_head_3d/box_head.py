@@ -9,7 +9,7 @@ from .loss import make_roi_box_loss_evaluator
 
 DEBUG = True
 SHOW_ROI_INPUT = DEBUG and False
-SHOW_PRO_NUMS = DEBUG and True
+SHOW_PRO_NUMS = DEBUG and False
 
 def rm_gt_from_proposals(class_logits, box_regression, proposals, targets):
     class_logits = class_logits.clone().detach()
@@ -118,7 +118,7 @@ class ROIBoxHead3D(torch.nn.Module):
                   print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
         loss_classifier, loss_box_reg = self.loss_evaluator(
-            [class_logits], [box_regression], targets, proposals
+            [class_logits], [box_regression], targets=targets
         )
         if DEBUG and False:
           print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")
@@ -126,10 +126,15 @@ class ROIBoxHead3D(torch.nn.Module):
           proposals[0].show_by_objectness(0.5, targets[0])
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
+        if not self.need_seperate:
+          roi_loss = {"loss_classifier_roi":loss_classifier, "loss_box_reg_roi":loss_box_reg}
+        else:
+          roi_loss = {"loss_classifier_roi_0":loss_classifier[0], "loss_classifier_roi_1": loss_classifier[1],
+                      "loss_box_reg_roi_0":loss_box_reg[0], "loss_box_reg_roi_1":loss_box_reg[1] }
         return (
             x,
             proposals,
-            {"loss_classifier_roi":loss_classifier, "loss_box_reg_roi":loss_box_reg},
+            roi_loss,
         )
 
 

@@ -251,27 +251,34 @@ class RPNModule(torch.nn.Module):
             # sampled into a training batch.
             with torch.no_grad():
                 if not self.seperate_classifier.need_seperate:
-                  boxes = self.box_selector_train(anchors, objectness.squeeze(1), rpn_box_regression, targets, self.add_gt_proposals)
+                  boxes = self.box_selector_train(anchors, objectness.squeeze(1),
+                                rpn_box_regression, targets, self.add_gt_proposals)
                 else:
-                  boxes = self.seperate_classifier.seperate_selector(self.box_selector_train, anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals)
+                  boxes = self.seperate_classifier.seperate_rpn_selector(self.box_selector_train,
+                                anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals)
 
         if not self.seperate_classifier.need_seperate:
           loss_objectness, loss_rpn_box_reg = self.loss_evaluator(
               anchors, objectness.squeeze(1), rpn_box_regression, targets
           )
           boxes.set_as_prediction()
+          losses = {
+            "loss_objectness": loss_objectness,
+            "loss_rpn_box_reg": loss_rpn_box_reg,
+          }
         else:
-          loss_objectness0, loss_rpn_box_reg0 = self.loss_evaluator( anchors, objectness[:,0], rpn_box_regression[:,0:7], targets )
-          loss_objectness1, loss_rpn_box_reg1 = self.loss_evaluator( anchors, objectness[:,1], rpn_box_regression[:,7:14], targets )
-          loss_objectness = loss_objectness0 + loss_objectness1
-          loss_rpn_box_reg = loss_rpn_box_reg0 + loss_rpn_box_reg1
+          loss_objectness, loss_rpn_box_reg = self.seperate_classifier.seperate_rpn_loss_evaluator(
+                  self.loss_evaluator, anchors, objectness, rpn_box_regression, targets)
           boxes[0].set_as_prediction()
           boxes[1].set_as_prediction()
 
-        losses = {
-            "loss_objectness": loss_objectness,
-            "loss_rpn_box_reg": loss_rpn_box_reg,
-        }
+          losses = {
+            "loss_objectness_0": loss_objectness[0],
+            "loss_objectness_1": loss_objectness[1],
+            "loss_rpn_box_reg_0": loss_rpn_box_reg[0],
+            "loss_rpn_box_reg_1": loss_rpn_box_reg[1],
+          }
+
         return boxes, losses
 
     def _forward_test(self, anchors, objectness, rpn_box_regression, targets=None):
@@ -279,7 +286,8 @@ class RPNModule(torch.nn.Module):
             boxes = self.box_selector_test(anchors, objectness.squeeze(1), rpn_box_regression, targets)
             boxes.set_as_prediction()
         else:
-            boxes = self.seperate_classifier.seperate_selector(self.box_selector_test, anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals)
+            boxes = self.seperate_classifier.seperate_selector(self.box_selector_test,
+                            anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals)
             boxes[0].set_as_prediction()
             boxes[1].set_as_prediction()
         if self.cfg.MODEL.RPN_ONLY:
