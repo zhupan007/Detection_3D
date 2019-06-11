@@ -27,7 +27,7 @@ SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch' + f'_BS_{BLOCK_SIZE0[0]}_{BLOCK
 MAX_FLOAT_DRIFT = 1e-6
 DATASET = 'SUNCG'
 CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
-CLASSES_USED = ['wall', 'window', 'door']
+#CLASSES_USED = ['wall', 'window', 'door']
 MIN_BOXES_NUM = 10
 
 def points2pcd_open3d(points):
