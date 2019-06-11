@@ -56,7 +56,6 @@ class SparseRCNN(nn.Module):
           proposals[1].clamp_size()
         else:
           proposals.clamp_size()
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         if self.roi_heads:
             if not self.seperate_classifier.need_seperate:
               x, result, detector_losses = self.roi_heads(roi_features, proposals, targets)
