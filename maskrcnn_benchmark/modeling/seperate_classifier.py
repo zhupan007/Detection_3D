@@ -141,15 +141,29 @@ class SeperateClassifier():
 
     def seperate_subsample(self, proposals, targets, subsample_fn):
         proposals_0, proposals_1, _, _ = self.seperate_proposals(proposals)
-        targets_0, targets_1 = self.seperate_targets_and_update_labels(targets)
+        self.targets_0, self.targets_1 = self.seperate_targets_and_update_labels(targets)
 
-        proposals_0_ = subsample_fn(proposals_0, targets_0)
-        proposals_1_ = subsample_fn(proposals_1, targets_1)
+        proposals_0_ = subsample_fn(proposals_0, self.targets_0)
+        proposals_1_ = subsample_fn(proposals_1, self.targets_1)
         bs = len(proposals)
         proposals_out = []
         for i in range(bs):
           proposals_out.append( cat_boxlist_3d([proposals_0_[i], proposals_1_[i]], per_example=False) )
         return proposals_out
+
+
+    def rm_gt_from_proposals_seperated(self, rm_gt_from_proposals_fn,
+              class_logits, box_regression, proposals, targets):
+
+        proposals_0, proposals_1, sep_ids0_all, sep_ids1_all  = self.seperate_proposals(proposals)
+        class_logits0, class_logits1 = self.seperate_pred_logits(class_logits, sep_ids0_all, sep_ids1_all)
+        box_regression0, box_regression1 = self.seperate_pred_box(box_regression, sep_ids0_all, sep_ids1_all)
+
+        class_logits__0, box_regression__0, proposals__0 =  rm_gt_from_proposals_fn(class_logits0, box_regression0, proposals_0, self.targets_0)
+        class_logits__1, box_regression__1, proposals__1 =  rm_gt_from_proposals_fn(class_logits1, box_regression1, proposals_1, self.targets_1)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        pass
+
 
 
     def cross_entropy_seperated(self, class_logits, labels, proposals):
@@ -289,9 +303,6 @@ class SeperateClassifier():
       for b in range(bs):
         result[b].extra_fields['labels'] =  l2ol[result[b].extra_fields['labels']]
       return result
-
-    def rm_gt_from_proposals():
-      pass
 
     def post_processor(self, class_logits, box_regression, proposals, post_processor_fn):
       proposals_0, proposals_1, sep_ids0_all, sep_ids1_all  = self.seperate_proposals(proposals)

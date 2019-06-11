@@ -11,7 +11,7 @@ DEBUG = True
 SHOW_ROI_INPUT = DEBUG and False
 SHOW_PRO_NUMS = DEBUG and False
 
-def rm_gt_from_proposals(class_logits, box_regression, proposals, targets):
+def rm_gt_from_proposals_(class_logits, box_regression, proposals, targets):
     class_logits = class_logits.clone().detach()
     box_regression = box_regression.clone().detach()
 
@@ -22,6 +22,8 @@ def rm_gt_from_proposals(class_logits, box_regression, proposals, targets):
     s = 0
     for b in range(batch_size):
         #print(f's:{s}')
+        is_gt = proposals[b].get_field('is_gt')
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         pro_num_b = len(proposals[b])
         real_proposal_num = pro_num_b - len(targets[b])
         class_logits_.append( class_logits[s:s+real_proposal_num,:] )
@@ -44,7 +46,7 @@ class ROIBoxHead3D(torch.nn.Module):
         super(ROIBoxHead3D, self).__init__()
         self.feature_extractor = make_roi_box_feature_extractor(cfg)
         self.predictor = make_roi_box_predictor(cfg)
-        self.post_processor_0 = make_roi_box_post_processor(cfg)
+        self.post_processor_ = make_roi_box_post_processor(cfg)
         self.loss_evaluator, self.seperate_classifier = make_roi_box_loss_evaluator(cfg)
         self.need_seperate = self.seperate_classifier.need_seperate
         self.eval_in_train = cfg.DEBUG.eval_in_train
@@ -54,10 +56,21 @@ class ROIBoxHead3D(torch.nn.Module):
     def post_processor(self, log_reg, proposals):
         class_logits, box_regression = log_reg
         if not self.need_seperate:
-          proposals = self.post_processor_0((class_logits, box_regression), proposals)
+          proposals = self.post_processor_((class_logits, box_regression), proposals)
         else:
-          proposals = self.seperate_classifier.post_processor(class_logits, box_regression, proposals, self.post_processor_0)
+          proposals = self.seperate_classifier.post_processor(class_logits, box_regression, proposals, self.post_processor_)
         return proposals
+
+    def rm_gt_from_proposals(self,
+                      class_logits, box_regression, proposals, targets):
+        if not self.need_seperate:
+            #class_logits_, box_regression_, proposals_ =
+            return rm_gt_from_proposals_(
+                    class_logits, box_regression, proposals, targets)
+        else:
+            #class_logits_, box_regression_, proposals_ =
+            return self.seperate_classifier.rm_gt_from_proposals_seperated( rm_gt_from_proposals_,
+                    class_logits, box_regression, proposals, targets)
 
     def forward(self, features, proposals, targets=None):
         """
@@ -109,7 +122,7 @@ class ROIBoxHead3D(torch.nn.Module):
 
         if self.eval_in_train > 0:
             if self.add_gt_proposals:
-                class_logits_, box_regression_, proposals_ = rm_gt_from_proposals(
+                class_logits_, box_regression_, proposals_ = rm_gt_from_proposals_(
                     class_logits, box_regression, proposals, targets)
                 if SHOW_PRO_NUMS:
                   print(f'Eval in train rm gt proposals num: {len(proposals_[0])}')

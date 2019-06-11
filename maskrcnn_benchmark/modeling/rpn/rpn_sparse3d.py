@@ -286,7 +286,7 @@ class RPNModule(torch.nn.Module):
             boxes = self.box_selector_test(anchors, objectness.squeeze(1), rpn_box_regression, targets)
             boxes.set_as_prediction()
         else:
-            boxes = self.seperate_classifier.seperate_selector(self.box_selector_test,
+            boxes = self.seperate_classifier.seperate_rpn_selector(self.box_selector_test,
                             anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals)
             boxes[0].set_as_prediction()
             boxes[1].set_as_prediction()

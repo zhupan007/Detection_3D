@@ -62,7 +62,11 @@ class RPNPostProcessor(torch.nn.Module):
         # so we need to add a dummy for objectness that's missing
         for gt_box in gt_boxes:
             gt_box.add_field("objectness", torch.ones(len(gt_box), device=device))
+            gt_box.add_field("is_gt", torch.ones(len(gt_box), device=device))
             gt_box.constants = proposals.constants
+
+        for pro in proposals:
+            pro.add_field("is_gt", torch.zeros(len(pro), device=device))
 
         batch_size = proposals.batch_size()
         proposals = proposals.seperate_examples()
@@ -72,6 +76,7 @@ class RPNPostProcessor(torch.nn.Module):
           ]
         proposals = cat_boxlist_3d(proposals, per_example=True)
 
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return proposals
 
     def forward_for_single_feature_map(self, anchors, objectness, box_regression, targets=None):
