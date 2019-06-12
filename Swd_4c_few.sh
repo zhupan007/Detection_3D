@@ -3,7 +3,7 @@ export PYTHONPATH=$PWD
 export CUDA_VISIBLE_DEVICES=1
 
 TEST='--skip-test'
-#TEST='--only-test'
+TEST='--only-test'
 
 CONFIG_FILE='Swd4c_3S_fpn432_bs1.yaml'
 
