@@ -29,6 +29,11 @@ def get_obj_nums(gt_boxlists, dset_metas):
 def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger):
     # TODO need to make the use_07_metric format available
     # for the user to choose
+
+    if sum([len(p) for p in predictions]) == 0:
+      print('\n\n\tno predictions to evaluate\n\n')
+      return
+
     dset_metas = dataset.dset_metas
     pred_boxlists = predictions
     gt_boxlists = []
@@ -304,7 +309,11 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
             # get missed_gt_ids  and multi_preds_gt_ids
             gt_ids = np.array([k for k in peg.keys()])
             #gt_ids is only the index inside of one single class gts: (TAG: GT_MASK)
-            pred_num_each_gt = np.histogram(gt_ids, bins=range(obj_gt_nums[obj][bi]+1))[0]
+            try:
+              pred_num_each_gt = np.histogram(gt_ids, bins=range(obj_gt_nums[obj][bi]+1))[0]
+            except:
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
             pred_num_hist = np.histogram(pred_num_each_gt, bins=[0,1,2,3,4])[0]
             #print(f'{pred_num_hist[0]} gt boxes are missed \n{pred_num_hist[1]} t Boxes got one prediction')
             #print(f'{pred_num_hist[2]} gt boxes got 2 predictions')
@@ -534,6 +543,8 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_m
 
     for l in n_pos.keys():
         score_l = np.array(score[l])
+        if score_l.shape[0] == 0:
+          continue
         scores[l] = score_l
         match_l = np.array(match[l], dtype=np.int8)
 
@@ -596,7 +607,11 @@ def calc_detection_suncg_ap(prec, rec, scores, use_07_metric=False):
                 else:
                     p = np.max(np.nan_to_num(prec[l])[rec[l] >= t])
                 if np.sum(rec[l] <= t) == 0:
-                    s = np.max(scores[l]) + 0.01
+                    try:
+                      s = np.max(scores[l]) + 0.01
+                    except:
+                      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                      pass
                 else:
                     s = np.min(scores[l][rec[l] <= t])
                 ap[l] += p / 11
