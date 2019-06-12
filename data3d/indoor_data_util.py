@@ -19,6 +19,10 @@ if DEBUG:
   from second.data.data_render import DataRender
 
 BLOCK_SIZE0 = np.array([30, 30, -1])
+ENABLE_LARGE_SIZE_BY_AREA = True
+if ENABLE_LARGE_SIZE_BY_AREA:
+  MAX_SIZE_FOR_VOXEL_FULL_SCALE = 40.9 # When area is small, size can > 30. But still should < 40.9, to fit VOXEL_FULL_SCALE: [2048, 2048, 512]
+
 NUM_POINTS = 300 * 1000
 
 DSET_DIR = '/DS/SUNCG/suncg_v1'
@@ -131,7 +135,7 @@ class IndoorData():
 
     for i in range(n_block):
       boxes_num_all_classes = sum([bn[i] for bn in boxes_nums.values()])
-      if boxes_num_all_classes < MIN_BOXES_NUM:
+      if n_block>1 and  boxes_num_all_classes < MIN_BOXES_NUM:
           continue
       fni = splited_path + '/pcl_%d.pth'%(i)
       pcl_i = points_splited[i].astype(np.float32)
@@ -405,7 +409,7 @@ class IndoorData():
       block_size = block_size0
 
     # only split when xy area is large enough
-    if block_size[2] == -1:
+    if ENABLE_LARGE_SIZE_BY_AREA and block_size[2] == -1 and xyz_scope.max() < MAX_SIZE_FOR_VOXEL_FULL_SCALE:
       area_thres = block_size[0] * block_size[1]
       area = xyz_scope[0] * xyz_scope[1]
       if area < area_thres:
@@ -628,7 +632,7 @@ def creat_splited_pcl_box():
   house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   house_names = ['0067620211b8e6459ff24ebe0780a21c']
 
-  #house_names = get_house_names_1level()
+  house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
@@ -642,16 +646,18 @@ def gen_train_list():
   num = len(house_names)
   if DEBUG:
       train_num = num
+      train_num = int(num*0.7)
+      train_num = min(num, 20)
   else:
-    train_num = int(num*0.8)
+      train_num = int(num*0.8)
   train_hosue_names = house_names[0:train_num]
   test_house_names = house_names[train_num:]
 
   split_path = os.path.join(SPLITED_DIR, 'train_test_splited')
   if not os.path.exists(split_path):
     os.makedirs(split_path)
-  train_fn = os.path.join(split_path, 'train.txt')
-  test_fn = os.path.join(split_path, 'val.txt')
+  train_fn = os.path.join(split_path, 'train_.txt')
+  test_fn = os.path.join(split_path, 'val_.txt')
   with open(train_fn, 'w') as f:
     f.write('\n'.join(train_hosue_names))
   with open(test_fn, 'w') as f:
@@ -659,7 +665,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  creat_splited_pcl_box()
-  #gen_train_list()
+  #creat_splited_pcl_box()
+  gen_train_list()
   pass
 

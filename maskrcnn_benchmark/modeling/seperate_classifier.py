@@ -180,8 +180,8 @@ class SeperateClassifier():
       self.labels0_roi = labels[self.sep_ids0_all_roi]
       self.labels1_roi = labels[self.sep_ids1_all_roi]
 
-      assert self.labels0_roi.max() == self.num_classes0 - 1
-      assert self.labels1_roi.max() == self.num_classes1 - 1
+      assert self.labels0_roi.max() <= self.num_classes0 - 1
+      assert self.labels1_roi.max() <= self.num_classes1 - 1
 
       loss0 = F.cross_entropy(class_logits0, self.labels0_roi)
       loss1 = F.cross_entropy(class_logits1, self.labels1_roi)

@@ -176,6 +176,7 @@ blur0=np.ones((3,1,1)).astype('float32')/3
 blur1=np.ones((1,3,1)).astype('float32')/3
 blur2=np.ones((1,1,3)).astype('float32')/3
 
+
 def elastic(x,gran,mag):
     bb=np.abs(x).max(0).astype(np.int32)//gran+3
     noise=[np.random.randn(bb[0],bb[1],bb[2]).astype('float32') for _ in range(3)]
