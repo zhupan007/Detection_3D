@@ -8,6 +8,7 @@ from collections import defaultdict
 import pickle
 import torch
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
+from data3d.suncg_utils.scene_samples import SceneSamples
 
 #BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 #ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -288,7 +289,8 @@ class IndoorData():
       colors = np.asarray(pcd.colors)
       if scene_name not in ['0058113bdc8bee5f387bb5ad316d7b28']:
           return points, colors
-      debuging = False
+      print(f'This is a special scene: \n\t{scene_name}')
+      debuging = True
       xyz_max0 = points.max(0)
       xyz_min0 = points.min(0)
       scope0 = xyz_max0 - xyz_min0
@@ -626,13 +628,10 @@ def creat_splited_pcl_box():
   house_names = os.listdir(parsed_dir)
   house_names.sort()
 
-  #house_names = ['28297783bce682aac7fb35a1f35f68fa'] # yaw!=0
-  #house_names = ['001188c384dd72ce2c2577d034b5cc92']  # a lot of unseen corners
-  #house_names = ['001188c384dd72ce2c2577d034b5cc92']
-  house_names = ['31a69e882e51c7c5dfdc0da464c3c02d']
   house_names = ['0067620211b8e6459ff24ebe0780a21c']
+  house_names = SceneSamples.paper_samples
 
-  house_names = get_house_names_1level()
+  #house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
@@ -665,7 +664,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  #creat_splited_pcl_box()
-  gen_train_list()
+  creat_splited_pcl_box()
+  #gen_train_list()
   pass
 

@@ -20,7 +20,7 @@ CLASSES += ['floor']
 #CLASSES += ['room']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.3
+POINTS_KEEP_RATE = 0.6
 NOT_SHOW_CEILING = True
 
 def show_walls_1by1(wall_bboxes):
@@ -234,6 +234,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = house_names[320:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
+  house_names = SceneSamples.paper_samples
   #house_names = ['03ca5b7fcc114833b18cd5f22ae0edf8']
 
   for k,house_name in enumerate( house_names ):
