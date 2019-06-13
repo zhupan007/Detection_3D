@@ -4,6 +4,7 @@ DEBUG:
 INPUT:
   #CLASSES: ['background', 'wall']
   CLASSES: ['background', 'wall', 'door', 'window']
+  SCENES: ['00602d3d932a8d5305234360a9d1e0ad', '0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca']
 MODEL:
   SEPERATE_CLASSES: ['wall']
   BACKBONE:
@@ -25,14 +26,14 @@ SPARSE3D:
   nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256, 256]
   KERNEL: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
   STRIDE: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
-  VOXEL_FULL_SCALE: [2048, 2048, 512]  # [1536, 1536, 512 ]
+  VOXEL_FULL_SCALE: [1536, 1536, 512 ]
   VOXEL_SCALE: 50
 DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
   EPOCHS: 500
   EPOCHS_BETWEEN_TEST: 500
-  IMS_PER_BATCH: 2
+  IMS_PER_BATCH: 1
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (70,)

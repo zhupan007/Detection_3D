@@ -394,7 +394,7 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[1000:1500]
     else:
-      self.house_fns = house_fns[600:1000]
+      self.house_fns = house_fns[600:1300]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
@@ -1125,8 +1125,8 @@ def parse_house():
   suncg.parse_houses()
 
 if __name__ == '__main__':
-  #parse_house()
-  gen_house_names_1level()
+  parse_house()
+  #gen_house_names_1level()
 
   #check_house_status()
 
