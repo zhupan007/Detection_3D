@@ -115,7 +115,7 @@ class IndoorData():
     if not os.path.exists(pcl_fn):
       print(f'pcl.ply not exist, skip {scene_dir}')
       return
-    points_splited = IndoorData.split_pcl_plyf(pcl_fn)
+    points_splited, is_special_scene = IndoorData.split_pcl_plyf(pcl_fn)
     n_block = len(points_splited)
 
     bboxes_splited = {}
@@ -123,7 +123,7 @@ class IndoorData():
     for obj in CLASSES_USED:
       bbox_fn = os.path.join(scene_dir, f'object_bbox/{obj}.txt')
       if os.path.exists(bbox_fn):
-        if n_block > 1:
+        if is_special_scene or n_block > 1:
             bboxes_splited[obj] = IndoorData.split_bbox(bbox_fn, points_splited)
         else:
             bboxes_splited[obj] = IndoorData.load_bboxes(bbox_fn)
@@ -288,9 +288,9 @@ class IndoorData():
       points = np.asarray(pcd.points)
       colors = np.asarray(pcd.colors)
       if scene_name not in ['0058113bdc8bee5f387bb5ad316d7b28']:
-          return points, colors
+          return points, colors, False
       print(f'This is a special scene: \n\t{scene_name}')
-      debuging = True
+      debuging = False
       xyz_max0 = points.max(0)
       xyz_min0 = points.min(0)
       scope0 = xyz_max0 - xyz_min0
@@ -320,14 +320,14 @@ class IndoorData():
 
         pcd.points = open3d.Vector3dVector(points_new)
         open3d.draw_geometries([pcd])
-      return points_new, colors_new
+      return points_new, colors_new, True
 
   @staticmethod
   def split_pcl_plyf(pcl_fn):
     assert os.path.exists(pcl_fn)
     pcd = open3d.read_point_cloud(pcl_fn)
     scene_name = os.path.basename( os.path.dirname(pcl_fn))
-    points, colors = IndoorData.crop_special_scenes(scene_name, pcd)
+    points, colors, is_special_scene = IndoorData.crop_special_scenes(scene_name, pcd)
 
     points = cam2world_pcl(points)
     pcd.points = open3d.Vector3dVector(points)
@@ -340,7 +340,7 @@ class IndoorData():
       points = np.concatenate([points,  normals], -1)
     #open3d.draw_geometries([pcd])
     points_splited = IndoorData.points_splited(points)
-    return points_splited
+    return points_splited, is_special_scene
 
   @staticmethod
   def points_splited(points):
