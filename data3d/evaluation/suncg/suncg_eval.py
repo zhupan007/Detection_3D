@@ -20,10 +20,9 @@ def get_obj_nums(gt_boxlists, dset_metas):
     obj_gt_nums = defaultdict(list)
     for bi in range(batch_size):
         labels = gt_boxlists[bi].get_field('labels').cpu().data.numpy()
-        bins = set(labels)
-        for label in set(labels):
-            obj = dset_metas.label_2_class[int(label)]
-            obj_gt_nums[obj].append( sum(labels==label) )
+        for l in range(dset_metas.num_classes):
+            obj = dset_metas.label_2_class[int(l)]
+            obj_gt_nums[obj].append( sum(labels==l) )
     return obj_gt_nums
 
 def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger):
@@ -309,11 +308,7 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
             # get missed_gt_ids  and multi_preds_gt_ids
             gt_ids = np.array([k for k in peg.keys()])
             #gt_ids is only the index inside of one single class gts: (TAG: GT_MASK)
-            try:
-              pred_num_each_gt = np.histogram(gt_ids, bins=range(obj_gt_nums[obj][bi]+1))[0]
-            except:
-              import pdb; pdb.set_trace()  # XXX BREAKPOINT
-              pass
+            pred_num_each_gt = np.histogram(gt_ids, bins=range(obj_gt_nums[obj][bi]+1))[0]
             pred_num_hist = np.histogram(pred_num_each_gt, bins=[0,1,2,3,4])[0]
             #print(f'{pred_num_hist[0]} gt boxes are missed \n{pred_num_hist[1]} t Boxes got one prediction')
             #print(f'{pred_num_hist[2]} gt boxes got 2 predictions')

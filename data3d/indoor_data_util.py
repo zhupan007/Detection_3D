@@ -647,7 +647,7 @@ def gen_train_list():
   if DEBUG:
       train_num = num
       train_num = int(num*0.7)
-      train_num = min(num, 20)
+      #train_num = min(num, 20)
   else:
       train_num = int(num*0.8)
   train_hosue_names = house_names[0:train_num]
