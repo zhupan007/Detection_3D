@@ -644,10 +644,13 @@ def gen_train_list():
   house_names = os.listdir(os.path.join(SPLITED_DIR, 'houses'))
   num = len(house_names)
   if DEBUG:
+      house_names.sort()
       train_num = num
       train_num = int(num*0.7)
-      #train_num = min(num, 20)
+      train_num = min(num, 20)
   else:
+      import random
+      random.shuffle(house_names)
       train_num = int(num*0.8)
   train_hosue_names = house_names[0:train_num]
   test_house_names = house_names[train_num:]
@@ -664,7 +667,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  creat_splited_pcl_box()
-  #gen_train_list()
+  #creat_splited_pcl_box()
+  gen_train_list()
   pass
 
