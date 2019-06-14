@@ -117,7 +117,7 @@ def pcl_size(pcl):
     xyz_size = xyz_max - xyz_min
     return xyz_size
 
-def render_pth_file(pth_fn, show_by_class=False):
+def render_pth_file(pth_fn, show_by_class=True):
   pcl, bboxes = torch.load(pth_fn)
   #points = pcl[:,0:3]
   #colors = pcl[:,3:6]
@@ -153,12 +153,15 @@ def render_pth_file(pth_fn, show_by_class=False):
 
   if show_by_class:
     for clas in bboxes.keys():
+      if clas not in ['wall', 'window', 'door']:
+        continue
       print(clas)
       #if clas not in CLASSES:
       #  continue
       boxes = bboxes[clas]
       #Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
       Bbox3D.draw_points_bboxes_mesh(pcl, boxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
+      show_walls_offsetz(boxes)
 
 def render_suncg_raw_house_walls(house_fn):
     from suncg import split_room_parts, Suncg
