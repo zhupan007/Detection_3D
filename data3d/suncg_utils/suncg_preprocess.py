@@ -397,8 +397,8 @@ class Suncg():
       self.house_fns = house_fns[600:1300]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and False:
-      scene_id = '032263b2cbfb990da2107da76a2a9328'
+    if Debug and True:
+      scene_id = '05b5d2860fb2a991bfe4ebc8cb06df95'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
     self.house_fns = rm_bad_scenes(self.house_fns)
