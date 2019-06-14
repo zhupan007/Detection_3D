@@ -4,6 +4,7 @@ DEBUG:
 INPUT:
   #CLASSES: ['background', 'wall']
   CLASSES: ['background', 'wall', 'door', 'window']
+  #SCENES: []
 MODEL:
   SEPERATE_CLASSES: ['wall']
   BACKBONE:
