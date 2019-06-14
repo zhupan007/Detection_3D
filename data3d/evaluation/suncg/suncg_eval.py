@@ -178,7 +178,8 @@ def performance_str(result, dataset, regression_res):
     gt_nums[0] = np.mean(gt_nums[1:]).astype(np.int)
 
 
-    result_str += f'{"class &":13}' + ' & '.join([f'{c:<10}' for c in  class_names]) + '\\\\\n \hline'
+    result_str += f'{"class &":13}' + ' & '.join([f'{c:<10}' for c in  class_names]) + '\\\\\n '
+    result_str += '\hline\n'
     result_str += f'{"ap &":13}' + ' & '.join([f'{p:<10.4f}' for p in ap]) + '\\\\\n'
     result_str += f'{"r7p &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec7_precision]) + '\\\\\n'
     result_str += f'{"r9p &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec9_precision]) + '\\\\\n'
