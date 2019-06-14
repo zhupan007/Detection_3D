@@ -1,6 +1,7 @@
 import torch
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from .suncg_metas import SUNCG_METAS
+from .scene_samples import SceneSamples
 from utils3d.bbox3d_ops import Bbox3D
 import numpy as np
 import logging
@@ -39,7 +40,8 @@ class SUNCGDataset(torch.utils.data.Dataset):
         scene_names = small_scenes
     for scene in scene_names:
       files += glob.glob(f'{dset_path}/houses/{scene}/*.pth')
-    self.files = files
+    self.files = rm_bad_samples( files )
+    assert len(self.files) > 0, 'no input data'
 
   def get_img_info(self, index):
     fn = self.files[index]
@@ -228,6 +230,14 @@ def batch_scopes(location, voxel_scale):
   scopes = torch.cat(scopes, 0)
   return scopes
 
+
+def rm_bad_samples(files):
+  files_new = []
+  for fn in files:
+    hn = os.path.basename( os.path.dirname(fn) )
+    if hn not in SceneSamples.bad_scenes:
+      files_new.append(fn)
+  return files_new
 
 def show_pcl_boxes(pcl, boxes):
   from utils3d.bbox3d_ops import Bbox3D

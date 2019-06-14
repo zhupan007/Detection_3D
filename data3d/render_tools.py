@@ -238,7 +238,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   #house_names = SceneSamples.very_hard_wall_window_close
   #house_names = SceneSamples.paper_samples
-  #house_names = ['03ca5b7fcc114833b18cd5f22ae0edf8']
+  house_names = ['0005b50577f5871e1c0bb7a687f6cbc3']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
