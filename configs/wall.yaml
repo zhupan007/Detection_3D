@@ -6,7 +6,7 @@ INPUT:
   #CLASSES: ['background', 'wall', 'door', 'window']
   #SCENES: []
 MODEL:
-  SEPERATE_CLASSES: ['wall']
+  #SEPERATE_CLASSES: ['wall']
   BACKBONE:
     OUT_CHANNELS: 128
   RPN:
