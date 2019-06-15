@@ -7,6 +7,7 @@ CHECK_MISSED_TARGETS_NUM = DEBUG and False
 
 ENALE_SECOND_THIRD_MAX__ONLY_HIGHEST_IOU_TARGET = False # reduce missed target
 IGNORE_HIGHEST_MATCH_NEARBY = True
+POS_HIGHEST_MATCH_NEARBY = False
 
 class Matcher(object):
     """
@@ -54,7 +55,7 @@ class Matcher(object):
         match_quality_matrix_new = match_quality_matrix * mask.float()
         return match_quality_matrix_new
 
-    def __call__(self, match_quality_matrix, yaw_diff=None, flag=''):
+    def __call__(self, match_quality_matrix, yaw_diff=None, flag='', cendis=None):
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -94,7 +95,7 @@ class Matcher(object):
         matches[between_thresholds] = Matcher.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
-            self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+            self.set_low_quality_matches_(matches, all_matches, match_quality_matrix, cendis)
 
         if CHECK_MISSED_TARGETS_NUM:
             target_num = match_quality_matrix.shape[0]
@@ -104,7 +105,7 @@ class Matcher(object):
             print(f'missed target num: {missed_num}  flag:{flag}')
         return matches
 
-    def set_low_quality_matches_(self, matches, all_matches, match_quality_matrix0):
+    def set_low_quality_matches_(self, matches, all_matches, match_quality_matrix0, cendis=None):
         """
         Produce additional matches for predictions that have only low-quality matches.
         Specifically, for each ground-truth find the set of predictions that have
@@ -130,9 +131,21 @@ class Matcher(object):
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
         # Find highest quality match available, even if it is low, including ties
         #print(f'highest_quality_foreach_gt: \n{highest_quality_foreach_gt}')
-        gt_pred_pairs_of_highest_quality = torch.nonzero(
-            match_quality_matrix == highest_quality_foreach_gt[:, None]
-        )
+
+        if cendis is None:
+          gt_pred_pairs_of_highest_quality = torch.nonzero(
+              match_quality_matrix == highest_quality_foreach_gt[:, None]
+          )
+        else:
+          high_mask = match_quality_matrix >= highest_quality_foreach_gt[:, None]*0.95
+          #gt_pred_pairs_of_highest_quality0 = torch.nonzero( )
+          cendis1 = cendis + (1-high_mask.float()) * 1000
+          cendis_min = cendis1.min(dim=1)[0]
+          cendis_min_mask = cendis == cendis_min.view(-1,1)
+          gt_pred_pairs_of_highest_quality = torch.nonzero(cendis_min_mask * high_mask)
+          assert gt_pred_pairs_of_highest_quality.shape[0] == cendis.shape[0]
+
+
         # Example gt_pred_pairs_of_highest_quality:
         #   tensor([[    0, 39796],
         #           [    1, 32055],
@@ -151,13 +164,26 @@ class Matcher(object):
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
 
         if IGNORE_HIGHEST_MATCH_NEARBY:
+            assert not POS_HIGHEST_MATCH_NEARBY
             ignore_threshold = highest_quality_foreach_gt - 0.05
-            ignore_mask =  match_quality_matrix0 > ignore_threshold.view(-1,1)
-            ignore_mask = ignore_mask.any(dim=0)
-            neg_mask = matches==-1
-            ignore_mask = ignore_mask * neg_mask
-            ignore_ids = torch.nonzero(ignore_mask).view(-1)
+            ignore_mask0 =  match_quality_matrix0 > ignore_threshold.view(-1,1)
+            ignore_mask1 = ignore_mask0.any(dim=0)
+            neg_mask = matches==Matcher.BELOW_LOW_THRESHOLD
+            ignore_mask2 = ignore_mask1 * neg_mask
+            ignore_ids = torch.nonzero(ignore_mask2).view(-1)
             matches[ignore_ids] = Matcher.BETWEEN_THRESHOLDS
+        if POS_HIGHEST_MATCH_NEARBY:
+            raise NotImplementedError
+            assert not IGNORE_HIGHEST_MATCH_NEARBY
+            ignore_threshold = highest_quality_foreach_gt - 0.05
+            ignore_mask0 =  match_quality_matrix0 > ignore_threshold.view(-1,1)
+            ignore_mask1 = ignore_mask0.any(dim=0)
+            ignore_ids = torch.nonzero(ignore_mask1).view(-1)
+            ignore_mask3 = torch.transpose( ignore_mask0[:,ignore_ids], 0, 1)
+            gt_ids3 = torch.nonzero(ignore_mask3)
+            matches[ignore_ids] = Matcher.BETWEEN_THRESHOLDS
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
 
         if CHECK_SMAE_ANCHOR_MATCH_MULTI_TARGETS:
             one_anchor_multi_targets = pred_inds_to_update.shape[0] - torch.unique(pred_inds_to_update).shape[0]

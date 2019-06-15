@@ -15,7 +15,7 @@ from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d, cat_boxlist_3d
 import numpy as np
 
-#from data3d.suncg_utils.suncg_meta import SUNCG_META
+from data3d.dataset_metas import DSET_METAS
 
 DEBUG = True
 SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
@@ -28,12 +28,11 @@ SHOW_PRED_POS_ANCHORS = DEBUG and False
 CHECK_REGRESSION_TARGET_YAW = False
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
-  from data3d.suncg_utils.suncg_meta import SUNCG_META
   ONLY_MISSED_TARGET = False
 
   num_gt = target.bbox3d.shape[0]
   labels = target.get_field('labels').cpu().data.numpy().astype(np.int)
-  classes = [SUNCG_META.label_2_class[l] for l in labels]
+  classes = [DSET_METAS.label_2_class0[l] for l in labels]
   for j in range(num_gt):
     ious_j = match_quality_matrix[j]
     mathched_inds_j = torch.nonzero(matched_idxs == j).squeeze(1)
@@ -95,7 +94,9 @@ class RPNLossComputation(object):
           match_quality_matrix = boxlist_iou_3d(target, anchor, aug_thickness = {'target':0.25, 'anchor':0}, criterion=2)
           yaw_diff = angle_dif(anchor.bbox3d[:,-1].view(1,-1),  target.bbox3d[:,-1].view(-1,1), 0)
           yaw_diff = torch.abs(yaw_diff)
-          matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff, flag='RPN')
+          cendis = anchor.bbox3d[:,0:3].view(1,-1,3) - target.bbox3d[:,0:3].view(-1,1,3)
+          cendis = cendis.norm(dim=2)
+          matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff=yaw_diff, flag='RPN', cendis=cendis)
           #anchor.show_together(target, 200)
           # RPN doesn't need any fields from target
           # for creating the labels, so clear them all
@@ -113,7 +114,7 @@ class RPNLossComputation(object):
         if SHOW_IGNORED_ANCHOR:
           sampled_ign_inds = torch.nonzero(matched_idxs==-2).squeeze(1)
           anchors_ign = anchor[sampled_ign_inds]
-          print(f'\n ignore {len(target)} anchors')
+          print(f'\n ignore {len(anchors_ign)} anchors')
           anchors_ign.show_together(target)
 
         if CHECK_MATCHER and target.bbox3d.shape[0]>0:
@@ -241,7 +242,7 @@ class RPNLossComputation(object):
         return objectness_loss, box_loss
 
     def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds, targets):
-      labels_all = list(SUNCG_META.label_2_class.keys())
+      labels_all = list(DSET_METAS.label_2_class0.keys())
       labels_all = [l for  l in labels_all if l!=0]
       assert anchors.batch_size()  == 1
       anchors.add_field('matched_idxs', self.matched_idxs.cpu().data.numpy().astype(np.int))
@@ -254,6 +255,7 @@ class RPNLossComputation(object):
         #label_nums = [ np.sum(labels_bi==l) for l in labels_all ]
         anchors_bi = anchors.example(bi)
         pos_anchors_bi = anchors_bi[pos_inds_examples[bi]]
+        neg_anchors_bi = anchors_bi[neg_inds_examples[bi]]
         matched_idxs = pos_anchors_bi.get_field('matched_idxs').cpu().data.numpy().astype(np.int)
         labels_pos = labels_bi[matched_idxs]
         #pos_label_nums = [ np.sum(labels_pos==l) for l in labels_all ]
@@ -261,7 +263,7 @@ class RPNLossComputation(object):
         mask_targ[matched_idxs] = 0
         missed_targets_ids = np.nonzero(mask_targ)[0]
         missed_targets_label = labels_bi[missed_targets_ids]
-        missed_targets_name = [SUNCG_META.label_2_class[l] for l in missed_targets_label]
+        missed_targets_name = [DSET_METAS.label_2_class0[l] for l in missed_targets_label]
         missed_targets = targets_bi[missed_targets_ids]
         missed_targets.bbox3d[:,2] += 0.2
 
@@ -275,11 +277,12 @@ class RPNLossComputation(object):
         else:
             print('no target missed')
         pos_anchors_bi.show_together(targets[bi])
+        #neg_anchors_bi.show_together(targets[bi])
 
         for l in labels_all:
             mask_l = labels_pos == l
             idxs_l = np.nonzero(mask_l)[0]
-            class_name = SUNCG_META.label_2_class[ l ]
+            class_name = DSET_METAS.label_2_class0[ l ]
             print(f'pos anchors for {class_name}')
             if len(idxs_l)==0:
                 print('no pos anchors')

@@ -20,7 +20,7 @@ CLASSES += ['floor']
 #CLASSES += ['room']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.6
+POINTS_KEEP_RATE = 1.0
 NOT_SHOW_CEILING = True
 
 def show_walls_1by1(wall_bboxes):
