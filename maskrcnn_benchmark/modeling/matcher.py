@@ -132,7 +132,7 @@ class Matcher(object):
         # Find highest quality match available, even if it is low, including ties
         #print(f'highest_quality_foreach_gt: \n{highest_quality_foreach_gt}')
 
-        if cendis is None:
+        if cendis is None or True:
           gt_pred_pairs_of_highest_quality = torch.nonzero(
               match_quality_matrix == highest_quality_foreach_gt[:, None]
           )
@@ -143,7 +143,9 @@ class Matcher(object):
           cendis_min = cendis1.min(dim=1)[0]
           cendis_min_mask = cendis == cendis_min.view(-1,1)
           gt_pred_pairs_of_highest_quality = torch.nonzero(cendis_min_mask * high_mask)
-          assert gt_pred_pairs_of_highest_quality.shape[0] == cendis.shape[0]
+          if not gt_pred_pairs_of_highest_quality.shape[0] == cendis.shape[0]:
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
 
 
         # Example gt_pred_pairs_of_highest_quality:
