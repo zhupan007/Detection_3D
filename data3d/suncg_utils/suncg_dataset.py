@@ -66,6 +66,8 @@ class SUNCGDataset(torch.utils.data.Dataset):
         norm_noise = 0.01 * int(is_train) * 0
 
         fn = self.files[index]
+        if not self.is_train:
+          print(f'\ntest {index}-th {fn}\n')
         pcl_i, bboxes_dic_i_0 = torch.load(fn)
 
         a = pcl_i[:,0:3].copy()

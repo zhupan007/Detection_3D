@@ -6,6 +6,7 @@ TEST='--skip-test'
 #TEST='--only-test' 
 
 CONFIG_FILE='Sw4c_fpn432_bs2.yaml'
+#CONFIG_FILE='Sw4c_fpn432_bs2_lr1.yaml'
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 

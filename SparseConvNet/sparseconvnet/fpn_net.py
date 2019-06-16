@@ -142,7 +142,9 @@ class FPN_Net(torch.nn.Module):
       net_scales = self.forward_fpn(net1)
 
       if CHECK_NAN:
-        assert torch.isnan( net_scales[0][0].features ).sum() == 0
+        if not torch.isnan( net_scales[0][0].features ).sum() == 0:
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
         #assert torch.isnan( net_scales[0][-1].features ).sum() == 0
         #assert torch.isnan( net_scales[1][0].features ).sum() == 0
         assert torch.isnan( net_scales[-1][-1].features ).sum() == 0

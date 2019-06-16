@@ -153,16 +153,26 @@ def performance_str(result, dataset, regression_res):
             multi_gt_rates.append( np.nan )
             gt_nums.append( np.nan )
         else:
-            assert clsn in regression_res, f'{clsn} not in {regression_res.keys()}'
-            ious_mean.append( regression_res[clsn]['ave_std_iou'][0] )
-            ious_std.append( regression_res[clsn]['ave_std_iou'][1] )
-            ious_min.append( regression_res[clsn]['min_max_iou'][0] )
-            scores_mean.append( regression_res[clsn]['ave_std_score'][0] )
-            scores_std.append( regression_res[clsn] ['ave_std_score'][1] )
-            scores_min.append( regression_res[clsn] ['min_max_score'][0] )
-            missed_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][0] )
-            multi_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][1] )
-            gt_nums.append( regression_res[clsn] ['missed_multi_sum_gtnum'][2] )
+            if clsn in regression_res:
+              ious_mean.append( regression_res[clsn]['ave_std_iou'][0] )
+              ious_std.append( regression_res[clsn]['ave_std_iou'][1] )
+              ious_min.append( regression_res[clsn]['min_max_iou'][0] )
+              scores_mean.append( regression_res[clsn]['ave_std_score'][0] )
+              scores_std.append( regression_res[clsn] ['ave_std_score'][1] )
+              scores_min.append( regression_res[clsn] ['min_max_score'][0] )
+              missed_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][0] )
+              multi_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][1] )
+              gt_nums.append( regression_res[clsn] ['missed_multi_sum_gtnum'][2] )
+            else:
+              ious_mean.append(   np.nan )
+              ious_std.append(  np.nan )
+              ious_min.append(  np.nan )
+              scores_mean.append(  np.nan )
+              scores_std.append(  np.nan )
+              scores_min.append(  np.nan )
+              missed_gt_rates.append(  np.nan )
+              multi_gt_rates.append(  np.nan )
+              gt_nums.append(  0 )
 
 
     ious_mean[0] = np.mean(ious_mean[1:])
