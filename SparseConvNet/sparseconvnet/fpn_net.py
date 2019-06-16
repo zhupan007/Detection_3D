@@ -7,6 +7,7 @@ from .sparseConvNetTensor import SparseConvNetTensor
 import numpy as np
 
 SHOW_MODEL = False
+CHECK_NAN = True
 
 class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
@@ -35,6 +36,8 @@ class FPN_Net(torch.nn.Module):
         ele_channels = {'xyz':3, 'color':3, 'normal':3}
         in_channels = sum([ele_channels[e] for e in raw_elements])
 
+        self.layers_in_0 = scn.Sequential(
+                scn.InputLayer(dimension,full_scale, mode=4))
         self.layers_in = scn.Sequential(
                 scn.InputLayer(dimension,full_scale, mode=4),
                 scn.SubmanifoldConvolution(dimension, in_channels, nPlanesF[0], 3, False))
@@ -137,6 +140,12 @@ class FPN_Net(torch.nn.Module):
       if self._show: print(f'\nFPN net input: {net0[0].shape}')
       net1 = self.layers_in(net0)
       net_scales = self.forward_fpn(net1)
+
+      if CHECK_NAN:
+        assert torch.isnan( net_scales[0][0].features ).sum() == 0
+        #assert torch.isnan( net_scales[0][-1].features ).sum() == 0
+        #assert torch.isnan( net_scales[1][0].features ).sum() == 0
+        assert torch.isnan( net_scales[-1][-1].features ).sum() == 0
 
       #net_scales = [n.to_dict() for n in net_scales]
       return net_scales

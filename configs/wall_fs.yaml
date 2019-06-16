@@ -1,10 +1,10 @@
 DEBUG:
-  eval_in_train: 5
+  eval_in_train: -1
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'wall']
   #CLASSES: ['background', 'wall', 'door', 'window']
-  SCENES: ['0005b50577f5871e1c0bb7a687f6cbc3']
+  SCENES: ['0005b50577f5871e1c0bb7a687f6cbc3', '001188c384dd72ce2c2577d034b5cc92']
 MODEL:
   #SEPERATE_CLASSES: ['wall']
   BACKBONE:
@@ -33,13 +33,13 @@ DATALOADER:
 SOLVER:
   EPOCHS: 500
   EPOCHS_BETWEEN_TEST: 500
-  IMS_PER_BATCH: 1
-  BASE_LR: 0.0000001
+  IMS_PER_BATCH: 2
+  BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (100,)
   CHECKPOINT_PERIOD_EPOCHS: 20
   WARMUP_EPOCHS: 2.0
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "res_wall_3S_fpn432_bs1_"
+OUTPUT_DIR: "res_wall_3S_fpn432_bs1"
 TEST:
   IMS_PER_BATCH: 1
