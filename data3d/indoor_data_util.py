@@ -647,7 +647,7 @@ def gen_train_list():
       house_names.sort()
       train_num = num
       train_num = int(num*0.7)
-      #train_num = min(num, 20)
+      train_num = min(num, 100)
   else:
       import random
       random.shuffle(house_names)
