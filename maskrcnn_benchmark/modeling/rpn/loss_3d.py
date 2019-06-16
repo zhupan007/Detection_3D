@@ -22,7 +22,7 @@ SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
 CHECK_MATCHER = DEBUG and False
 
 SHOW_IGNORED_ANCHOR = DEBUG and False
-SHOW_POS_NEG_ANCHORS = DEBUG and False
+SHOW_POS_NEG_ANCHORS = DEBUG and True
 
 SHOW_PRED_POS_ANCHORS = DEBUG and False
 CHECK_REGRESSION_TARGET_YAW = False
@@ -71,7 +71,7 @@ class RPNLossComputation(object):
     This class computes the RPN loss.
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, aug_thickness):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, aug_thickness, dset_metas):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -84,6 +84,7 @@ class RPNLossComputation(object):
         self.box_coder = box_coder
         self.yaw_loss_mode = yaw_loss_mode
         self.aug_thickness = aug_thickness
+        self.dset_metas = dset_metas
 
     def match_targets_to_anchors(self, anchor, target):
         from utils3d.geometric_torch import angle_dif
@@ -242,7 +243,7 @@ class RPNLossComputation(object):
         return objectness_loss, box_loss
 
     def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds, targets):
-      labels_all = list(DSET_METAS.label_2_class0.keys())
+      labels_all = list(self.dset_metas.label_2_class.keys())
       labels_all = [l for  l in labels_all if l!=0]
       assert anchors.batch_size()  == 1
       anchors.add_field('matched_idxs', self.matched_idxs.cpu().data.numpy().astype(np.int))
@@ -263,7 +264,7 @@ class RPNLossComputation(object):
         mask_targ[matched_idxs] = 0
         missed_targets_ids = np.nonzero(mask_targ)[0]
         missed_targets_label = labels_bi[missed_targets_ids]
-        missed_targets_name = [DSET_METAS.label_2_class0[l] for l in missed_targets_label]
+        missed_targets_name = [self.dset_metas.label_2_class[l] for l in missed_targets_label]
         missed_targets = targets_bi[missed_targets_ids]
         missed_targets.bbox3d[:,2] += 0.2
 
@@ -282,7 +283,7 @@ class RPNLossComputation(object):
         for l in labels_all:
             mask_l = labels_pos == l
             idxs_l = np.nonzero(mask_l)[0]
-            class_name = DSET_METAS.label_2_class0[ l ]
+            class_name = self.dset_metas.label_2_class[ l ]
             print(f'pos anchors for {class_name}')
             if len(idxs_l)==0:
                 print('no pos anchors')
@@ -323,6 +324,7 @@ def make_rpn_loss_evaluator(cfg, box_coder):
     )
     tmp = cfg.MODEL.RPN.AUG_THICKNESS_TAR_ANC
     aug_thickness = {'target':tmp[0], 'anchor':tmp[1]}
-    loss_evaluator = RPNLossComputation(matcher, fg_bg_sampler, box_coder, cfg.MODEL.LOSS.YAW_MODE, aug_thickness)
+    dset_metas = DSET_METAS(cfg.INPUT.CLASSES)
+    loss_evaluator = RPNLossComputation(matcher, fg_bg_sampler, box_coder, cfg.MODEL.LOSS.YAW_MODE, aug_thickness, dset_metas=dset_metas)
     return loss_evaluator
 

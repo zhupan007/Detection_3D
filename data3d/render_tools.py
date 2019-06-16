@@ -21,7 +21,7 @@ CLASSES += ['floor']
 
 SHOW_PCL = 1
 POINTS_KEEP_RATE = 1.0
-NOT_SHOW_CEILING = True
+NOT_SHOW_CEILING = False
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -153,7 +153,7 @@ def render_pth_file(pth_fn, show_by_class=True):
 
   if show_by_class:
     for clas in bboxes.keys():
-      if clas not in ['wall', 'window', 'door']:
+      if clas not in ['wall', 'window', 'door', 'room']:
         continue
       print(clas)
       #if clas not in CLASSES:
@@ -239,7 +239,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = SceneSamples.very_hard_wall_window_close
   #house_names = SceneSamples.paper_samples
   house_names = ['0005b50577f5871e1c0bb7a687f6cbc3']
-  house_names = ['0011725c3f4c57108aa17f90ed8bea54']
+  house_names = ['00602d3d932a8d5305234360a9d1e0ad']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

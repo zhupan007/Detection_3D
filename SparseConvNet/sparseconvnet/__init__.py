@@ -4,6 +4,10 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import sys, os
+BASE_PATH = os.path.dirname( os.path.dirname(os.path.abspath(__file__)) )
+sys.path.append(BASE_PATH)
+
 forward_pass_multiplyAdd_count = 0
 forward_pass_hidden_states = 0
 from .activations import Tanh, Sigmoid, ReLU, LeakyReLU, ELU, SELU, BatchNormELU
