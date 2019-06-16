@@ -9,6 +9,9 @@ import logging
 import os, glob
 
 DEBUG = True
+
+ENABLE_POINTS_MISSED = DEBUG and True
+
 SHOW_RAW_INPUT = DEBUG and False
 SHOW_AUG_INPUT = DEBUG and False
 
@@ -136,8 +139,9 @@ class SUNCGDataset(torch.utils.data.Dataset):
             max_scale = a.max(0)
             print(f'file: {self.files[index]}')
             print(f'\nmax scale: {max_scale} > full_scale: {full_scale}, some points will be missed\n')
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            assert False
+            if  not ENABLE_POINTS_MISSED:
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              assert False
 
         idxs = (a.min(1)>=0)*(up_check)
         a=a[idxs]
