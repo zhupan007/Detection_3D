@@ -1,5 +1,5 @@
 import  glob, os
-path = './res_Sw4c_3S_fpn432_bs1_T3'
+path = './res_Sw4c_4S_fpn432_bs2_T4'
 f = open(f'{path}/last_checkpoint', 'r')
 checkpoint = './'+f.readlines()[0]
 fnames = glob.glob(f'{path}/model_*.pth')
