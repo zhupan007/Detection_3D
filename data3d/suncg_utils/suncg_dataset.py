@@ -33,14 +33,15 @@ class SUNCGDataset(torch.utils.data.Dataset):
     dset_path = SuncgTorch_PATH
     with open(f'{dset_path}/train_test_splited/{split}.txt') as f:
       scene_names = [l.strip() for l in f.readlines()]
-    files = []
+    scene_names = rm_bad_samples( scene_names )
     small_scenes = cfg.INPUT.SCENES
     if len(small_scenes)>0:
         logger.info(f'\nsmall scenes:\n{small_scenes}\n')
         scene_names = small_scenes
+    files = []
     for scene in scene_names:
       files += glob.glob(f'{dset_path}/houses/{scene}/*.pth')
-    self.files = rm_bad_samples( files )
+    self.files = files
     assert len(self.files) > 0, 'no input data'
 
   def get_img_info(self, index):
@@ -231,13 +232,12 @@ def batch_scopes(location, voxel_scale):
   return scopes
 
 
-def rm_bad_samples(files):
-  files_new = []
-  for fn in files:
-    hn = os.path.basename( os.path.dirname(fn) )
-    if hn not in SceneSamples.bad_scenes:
-      files_new.append(fn)
-  return files_new
+def rm_bad_samples(scene_names):
+  scene_names_new = []
+  for sn in scene_names:
+    if sn not in SceneSamples.bad_scenes:
+      scene_names_new.append(sn)
+  return scene_names_new
 
 def show_pcl_boxes(pcl, boxes):
   from utils3d.bbox3d_ops import Bbox3D
