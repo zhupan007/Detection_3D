@@ -15,10 +15,11 @@ ENABLE_POINTS_MISSED = DEBUG and True
 SHOW_RAW_INPUT = DEBUG and False
 SHOW_AUG_INPUT = DEBUG and False
 
-ADD_PAPER_SCENES = True
+ADD_PAPER_SCENES = False
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
+ELEMENTS_IDS = {'xyz':[0,1,2], 'color':[3,4,5], 'normal':[6,7,8]}
 
 class SUNCGDataset(torch.utils.data.Dataset):
   def __init__(self, split, cfg):
@@ -31,6 +32,9 @@ class SUNCGDataset(torch.utils.data.Dataset):
     self.objects_to_detect = cfg.INPUT.CLASSES
     dimension=3
     self.dset_metas = SUNCG_METAS(cfg.INPUT.CLASSES)
+    self.elements = cfg.INPUT.ELEMENTS
+    self.elements_ids = np.array([ELEMENTS_IDS[e] for e in self.elements]).reshape(-1)
+    self.elements_ids.sort()
 
     self.full_scale = np.array(full_scale)
     assert self.full_scale.shape == (3,)
@@ -69,7 +73,6 @@ class SUNCGDataset(torch.utils.data.Dataset):
         random_rotate = False and is_train
         distortion = False and is_train
         origin_offset = False and is_train
-        feature_with_xyz = True
         norm_noise = 0.01 * int(is_train) * 0
 
         fn = self.files[index]
@@ -121,12 +124,13 @@ class SUNCGDataset(torch.utils.data.Dataset):
         # augmentation of feature
         # aug norm
         b[:,3:6] += np.random.randn(3)*norm_noise
-        if feature_with_xyz:
+
+        #---------------------------------------------------------------------
+        # get elements
+        b = b[:, self.elements_ids]
+        if 'xyz' in self.elements:
           # import augmentation of xyz to feature
           b[:,0:3] = a / scale
-        else:
-          assert b.shape[1] > 3
-          b = b[:,3:]
 
         #---------------------------------------------------------------------
         # augment gt boxes

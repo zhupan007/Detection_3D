@@ -109,7 +109,10 @@ class RPNPostProcessor(torch.nn.Module):
           #batch_idx = torch.arange(N, device=device)[:, None]
           box_regression_i = box_regression_i[topk_idx]
 
-          pcl_size3d = anchors.size3d[bi:bi+1]
+          if anchors.size3d is None:
+            pcl_size3d = None
+          else:
+            pcl_size3d = anchors.size3d[bi:bi+1]
           concat_anchors_i = anchors.bbox3d[s:e,:]
           concat_anchors_i = concat_anchors_i[topk_idx]
 

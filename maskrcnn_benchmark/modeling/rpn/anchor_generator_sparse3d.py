@@ -132,7 +132,7 @@ class AnchorGenerator(nn.Module):
             inds_inside = torch.ones(anchors.shape[0], dtype=torch.uint8, device=device)
         boxlist.add_field("visibility", inds_inside)
 
-    def forward(self, points_sparse, feature_maps_sparse):
+    def forward(self, points_sparse, feature_maps_sparse, targets):
         '''
           Note: all the batches are concatenated together
         '''
@@ -141,8 +141,7 @@ class AnchorGenerator(nn.Module):
         anchors_over_all_feature_maps_sparse = self.grid_anchors(locations)
         examples_idxscope = [examples_bidx_2_sizes(f.get_spatial_locations()[:,-1]) * self.anchor_num_per_loc
                               for f in feature_maps_sparse]
-        size3d = sparse_points_scope(points_sparse)
-        anchors = [BoxList3D(a, size3d, self.anchor_mode, ei, {}) \
+        anchors = [BoxList3D(a, None, self.anchor_mode, ei, {}) \
                       for a,ei in zip(anchors_over_all_feature_maps_sparse, examples_idxscope)]
 
         if SHOW_ANCHOR_EACH_SCALE:
@@ -178,25 +177,6 @@ def examples_bidx_2_sizes(examples_bidx):
     s = e.clone()
   examples_idxscope = torch.cat(examples_idxscope, 0)
   return examples_idxscope
-
-
-def sparse_points_scope(points_sparse):
-  batch_idx = points_sparse[0][:,-1]
-  points = points_sparse[1][:,0:3]
-  batch_size = batch_idx[-1] + 1
-  s = torch.tensor(0)
-  e = torch.tensor(0)
-  size3d = []
-  for bi in range(batch_size):
-    e += torch.sum(batch_idx==bi)
-    xyz = points[s:e]
-    s = e.clone()
-    xyz_min = xyz.min(0)[0]
-    xyz_max = xyz.max(0)[0]
-    size3d.append( torch.cat([xyz_min, xyz_max], 0).view(1,6) )
-  size3d = torch.cat(size3d, 0)
-  return size3d
-
 
 def make_anchor_generator(config):
     anchor_sizes_3d = config.MODEL.RPN.ANCHOR_SIZES_3D

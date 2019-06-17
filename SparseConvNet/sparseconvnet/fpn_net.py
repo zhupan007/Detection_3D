@@ -40,7 +40,7 @@ class FPN_Net(torch.nn.Module):
                 scn.InputLayer(dimension,full_scale, mode=4))
         self.layers_in = scn.Sequential(
                 scn.InputLayer(dimension,full_scale, mode=4),
-                scn.SubmanifoldConvolution(dimension, in_channels, nPlanesF[0], 3, False))
+                scn.SubmanifoldConvolution(dimension, in_channels, nPlanesF[0], 3, True))
 
         self.layers_out = scn.Sequential(
             scn.BatchNormReLU(nPlanesF[0], momentum=bn_momentum, track_running_stats=track_running_stats),

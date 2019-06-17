@@ -31,16 +31,20 @@ def cat_boxlist_3d(bboxes_ls, per_example, use_constants0=False):
     assert isinstance(bboxes_ls, (list, tuple))
     assert all(isinstance(bbox, BoxList3D) for bbox in bboxes_ls)
 
-    if not per_example:
-      size3d = bboxes_ls[0].size3d
-      for bbox3d in bboxes_ls:
-        #is_size_close =  torch.abs(bbox3d.size3d - size3d).max() < 0.01
-        #if not is_size_close:
-        if not torch.isclose( bbox3d.size3d, size3d ).all():
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
-          pass
+    none_size3d = any([b.size3d is None for b in bboxes_ls])
+    if none_size3d:
+      size3d = None
     else:
-      size3d = torch.cat([b.size3d for b in bboxes_ls])
+        if not per_example:
+          size3d_0 = bboxes_ls[0].size3d
+          for bbox3d in bboxes_ls:
+            #is_size_close =  torch.abs(bbox3d.size3d - size3d).max() < 0.01
+            #if not is_size_close:
+            if not torch.isclose( bbox3d.size3d, size3d_0 ).all():
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
+        else:
+          size3d = torch.cat([b.size3d for b in bboxes_ls])
 
     mode = bboxes_ls[0].mode
     assert all(bbox.mode == mode for bbox in bboxes_ls)
@@ -231,7 +235,11 @@ class BoxList3D(object):
 
     # Tensor-like methods
     def to(self, device):
-        bbox3d = BoxList3D(self.bbox3d.to(device), self.size3d.to(device), self.mode, self.examples_idxscope, self.constants)
+        if self.size3d is None:
+            size3d = None
+        else:
+            size3d = self.size3d.to(device)
+        bbox3d = BoxList3D(self.bbox3d.to(device), size3d, self.mode, self.examples_idxscope, self.constants)
 
         for k, v in self.extra_fields.items():
             if hasattr(v, "to"):
@@ -247,7 +255,11 @@ class BoxList3D(object):
         assert idx < self.batch_size()
         se = self.examples_idxscope[idx]
         examples_idxscope = torch.tensor([[0, se[1]-se[0]]], dtype=torch.int32)
-        bbox3d = BoxList3D( self.bbox3d[se[0]:se[1],:], self.size3d[idx:idx+1], self.mode, examples_idxscope, self.constants)
+        if self.size3d is None:
+          size3d_i = None
+        else:
+          size3d_i = self.size3d[idx:idx+1]
+        bbox3d = BoxList3D( self.bbox3d[se[0]:se[1],:], size3d_i, self.mode, examples_idxscope, self.constants)
         for k, v in self.extra_fields.items():
             bbox3d.add_field(k, v[se[0]:se[1]])
         return bbox3d
@@ -335,7 +347,8 @@ class BoxList3D(object):
         return area
 
     def copy_with_fields(self, fields):
-        bbox3d_list = BoxList3D(self.bbox3d.clone(), self.size3d.clone(), self.mode, self.examples_idxscope.clone(), self.constants)
+        size3d = self.size3d.clone() if self.size3d is not None else self.size3d
+        bbox3d_list = BoxList3D(self.bbox3d.clone(), size3d, self.mode, self.examples_idxscope.clone(), self.constants)
         if not isinstance(fields, (list, tuple)):
             fields = [fields]
         for field in fields:

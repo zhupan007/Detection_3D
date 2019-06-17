@@ -190,7 +190,7 @@ class RPNModule(torch.nn.Module):
         # n is a flatten of all the locations of all examples in a batch.
         # Because the feature map size in a batch may be diff for each example
         objectness, rpn_box_regression = self.head(features)
-        anchors = self.anchor_generator(points_sparse, features_sparse)
+        anchors = self.anchor_generator(points_sparse, features_sparse, targets)
         objectness, rpn_box_regression = cat_scales_obj_reg(objectness, rpn_box_regression, anchors)
         scale_num = len(anchors)
         anchors = cat_scales_anchor(anchors)
