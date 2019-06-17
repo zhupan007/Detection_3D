@@ -10,6 +10,8 @@ from maskrcnn_benchmark.utils.comm import get_world_size
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 from data3d.evaluation import evaluate
 
+SHOW_FN = True
+CHECK_NAN = True
 
 def reduce_loss_dict(loss_dict):
     """
@@ -49,7 +51,8 @@ def do_train(
     eval_in_train,
     eval_out_dir,
     eval_in_train_per_iter,
-    iou_thresh_eval
+    iou_thresh_eval,
+    min_loss
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info(f"Start training {epoch_id}")
@@ -60,7 +63,12 @@ def do_train(
     start_training_time = time.time()
     end = time.time()
     predictions_all = []
+    losses_last = 100
     for iteration, batch in enumerate(data_loader, start_iter):
+        fn = [os.path.basename(os.path.dirname(nm)) for nm in batch['fn']]
+        if SHOW_FN:
+          print(f'\t\t{fn}')
+
         data_time = time.time() - end
         iteration = iteration + 1
         arguments["iteration"] = iteration
@@ -71,6 +79,14 @@ def do_train(
         batch['y'] = [b.to(device) for b in batch['y']]
 
         loss_dict, predictions_i = model(batch['x'], batch['y'])
+
+
+        if CHECK_NAN:
+          any_nan = sum(torch.isnan(v.data) for v in loss_dict.values())
+          if any_nan:
+            print(f'\nGot nan loss:\n{fn}\n')
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            continue
 
         losses = sum(loss for loss in loss_dict.values())
 
@@ -126,6 +142,11 @@ def do_train(
             checkpointer.save("model_{:07d}".format(iteration), **arguments)
         if iteration == max_iter:
             checkpointer.save("model_final", **arguments)
+        avg_loss = meters.loss.avg
+        if iteration % 10 == 0 and avg_loss < min_loss:
+            checkpointer.save("model_min_loss", **arguments)
+            logger.info(f'\nmin loss: {avg_loss} at {iteration}\n')
+            min_loss = avg_loss
 
     total_training_time = time.time() - start_training_time
     total_time_str = str(datetime.timedelta(seconds=total_training_time))
@@ -140,4 +161,6 @@ def do_train(
       eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all,
                           iou_thresh_eval=iou_thresh_eval, output_folder=eval_out_dir, box_only=False)
       pass
+    return min_loss
+
 

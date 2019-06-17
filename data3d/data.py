@@ -30,7 +30,8 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
     feats = torch.cat( [data['x'][1] for data in data_ls], 0 )
     labels = [data['y'] for data in data_ls]
     ids = [data['id'] for data in data_ls]
-    data = {'x': [locs,feats], 'y': labels, 'id': ids}
+    fns = [data['fn'] for data in data_ls]
+    data = {'x': [locs,feats], 'y': labels, 'id': ids, 'fn': fns}
     return data
 
   data__loader = torch.utils.data.DataLoader(

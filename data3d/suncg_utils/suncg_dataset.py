@@ -162,7 +162,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
           pass
 
         #batch_scopes(locs, scale)
-        data = {'x': [locs,feats], 'y': labels, 'id': index}
+        data = {'x': [locs,feats], 'y': labels, 'id': index, 'fn':fn}
         return data
 
   def get_groundtruth(self, index):

@@ -29,7 +29,7 @@ from maskrcnn_benchmark.utils.miscellaneous import mkdir
 from data3d.data import make_data_loader
 from data3d.dataset_metas import DSET_METAS
 
-def train(cfg, local_rank, distributed, loop, only_test):
+def train(cfg, local_rank, distributed, loop, only_test, min_loss):
     model = build_detection_model(cfg)
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
@@ -67,7 +67,7 @@ def train(cfg, local_rank, distributed, loop, only_test):
 
     epochs_between_test = cfg.SOLVER.EPOCHS_BETWEEN_TEST
     for e in range(epochs_between_test):
-      do_train(
+      min_loss = do_train(
           model,
           data_loader,
           optimizer,
@@ -81,6 +81,7 @@ def train(cfg, local_rank, distributed, loop, only_test):
           output_dir,
           cfg.DEBUG.eval_in_train_per_iter,
           cfg.TEST.IOU_THRESHOLD,
+          min_loss
       )
 
     return model
@@ -191,8 +192,9 @@ def main():
         logger.info(config_str)
     logger.info("Running with config:\n{}".format(cfg))
 
+    min_loss = 10000
     for loop in range(cfg.SOLVER.EPOCHS // cfg.SOLVER.EPOCHS_BETWEEN_TEST):
-      model = train(cfg, args.local_rank, args.distributed, loop, args.only_test)
+      model, min_loss = train(cfg, args.local_rank, args.distributed, loop, args.only_test, min_loss)
 
       if not args.skip_test:
           test(cfg, model, args.distributed)

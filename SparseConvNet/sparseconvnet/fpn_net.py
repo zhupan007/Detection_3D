@@ -7,7 +7,7 @@ from .sparseConvNetTensor import SparseConvNetTensor
 import numpy as np
 
 SHOW_MODEL = False
-CHECK_NAN = True
+CHECK_NAN = False
 
 class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
