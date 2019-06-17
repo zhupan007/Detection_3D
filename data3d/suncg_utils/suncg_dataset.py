@@ -15,6 +15,8 @@ ENABLE_POINTS_MISSED = DEBUG and True
 SHOW_RAW_INPUT = DEBUG and False
 SHOW_AUG_INPUT = DEBUG and False
 
+ADD_PAPER_SCENES = True
+
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
 
@@ -41,6 +43,8 @@ class SUNCGDataset(torch.utils.data.Dataset):
     if len(small_scenes)>0:
         logger.info(f'\nsmall scenes:\n{small_scenes}\n')
         scene_names = small_scenes
+    if ADD_PAPER_SCENES:
+      add_paper_samples(scene_names)
     files = []
     for scene in scene_names:
       files += glob.glob(f'{dset_path}/houses/{scene}/*.pth')
@@ -179,6 +183,11 @@ class SUNCGDataset(torch.utils.data.Dataset):
   def map_class_id_to_class_name(self, class_id):
     class_name = self.dset_metas.label_2_class[class_id]
     return class_name
+
+def add_paper_samples(scene_names):
+  for s in SceneSamples.paper_samples:
+    if s not in scene_names:
+      scene_names += [s]
 
 #Elastic distortion
 blur0=np.ones((3,1,1)).astype('float32')/3

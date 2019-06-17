@@ -60,7 +60,7 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
     arguments.update(extra_checkpoint_data)
 
     if only_test:
-      return model
+      return model, min_loss
 
 
     checkpoint_period = int(cfg.SOLVER.CHECKPOINT_PERIOD_EPOCHS * cfg.INPUT.Example_num / cfg.SOLVER.IMS_PER_BATCH)

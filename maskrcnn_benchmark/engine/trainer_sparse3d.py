@@ -138,15 +138,17 @@ def do_train(
                     memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
                 )
             )
-        if iteration % checkpoint_period == 0:
-            checkpointer.save("model_{:07d}".format(iteration), **arguments)
-        if iteration == max_iter:
-            checkpointer.save("model_final", **arguments)
+
         avg_loss = meters.loss.avg
         if iteration % 10 == 0 and avg_loss < min_loss:
             checkpointer.save("model_min_loss", **arguments)
             logger.info(f'\nmin loss: {avg_loss} at {iteration}\n')
             min_loss = avg_loss
+
+        if iteration % checkpoint_period == 0:
+            checkpointer.save("model_{:07d}".format(iteration), **arguments)
+        if iteration == max_iter:
+            checkpointer.save("model_final", **arguments)
 
     total_training_time = time.time() - start_training_time
     total_time_str = str(datetime.timedelta(seconds=total_training_time))
