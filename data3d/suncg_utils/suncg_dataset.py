@@ -15,7 +15,7 @@ ENABLE_POINTS_MISSED = DEBUG and True
 SHOW_RAW_INPUT = DEBUG and False
 SHOW_AUG_INPUT = DEBUG and False
 
-ADD_PAPER_SCENES = False
+ADD_PAPER_SCENES = True
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
@@ -47,7 +47,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
     if len(small_scenes)>0:
         logger.info(f'\nsmall scenes:\n{small_scenes}\n')
         scene_names = small_scenes
-    if ADD_PAPER_SCENES:
+    if ADD_PAPER_SCENES and len(scene_names) > 10:
       add_paper_samples(scene_names)
     files = []
     for scene in scene_names:

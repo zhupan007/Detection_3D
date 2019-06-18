@@ -44,6 +44,7 @@ class BatchNormalization(Module):
 
 
     def forward(self, input):
+        return input
         assert input.features.nelement() == 0 or input.features.size(1) == self.nPlanes, (self.nPlanes, input.features.shape)
         output = SparseConvNetTensor()
         output.metadata = input.metadata
