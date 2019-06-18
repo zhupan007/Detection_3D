@@ -6,8 +6,9 @@ import sparseconvnet as scn
 from .sparseConvNetTensor import SparseConvNetTensor
 import numpy as np
 
+DEBUG = True
 SHOW_MODEL = False
-CHECK_NAN = True
+CHECK_NAN = False
 
 class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
@@ -40,7 +41,7 @@ class FPN_Net(torch.nn.Module):
                 scn.InputLayer(dimension,full_scale, mode=4))
         self.layers_in = scn.Sequential(
                 scn.InputLayer(dimension,full_scale, mode=4),
-                scn.SubmanifoldConvolution(dimension, in_channels, nPlanesF[0], 3, True))
+                scn.SubmanifoldConvolution(dimension, in_channels, nPlanesF[0], 3, False))
 
         self.layers_out = scn.Sequential(
             scn.BatchNormReLU(nPlanesF[0], momentum=bn_momentum, track_running_stats=track_running_stats),
@@ -137,20 +138,33 @@ class FPN_Net(torch.nn.Module):
 
 
     def forward(self, net0):
+      if CHECK_NAN:
+        self.check_grad_nan()
+        if not torch.isnan( self.layers_in[1].weight ).sum() == 0:
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
+
       if self._show: print(f'\nFPN net input: {net0[0].shape}')
       net1 = self.layers_in(net0)
       net_scales = self.forward_fpn(net1)
 
-      if CHECK_NAN:
-        if not torch.isnan( net_scales[0][0].features ).sum() == 0:
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
-          pass
-        #assert torch.isnan( net_scales[0][-1].features ).sum() == 0
-        #assert torch.isnan( net_scales[1][0].features ).sum() == 0
-        assert torch.isnan( net_scales[-1][-1].features ).sum() == 0
-
       #net_scales = [n.to_dict() for n in net_scales]
       return net_scales
+
+    def check_grad_nan(self):
+      print_max_grad(self.convs_pro2d, 'self.convs_pro2d')
+      print_max_grad(self.m_downs[0][0][1] , f'self.m_downs[0][0][1]')
+      print_max_grad(self.m_downs[-1][0] , f'')
+      print_max_grad(self.m_ups[-1] , f'')
+
+      for i, up in enumerate(self.m_ups):
+        print_max_grad(up , f'self.ups[{i}]')
+
+      print_max_grad(self.m_shortcuts , f'shorcuts')
+
+      print_max_grad(self.m_mergeds , f'm_mergeds')
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
 
     def forward_fpn(self, net):
       if self._show:
@@ -165,6 +179,8 @@ class FPN_Net(torch.nn.Module):
         #if self._show:  sparse_shape(net)
         downs.append(net)
 
+      if DEBUG:
+        net_t = net.features.clone().detach()
       net = self.m_shortcuts[-1](net)
       ups = [net]
       #if self._show:    print('\nups:')
@@ -189,65 +205,66 @@ class FPN_Net(torch.nn.Module):
 
       roi_maps = [ups[i] for i in self.roi_scales_from_top]
 
+
       for i in range(len(rpn_maps_3d)):
         assert torch.all(rpn_maps_3d[i].spatial_size == torch.tensor(self.rpn_map_sizes[i]))
 
       if self._show:
-          receptive_field(self.operations_down, self.voxel_scale)
-          print('\n\nSparse FPN\n--------------------------------------------------')
-          print(f'scale num: {scales_num}')
-          print('downs:')
-          for i in range(len(downs)):
-            #if i!=0:
-            #  print(f'\tKernel:{self.down_kernels[i-1]} stride:{self.down_strides[i-1]}', end='\t')
-            #else:
-            #  print('\tSubmanifoldConvolution \t\t', end='\t')
-            op = self.operations_down[i]
-            ke = op['kernel']
-            st = op['stride']
-            rf = op['rf']
-            tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
-            sparse_shape(downs[i], pre=f'\t{i} ', post=tmp)
-
-          print('\n\nups:')
-          for i in range(len(ups)):
-            #if i==0:
-            #  print('\tIdentity of the last \t\t', end='\t')
-            #else:
-            #  print(f'\tKernel:{self.down_kernels[-i]} stride:{self.down_strides[-i]}', end='\t')
-            if i<len(self.operations_up):
-              op = self.operations_up[i]
+            receptive_field(self.operations_down, self.voxel_scale)
+            print('\n\nSparse FPN\n--------------------------------------------------')
+            print(f'scale num: {scales_num}')
+            print('downs:')
+            for i in range(len(downs)):
+              #if i!=0:
+              #  print(f'\tKernel:{self.down_kernels[i-1]} stride:{self.down_strides[i-1]}', end='\t')
+              #else:
+              #  print('\tSubmanifoldConvolution \t\t', end='\t')
+              op = self.operations_down[i]
               ke = op['kernel']
               st = op['stride']
-              rf = self.operations_down[-i-1]['rf']
+              rf = op['rf']
               tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
-            else:
-              tmp = ''
-            sparse_shape(ups[i], pre=f'\t{i} ', post=tmp)
+              sparse_shape(downs[i], pre=f'\t{i} ', post=tmp)
 
-          print('\n\nFPN_Net out:')
-          print(f'{self.fpn_scales_from_top} of ups')
-          receptive_fields_fpn = [self.operations_down[-i-1]['rf'] for i in self.fpn_scales_from_top]
-          for j,t in enumerate(rpn_maps):
-            if j < len(receptive_fields_fpn):
-                tmp = f'\t Receptive:{receptive_fields_fpn[j]}'
-            else:
+            print('\n\nups:')
+            for i in range(len(ups)):
+              #if i==0:
+              #  print('\tIdentity of the last \t\t', end='\t')
+              #else:
+              #  print(f'\tKernel:{self.down_kernels[-i]} stride:{self.down_strides[-i]}', end='\t')
+              if i<len(self.operations_up):
+                op = self.operations_up[i]
+                ke = op['kernel']
+                st = op['stride']
+                rf = self.operations_down[-i-1]['rf']
+                tmp = f' \tKernel:{ke}, Stride:{st}, Receptive:{rf}'
+              else:
                 tmp = ''
-            sparse_shape(t, post=tmp)
-            sparse_real_size(t,'\t')
-            print('\n')
+              sparse_shape(ups[i], pre=f'\t{i} ', post=tmp)
 
-          print('\n\nROI map:')
-          print(f'{self.roi_scales_from_top} of ups')
-          receptive_fields_roi = [self.operations_down[-i-1]['rf'] for i in self.roi_scales_from_top]
-          for j,t in enumerate(roi_maps):
-            tmp = f'\t Receptive:{receptive_fields_roi[j]}'
-            sparse_shape(t, post=tmp)
-            sparse_real_size(t,'\t')
-            print('\n')
-          print('--------------------------------------------------\n\n')
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
-          pass
+            print('\n\nFPN_Net out:')
+            print(f'{self.fpn_scales_from_top} of ups')
+            receptive_fields_fpn = [self.operations_down[-i-1]['rf'] for i in self.fpn_scales_from_top]
+            for j,t in enumerate(rpn_maps):
+              if j < len(receptive_fields_fpn):
+                  tmp = f'\t Receptive:{receptive_fields_fpn[j]}'
+              else:
+                  tmp = ''
+              sparse_shape(t, post=tmp)
+              sparse_real_size(t,'\t')
+              print('\n')
+
+            print('\n\nROI map:')
+            print(f'{self.roi_scales_from_top} of ups')
+            receptive_fields_roi = [self.operations_down[-i-1]['rf'] for i in self.roi_scales_from_top]
+            for j,t in enumerate(roi_maps):
+              tmp = f'\t Receptive:{receptive_fields_roi[j]}'
+              sparse_shape(t, post=tmp)
+              sparse_real_size(t,'\t')
+              print('\n')
+            print('--------------------------------------------------\n\n')
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
 
       return rpn_maps, roi_maps
 
@@ -283,4 +300,18 @@ def sparse_real_size(t,pre=''):
   loc_max = loc.max(0)[0] + 1
   sparse_rate = 1.0 * t.features.shape[0] / loc_max.prod().float()
   print(f"{pre}min: {loc_min}, max: {loc_max}, sparse rate:{sparse_rate}")
+
+def print_max_grad(module_list, flag):
+    print(f'\n------------\n{flag}:')
+    for i, mod in enumerate(module_list):
+      if not hasattr(mod, 'weight'):
+        print(f'\t{i}\tno weight')
+        continue
+      if mod.weight.grad is not None:
+        max_grad = mod.weight.grad.max()
+        print(f'\t{i}\t{max_grad:.5f}')
+      else:
+        print(f'\t{i}\tno grad')
+
+
 

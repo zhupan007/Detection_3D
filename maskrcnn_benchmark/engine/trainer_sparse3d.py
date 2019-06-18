@@ -4,6 +4,7 @@ import logging
 import time
 
 import torch
+from torch import autograd
 import torch.distributed as dist
 
 from maskrcnn_benchmark.utils.comm import get_world_size
@@ -109,9 +110,10 @@ def do_train(
         losses_reduced = sum(loss for loss in loss_dict_reduced.values())
         meters.update(loss=losses_reduced, **loss_dict_reduced)
 
-        optimizer.zero_grad()
-        losses.backward()
-        optimizer.step()
+        with autograd.detect_anomaly():
+          optimizer.zero_grad()
+          losses.backward()
+          optimizer.step()
 
         batch_time = time.time() - end
         end = time.time()
