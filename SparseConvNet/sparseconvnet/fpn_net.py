@@ -6,7 +6,7 @@ import sparseconvnet as scn
 from .sparseConvNetTensor import SparseConvNetTensor
 import numpy as np
 
-DEBUG = True
+DEBUG = False
 SHOW_MODEL = False
 CHECK_NAN = True
 
@@ -178,8 +178,6 @@ class FPN_Net(torch.nn.Module):
         #if self._show:  sparse_shape(net)
         downs.append(net)
 
-      if DEBUG:
-        net_t = net.features.clone().detach()
       net = self.m_shortcuts[-1](net)
       ups = [net]
       #if self._show:    print('\nups:')
