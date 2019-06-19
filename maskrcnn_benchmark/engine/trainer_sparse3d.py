@@ -142,7 +142,8 @@ def do_train(
             )
 
         avg_loss = meters.loss.avg
-        if iteration % 10 == 0 and avg_loss < min_loss:
+        tmp_p = max(int(checkpoint_period//5), 10 )
+        if iteration % == tmp_p 0 and avg_loss < min_loss:
             checkpointer.save("model_min_loss", **arguments)
             logger.info(f'\nmin loss: {avg_loss} at {iteration}\n')
             min_loss = avg_loss
