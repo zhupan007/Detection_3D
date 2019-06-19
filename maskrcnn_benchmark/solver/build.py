@@ -24,6 +24,7 @@ def make_lr_scheduler(cfg, optimizer):
     STEPS = [int(e * cfg.INPUT.Example_num / cfg.SOLVER.IMS_PER_BATCH)  for e in cfg.SOLVER.LR_STEP_EPOCHS ]
     STEPS = tuple(STEPS)
     WARMUP_ITERS = int(cfg.SOLVER.WARMUP_EPOCHS * cfg.INPUT.Example_num / cfg.SOLVER.IMS_PER_BATCH)
+    WARMUP_ITERS = min(WARMUP_ITERS, 500)
     return WarmupMultiStepLR(
         optimizer,
         STEPS,
