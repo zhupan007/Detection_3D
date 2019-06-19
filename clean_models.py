@@ -1,12 +1,19 @@
 import  glob, os
-path = './res_Sw4c_4S_fpn432_bs2_T4'
-f = open(f'{path}/last_checkpoint', 'r')
-checkpoint = './'+f.readlines()[0]
-fnames = glob.glob(f'{path}/model_*.pth')
-final = f'{path}/model_final.pth'
-for s in fnames:
-  if s == checkpoint or s==final:
-    continue
-  os.remove(s)
-  print(f'{s} removed')
-print('clean ok')
+from shutil import copyfile
+
+pathes = ['./res_Sw4c_4S_fpn432_bs2_T4']
+pathes = glob.glob('./res*')
+
+for path in pathes:
+  copyfile(f'{path}/log.txt', f'{path}/_log.txt')
+  f = open(f'{path}/last_checkpoint', 'r')
+  checkpoint = './'+f.readlines()[0]
+  fnames = glob.glob(f'{path}/model_*.pth')
+  final = f'{path}/model_final.pth'
+  min_loss = f'{path}/model_min_loss.pth'
+  for s in fnames:
+    if s == checkpoint or s==final or s == min_loss:
+      continue
+    os.remove(s)
+    print(f'{s} removed')
+  print('clean ok')

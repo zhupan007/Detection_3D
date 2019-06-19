@@ -84,7 +84,7 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
           min_loss
       )
 
-    return model
+    return model, min_loss
 
 
 def test(cfg, model, distributed):
