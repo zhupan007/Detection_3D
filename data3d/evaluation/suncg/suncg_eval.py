@@ -52,7 +52,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     pred_nums = [len(p) for p in pred_boxlists]
     gt_num_totally = sum(gt_nums)
     if gt_num_totally == 0:
-        print(f'gt_num_totally=0, abort evalution')
+        print(f'\ngt_num_totally=0, abort evalution\n')
         return
 
     result = eval_detection_suncg(
@@ -64,6 +64,10 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     )
 
     obj_gt_nums = get_obj_nums(gt_boxlists, dset_metas)
+    if len(result['pred_for_each_gt']) == 0:
+      print('\nno pred for each gt\n')
+      return
+
     regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds = \
         parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger)
 
