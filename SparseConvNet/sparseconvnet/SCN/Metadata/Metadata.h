@@ -104,8 +104,13 @@ public:
   void appendMetadata(Metadata<dimension> &mAdd,
                       /*long*/ at::Tensor spatialSize);
 
+  /* std::vector<at::Tensor> sparsifyCompare(Metadata<dimension> &mReference, */
+  /*                                         Metadata<dimension> &mSparsified,
+   */
+  /*                                         /\*long*\/ at::Tensor spatialSize);
+   */
+
   std::vector<at::Tensor> sparsifyCompare(Metadata<dimension> &mReference,
-                                          Metadata<dimension> &mSparsified,
                                           /*long*/ at::Tensor spatialSize);
 
   // tensor is size[0] x .. x size[dimension-1] x size[dimension]
@@ -153,6 +158,8 @@ public:
   std::vector<at::Tensor>
   compareSparseHelper(Metadata<dimension> &mR,
                       /* long */ at::Tensor spatialSize);
+  at::Tensor copyFeaturesHelper(Metadata<dimension> &mR,
+                                /* long */ at::Tensor spatialSize);
 };
 
 template <typename T> T *OptionalTensorData(at::Tensor tensor);

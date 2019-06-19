@@ -200,7 +200,7 @@ def SparseResNet(dimension, nInputPlanes, layers):
     return m
 
 
-def UNet(dimension, reps, nPlanes, residual_blocks=False, downsample=[2, 2], leakiness=0):
+def UNet(dimension, reps, nPlanes, residual_blocks=False, downsample=[2, 2], leakiness=0, n_input_planes=-1):
     """
     U-Net style network with VGG or ResNet-style blocks.
     For voxel level prediction:
@@ -232,15 +232,12 @@ def UNet(dimension, reps, nPlanes, residual_blocks=False, downsample=[2, 2], lea
             m.add(scn.Sequential()
                  .add(scn.BatchNormLeakyReLU(a,leakiness=leakiness))
                  .add(scn.SubmanifoldConvolution(dimension, a, b, 3, False)))
-    def U(nPlanes): #Recursive function
+    def U(nPlanes,n_input_planes=-1): #Recursive function
         m = scn.Sequential()
-        if len(nPlanes) == 1:
-            for _ in range(reps):
-                block(m, nPlanes[0], nPlanes[0])
-        else:
-            m = scn.Sequential()
-            for _ in range(reps):
-                block(m, nPlanes[0], nPlanes[0])
+        for i in range(reps):
+            block(m, n_input_planes if n_input_planes!=-1 else nPlanes[0], nPlanes[0])
+            n_input_planes=-1
+        if len(nPlanes) > 1:
             m.add(
                 scn.ConcatTable().add(
                     scn.Identity()).add(
@@ -256,10 +253,8 @@ def UNet(dimension, reps, nPlanes, residual_blocks=False, downsample=[2, 2], lea
             for i in range(reps):
                 block(m, nPlanes[0] * (2 if i == 0 else 1), nPlanes[0])
         return m
-    m = U(nPlanes)
+    m = U(nPlanes,n_input_planes)
     return m
-
-
 
 def FullyConvolutionalNet(dimension, reps, nPlanes, residual_blocks=False, downsample=[2, 2]):
     """
@@ -315,3 +310,42 @@ def FullyConvolutionalNet(dimension, reps, nPlanes, residual_blocks=False, downs
         return m
     m = U(nPlanes)
     return m
+
+def FullConvolutionalNetIntegratedLinear(dimension, reps, nPlanes, nClasses=-1, residual=False, downsample=[2,2], leakiness=0):
+    if nClasses==-1:
+        nClasses=reps[0]
+    def l(x):
+        return x+nPlanes
+    def foo(m,np):
+        for _ in range(reps):
+            if residual_blocks: #ResNet style blocks
+                m.add(scn.ConcatTable()
+                      .add(scn.Identity())
+                      .add(scn.Sequential()
+                        .add(scn.BatchNormLeakyReLU(np,leakiness=leakiness))
+                        .add(scn.SubmanifoldConvolution(dimension, np, np, 3, False))
+                        .add(scn.BatchNormLeakyReLU(np,leakiness=leakiness))
+                        .add(scn.SubmanifoldConvolution(dimension, np, np, 3, False)))
+                 ).add(scn.AddTable())
+            else: #VGG style blocks
+                m.add(scn.BatchNormLeakyReLU(np,leakiness=leakiness)
+                ).add(scn.SubmanifoldConvolution(dimension, np, np, 3, False))
+    def bar(m,nPlanes,bias):
+        m.add(scn.BatchNormLeakyReLU(nPlanes,leakiness=leakiness))
+        m.add(scn.NetworkInNetwork(nPlanes,nClasses,bias)) #accumulte softmax input, only one set of biases
+    def baz(depth,nPlanes):
+        m=scn.Sequential()
+        foo(m,nPlanes[0])
+        if len(nPlanes)==1:
+            bar(m,nPlanes[0],True)
+        else:
+            a=scn.Sequential()
+            bar(a,nPlanes,False)
+            b=scn.Sequential(
+                scn.BatchNormLeakyReLU(nPlanes,leakiness=leakiness),
+                scn.Convolution(dimension, nPlanes[0], nPlanes[1], downsample[0], downsample[1], False),
+                baz(nPlanes[1:]),
+                scn.UnPooling(dimension, downsample[0], downsample[1]))
+            m.add(ConcatTable(a,b))
+            m.add(scn.AddTable())
+    return baz(depth,nPlanes)

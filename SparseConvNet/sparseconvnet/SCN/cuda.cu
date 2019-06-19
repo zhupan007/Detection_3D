@@ -55,21 +55,21 @@ template void Convolution_bp_bias<float>(float *d_oF, float *d_b,
 					 Int nPlanes, Int nActive);
 template double dConvolution_forward2<float>(
     float *inFeatures, float *outFeatures, float *w, RuleBook _rules,
-    Int input_nPlanes, Int input_stride, Int output_nPlanes, Int output_stride);
+    Int input_nPlanes, Int input_stride, Int output_nPlanes, Int output_stride, Int nGroups);
 
 template void dConvolution_backward_dW2<float>(
     float *inFeatures, float *dInFeatures, float *dOutFeatures, float *w,
     float *dw, RuleBook _rules, Int input_nPlanes, Int input_stride,
-    Int output_nPlanes, Int output_stride);
+    Int output_nPlanes, Int output_stride, Int nGroups);
 
 template double dDeconvolution_forward2<float>(
     float *inFeatures, float *outFeatures, float *w, RuleBook _rules,
-    Int input_nPlanes, Int input_stride, Int output_nPlanes, Int output_stride);
+    Int input_nPlanes, Int input_stride, Int output_nPlanes, Int output_stride, Int nGroups);
 
 template void dDeconvolution_backward_dW2<float>(
     float *inFeatures, float *dInFeatures, float *dOutFeatures, float *w,
     float *dw, RuleBook _rules, Int input_nPlanes, Int input_stride,
-    Int output_nPlanes, Int output_stride);
+    Int output_nPlanes, Int output_stride, Int nGroups);
 
 template void InputLayer_fp<float>(float *input_features,
 				   float *output_features, Int nRows,
@@ -134,3 +134,8 @@ template void bmd_f<float>(float *input_features, float *output_features,
 template void bmd_b<float>(float *input_features, float *d_input_features,
 			   float *d_output_features, float *noise, Int nActive,
 			   Int nPlanes, float alpha);
+
+template void cuda_CopyFeaturesHelper_ForwardPass<float>(
+	 float* context, float* Context,Int* rules, Int nPlanes, Int nHot);
+template void cuda_CopyFeaturesHelper_BackwardPass<float>(
+	 float* dcontext, float* dContext,Int* rules, Int nPlanes, Int nHot);

@@ -564,8 +564,8 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_m
         # the corresponding element of prec[l] is nan.
         prec[l] = tp / (fp + tp)
         # If n_pos[l] is 0, rec[l] is None.
-        if n_pos[l] > 0:
-            rec[l] = tp / n_pos[l]
+        #if n_pos[l] > 0:
+        rec[l] = tp / n_pos[l]
 
     return prec, rec, pred_for_each_gt, scores
 

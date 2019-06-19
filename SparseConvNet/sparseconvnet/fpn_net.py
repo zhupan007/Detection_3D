@@ -8,7 +8,7 @@ import numpy as np
 
 DEBUG = True
 SHOW_MODEL = False
-CHECK_NAN = False
+CHECK_NAN = True
 
 class FPN_Net(torch.nn.Module):
     _show = SHOW_MODEL
@@ -139,8 +139,8 @@ class FPN_Net(torch.nn.Module):
 
     def forward(self, net0):
       if CHECK_NAN:
-        self.check_grad_nan()
         if not torch.isnan( self.layers_in[1].weight ).sum() == 0:
+          self.check_grad_nan()
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
 
@@ -163,7 +163,6 @@ class FPN_Net(torch.nn.Module):
       print_max_grad(self.m_shortcuts , f'shorcuts')
 
       print_max_grad(self.m_mergeds , f'm_mergeds')
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       pass
 
     def forward_fpn(self, net):
