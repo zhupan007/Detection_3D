@@ -48,7 +48,7 @@ class BatchNormalization(Module):
         output = SparseConvNetTensor()
         output.metadata = input.metadata
         output.spatial_size = input.spatial_size
-        if self.track_running_stats:
+        if self.training or self.track_running_stats:
           _mean = self.running_mean
           _var = self.running_var
         else:
