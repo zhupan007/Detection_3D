@@ -1,11 +1,10 @@
 DEBUG:
-  eval_in_train: 5
+  eval_in_train: 1
   eval_in_train_per_iter: -1
 INPUT:
-  ELEMENTS: ['xyz']
   #CLASSES: ['background', 'wall']
   CLASSES: ['background', 'wall', 'door', 'window']
-  SCENES: ['0005b50577f5871e1c0bb7a687f6cbc3']
+  SCENES: ['00602d3d932a8d5305234360a9d1e0ad']
   #SCENES: ['0005b50577f5871e1c0bb7a687f6cbc3', '00602d3d932a8d5305234360a9d1e0ad', '0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca', '001ef7e63573bd8fecf933f10fa4491b']
 MODEL:
   SEPERATE_CLASSES: ['wall']
@@ -28,7 +27,7 @@ SPARSE3D:
   nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256, 256]
   KERNEL: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
   STRIDE: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
-  VOXEL_FULL_SCALE: [1024,1024,256 ]
+  VOXEL_FULL_SCALE: [2048, 2048, 512 ]
   VOXEL_SCALE: 50
 DATALOADER:
   SIZE_DIVISIBILITY: 6
@@ -42,6 +41,6 @@ SOLVER:
   CHECKPOINT_PERIOD_EPOCHS: 20
   WARMUP_EPOCHS: 2.0
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "res_Sw4c_fS_fpn432_bs1"
+OUTPUT_DIR: "res_Sw4c_4S_fpn432_bs1"
 TEST:
   IMS_PER_BATCH: 1

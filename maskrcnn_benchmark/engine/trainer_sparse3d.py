@@ -164,7 +164,8 @@ def do_train(
     if eval_in_train>0 and epoch_id % eval_in_train == 0:
       logger.info(f'\nepoch {epoch_id}\n')
       eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all,
-                          iou_thresh_eval=iou_thresh_eval, output_folder=eval_out_dir, box_only=False)
+                          iou_thresh_eval=iou_thresh_eval,
+                          output_folder=eval_out_dir, box_only=False, epoch=epoch_id)
       pass
     return min_loss
 

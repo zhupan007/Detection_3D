@@ -25,7 +25,7 @@ def get_obj_nums(gt_boxlists, dset_metas):
             obj_gt_nums[obj].append( sum(labels==l) )
     return obj_gt_nums
 
-def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger):
+def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger, epoch=None):
     # TODO need to make the use_07_metric format available
     # for the user to choose
 
@@ -76,7 +76,9 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     logger.info(result_str)
 
     if output_folder:
-        with open(os.path.join(output_folder, "result.txt"), "w") as fid:
+        if epoch is not None:
+          result_str = f'\nepoch: {epoch}\n' +  result_str
+        with open(os.path.join(output_folder, "result.txt"), "a") as fid:
             fid.write(result_str)
 
     if SHOW_PRED:
