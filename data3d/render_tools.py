@@ -21,7 +21,7 @@ CLASSES += ['floor']
 
 SHOW_PCL = 1
 POINTS_KEEP_RATE = 1.0
-NOT_SHOW_CEILING = False
+DEL_CLASSES = True
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -123,11 +123,10 @@ def render_pth_file(pth_fn, show_by_class=True):
   #colors = pcl[:,3:6]
   #normals = pcl[:,6:9]
 
-  if NOT_SHOW_CEILING:
-    if 'ceiling' in bboxes:
-      del bboxes['ceiling']
-    if 'room' in bboxes:
-      del bboxes['room']
+  if DEL_CLASSES:
+    for c in ['ceiling', 'room', 'floor']:
+      if c in bboxes:
+        del bboxes[c]
 
   scene_size = pcl_size(pcl)
   print(f'scene pcl size:{scene_size}')
@@ -146,9 +145,9 @@ def render_pth_file(pth_fn, show_by_class=True):
     labels += [i]*n
   labels = np.array(labels)
 
-
   #show_walls_offsetz(all_bboxes)
-  Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
 
   if show_by_class:
@@ -240,7 +239,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = SceneSamples.paper_samples
   house_names = ['0005b50577f5871e1c0bb7a687f6cbc3']
   house_names = ['00602d3d932a8d5305234360a9d1e0ad']
-  house_names = ['0020d9dab70c6c8cfc0564c139c82dce']
+  house_names = ['0055398beb892233e0664d843eb451ca']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

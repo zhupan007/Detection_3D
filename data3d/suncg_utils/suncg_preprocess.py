@@ -394,10 +394,10 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[1000:1500]
     else:
-      self.house_fns = house_fns[600:1300]
+      self.house_fns = house_fns[1000:1153]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and True:
+    if Debug and False:
       scene_id = '05b5d2860fb2a991bfe4ebc8cb06df95'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
