@@ -336,11 +336,12 @@ class SeperateClassifier():
         org_to_new = self.org_labels_to_labels1
       for ls in labels_seperated_org:
         labels_new.append( org_to_new[ls.long()].to(device).long() )
-        try:
-          assert labels_new[-1].min() >= 0
-        except:
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
-          pass
+        if labels_new[-1].shape[0] > 0:
+          try:
+            assert labels_new[-1].min() >= 0
+          except:
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
       return labels_new
 
     def turn_labels_back_to_org(self, result, sep_flag):

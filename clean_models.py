@@ -1,7 +1,7 @@
 import  glob, os
 from shutil import copyfile
 
-pathes = ['./res_Sw4c_4S_fpn432_bs2_T4']
+pathes = ['./res_Sw4c_fpn432_bs1_lr1_T635']
 pathes = glob.glob('./res*')
 
 for path in pathes:

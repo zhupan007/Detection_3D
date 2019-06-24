@@ -29,7 +29,9 @@ from maskrcnn_benchmark.utils.miscellaneous import mkdir
 from data3d.data import make_data_loader
 from data3d.dataset_metas import DSET_METAS
 
+
 def train(cfg, local_rank, distributed, loop, only_test, min_loss):
+
     model = build_detection_model(cfg)
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
@@ -58,6 +60,7 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
     )
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
+
 
     if only_test:
       return model, min_loss
