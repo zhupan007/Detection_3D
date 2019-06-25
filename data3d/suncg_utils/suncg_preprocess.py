@@ -399,7 +399,7 @@ class Suncg():
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
-      scene_id = '05b5d2860fb2a991bfe4ebc8cb06df95'
+      scene_id = '0708dc446a77203bd122f64c45629b33'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
     self.house_fns = rm_bad_scenes(self.house_fns)
@@ -860,7 +860,7 @@ def gen_cam_images(house_fn):
     os.system(f"cd {house_dir}; {Suncg.tool_bin}/scn2img house.json {cam_fn} {parsed_dir}/images -categories {Suncg.tool_meta} -v " +\
               f" -xfov {xfov} -width {width} -height {height} " +\
               f" -kinect_max_depth {kinect_max_depth} -max_vertex_spacing {max_vertex_spacing} -kinect_min_reflection {kinect_min_reflection} " + \
-              f" -capture_depth_images -capture_color_images -raycast " )
+              f" -capture_depth_images -capture_color_images  " )   #  -raycast
 
 def add_extra_cam_orientations(cam_fn, show=False):
   cam_pos = read_cam_pos(cam_fn)
@@ -905,7 +905,7 @@ def add_extra_cam_orientations(cam_fn, show=False):
 
 def read_object_bbox(parsed_dir, category):
   fn = f'{parsed_dir}/object_bbox/{category}.txt'
-  bboxes = np.loadtxt(fn)
+  bboxes = np.loadtxt(fn).reshape(-1,7)
   return bboxes
 
 def add_exta_cam_locations(cam_fn, show=False):
@@ -1122,8 +1122,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  #suncg.parse_houses_pool()
-  suncg.parse_houses()
+  suncg.parse_houses_pool()
+  #suncg.parse_houses()
 
 if __name__ == '__main__':
   parse_house()
