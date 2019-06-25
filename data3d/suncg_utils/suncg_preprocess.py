@@ -393,9 +393,9 @@ class Suncg():
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
     house_fns.sort()
     if SAGE:
-      self.house_fns = house_fns[1700: 2000]
+      self.house_fns = house_fns[1800: 2500]
     else:
-      self.house_fns = house_fns[1500: 1700]
+      self.house_fns = house_fns[1500: 1800]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
