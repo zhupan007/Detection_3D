@@ -27,7 +27,7 @@ FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
 ENABLE_NO_RECTANGLE = ['Ceiling', 'Floor', 'Room']
-SAGE = False
+SAGE = True
 
 ONLY_LEVEL_1 = True
 
@@ -408,7 +408,7 @@ class Suncg():
 
   def parse_houses_pool(self):
     import multiprocessing as mp
-    threads = 4 if SAGE else 2
+    threads = 2 if SAGE else 2
     p = mp.Pool(processes=threads)
     p.map(parse_house_onef, self.house_fns)
     p.close()
