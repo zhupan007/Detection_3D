@@ -31,8 +31,7 @@ SAGE = False
 
 ONLY_LEVEL_1 = True
 
-if not SAGE:
-  SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
+SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
 def show_pcl(pcl):
     pcd = open3d.PointCloud()
@@ -382,8 +381,10 @@ def world2cam_box(box):
   return box
 
 class Suncg():
-  tool_bin = f"{USER_DIR}/Research/SUNCGtoolbox/gaps/bin/x86_64"
-  tool_meta = f"{USER_DIR}/Research/SUNCGtoolbox/metadata/ModelCategoryMapping.csv"
+  #tool_bin = f"{USER_DIR}/Research/SUNCGtoolbox/gaps/bin/x86_64"
+  #tool_meta = f"{USER_DIR}/Research/SUNCGtoolbox/metadata/ModelCategoryMapping.csv"
+  tool_bin = f'{BASE_DIR}/tools'
+  tool_meta = f'{BASE_DIR}/tools/ModelCategoryMapping.csv'
   modelId_2_class = read_ModelCategoryMap(tool_meta)
   def __init__(self, root_path):
     self.root_path = root_path
@@ -392,7 +393,7 @@ class Suncg():
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
     house_fns.sort()
     if SAGE:
-      self.house_fns = house_fns[1000: 1500]
+      self.house_fns = house_fns[1153: 1500]
     else:
       self.house_fns = house_fns[1500: 1600]
       #self.house_fns = house_fns[0:1500]
@@ -859,7 +860,7 @@ def gen_cam_images(house_fn):
     os.system(f"cd {house_dir}; {Suncg.tool_bin}/scn2img house.json {cam_fn} {parsed_dir}/images -categories {Suncg.tool_meta} -v " +\
               f" -xfov {xfov} -width {width} -height {height} " +\
               f" -kinect_max_depth {kinect_max_depth} -max_vertex_spacing {max_vertex_spacing} -kinect_min_reflection {kinect_min_reflection} " + \
-              f" -capture_depth_images -capture_color_images " )
+              f" -capture_depth_images -capture_color_images -raycast " )
 
 def add_extra_cam_orientations(cam_fn, show=False):
   cam_pos = read_cam_pos(cam_fn)
