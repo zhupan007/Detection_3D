@@ -408,7 +408,7 @@ class Suncg():
 
   def parse_houses_pool(self):
     import multiprocessing as mp
-    threads = 10 if SAGE else 5
+    threads = 12 if SAGE else 8
     p = mp.Pool(processes=threads)
     p.map(parse_house_onef, self.house_fns)
     p.close()
