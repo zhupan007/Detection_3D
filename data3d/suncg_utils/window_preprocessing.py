@@ -48,6 +48,7 @@ def find_wall_ids_for_windows(windows, walls):
       print(f'windows_missed:\n{windows[win_mw_ids]}')
       print("There is some windows, cfind multiple responding walls and thickness is not small.")
       import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      assert False
       pass
 
 
@@ -63,6 +64,7 @@ def find_wall_ids_for_windows(windows, walls):
       print(f'windows_missed:\n{windows[missed_win_ids]}')
       print("There is some windows, cannot find responding wall and thickness is not small.")
       import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      assert False
       pass
 
     #cen_lines_wall = Bbox3D.bboxes_centroid_lines(walls, 'X', 'Z')

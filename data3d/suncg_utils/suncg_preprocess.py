@@ -395,7 +395,8 @@ class Suncg():
     if SAGE:
       self.house_fns = house_fns[1800: 2500]
     else:
-      self.house_fns = house_fns[1500: 1800]
+      #self.house_fns = house_fns[1500: 1800]
+      self.house_fns = house_fns[3000: 4000]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
@@ -408,7 +409,7 @@ class Suncg():
 
   def parse_houses_pool(self):
     import multiprocessing as mp
-    threads = 12 if SAGE else 8
+    threads = 12 if SAGE else 6
     p = mp.Pool(processes=threads)
     p.map(parse_house_onef, self.house_fns)
     p.close()
@@ -1137,5 +1138,6 @@ if __name__ == '__main__':
   #add_extra_cam_orientations(cam_fn, True)
   #gen_a_house_obj()
   pass
+
 
 
