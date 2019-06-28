@@ -27,7 +27,7 @@ FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
 ENABLE_NO_RECTANGLE = ['Ceiling', 'Floor', 'Room']
-SAGE = False
+SAGE = True
 
 ONLY_LEVEL_1 = True
 
@@ -231,6 +231,7 @@ def get_part_bbox(vertices, triangle, triangle_norms, name=''):
     #show_mesh(vertices, triangle)
     if class_name  not in ENABLE_NO_RECTANGLE:
         print(f'\nFailed to find bbox, not rectangle, {class_name} \n {out_vertices.shape[0]} vertices\n')
+        assert False
         import pdb; pdb.set_trace()  # XXX BREAKPOINT
         pass
         return None
