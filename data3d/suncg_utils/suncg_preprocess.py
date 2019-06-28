@@ -27,7 +27,7 @@ FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
 ENABLE_NO_RECTANGLE = ['Ceiling', 'Floor', 'Room']
-SAGE = True
+SAGE = False
 
 ONLY_LEVEL_1 = True
 
@@ -446,8 +446,8 @@ def parse_house_onef( house_fn):
     '''
     is_gen_house_obj = Debug and False
     is_gen_bbox = 1
-    is_gen_cam = 0
-    is_gen_pcl = 0
+    is_gen_cam = 1
+    is_gen_pcl = 1
 
     if is_gen_house_obj:
       gen_house_obj(house_fn)
@@ -1139,8 +1139,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  #suncg.parse_houses_pool()
-  suncg.parse_houses()
+  suncg.parse_houses_pool()
+  #suncg.parse_houses()
 
 if __name__ == '__main__':
   parse_house()
