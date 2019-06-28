@@ -590,6 +590,10 @@ class Bbox3D():
       box[_yaw] = yaw0 + np.pi * 0.5 * is_increase
       pass
 
+    #if not box[3] > box[_up]:
+    #  Bbox3D.draw_bboxes(box, 'Z', False)
+    #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    #  pass
     assert box[3] > box[_up]
     if check_thickness:
       assert box[_up] < 0.3 # normally thickness is small

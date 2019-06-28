@@ -15,7 +15,12 @@ class SceneSamples():
     bad_scenes_BIM_ambiguous = ['004e36a61e574321adc8da7b48c331f2', '00466151039216eb333369aa60ea3efe', '008969b6e13d18db3abc9d954cebe6a5', '0165e8534588c269219c9aafa9d888da']
     bad_scenes_raw_bad = ['0320272d1b3c30e2d9f897ff917cef15']
     # 0705e25aa6919af45268133bd2d98b65: no wall for window
-    bad_scenes_cannot_parse = ['032e05d444b03cc1c80c0700ad4238b1', '0382e82fab999376ef880fcff345090d', '0705e25aa6919af45268133bd2d98b65']
+    bad_scenes_cannot_parse_no_wall_for_window = ['13304f20f6327c21aa285069efb03ca1', '0705e25aa6919af45268133bd2d98b65', '142686fa469dda10dae66065be7961ef']
+    bad_scenes_cannot_parse = ['032e05d444b03cc1c80c0700ad4238b1', '0382e82fab999376ef880fcff345090d'] + \
+      ['100bcb702b28198108369345bf26f302', '1102fd6dc8702f1cd0f1f21508cce0bb', '110385ba3254a1816cc67a1b78243823'] +\
+      ['14535bf081bd5ad2072683b43c8f0fd8', '14ab942f5f42112c1b2afa341b2b7522', '1515923b28f1cd8b101cc1f74358bb92'] +\
+      bad_scenes_cannot_parse_no_wall_for_window
+
     bad_scenes = bad_scenes_curved_walls + bad_scenes_BIM_ambiguous + bad_scenes_raw_bad + err_scenes + bad_scenes_cannot_parse
 
     bad_scenes_submanifold_bs1_nan = ['0005b50577f5871e1c0bb7a687f6cbc3']

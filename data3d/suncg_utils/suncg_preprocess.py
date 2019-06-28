@@ -393,14 +393,14 @@ class Suncg():
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
     house_fns.sort()
     if SAGE:
-      self.house_fns = house_fns[1800: 2500]
+      self.house_fns = house_fns[1800: 3000]
     else:
       #self.house_fns = house_fns[1500: 1800]
       self.house_fns = house_fns[3000: 4000]
       #self.house_fns = house_fns[0:1500]
 
     if Debug and False:
-      scene_id = '0708dc446a77203bd122f64c45629b33'
+      scene_id = '13304f20f6327c21aa285069efb03ca1'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
     self.house_fns = rm_bad_scenes(self.house_fns)
@@ -415,12 +415,27 @@ class Suncg():
     p.close()
     p.join()
 
-  def parse_houses(self):
+  def parse_houses(self, record_fail_fn=True):
+    if record_fail_fn:
+      fail_hs = open('./fail_hns.txt','w')
+
     #house_names_1level = []
     for k,fn in enumerate(self.house_fns):
       print(f'\nstart {k+1}th house: \n  {fn}\n')
-      parse_house_onef(fn)
+      if not record_fail_fn:
+          parse_house_onef(fn)
+      else:
+        try:
+          parse_house_onef(fn)
+        except:
+          print('\n\t\tThis file fails\n')
+          hn = os.path.basename( os.path.dirname(fn) )
+          fail_hs.write('\''+hn+'\', ')
+          fail_hs.flush()
       print(f'\nfinish {k+1} houses\n')
+
+    if record_fail_fn:
+        fail_hs.close()
 
 def parse_house_onef( house_fn):
     '''
@@ -430,8 +445,8 @@ def parse_house_onef( house_fn):
     '''
     is_gen_house_obj = Debug and False
     is_gen_bbox = 1
-    is_gen_cam = 1
-    is_gen_pcl = 1
+    is_gen_cam = 0
+    is_gen_pcl = 0
 
     if is_gen_house_obj:
       gen_house_obj(house_fn)
@@ -1123,8 +1138,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  suncg.parse_houses_pool()
-  #suncg.parse_houses()
+  #suncg.parse_houses_pool()
+  suncg.parse_houses()
 
 if __name__ == '__main__':
   parse_house()

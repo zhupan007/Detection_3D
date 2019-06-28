@@ -5,13 +5,13 @@ from utils3d.bbox3d_ops import Bbox3D
 from utils3d.geometric_util import limit_period, vertical_dis_1point_lines, angle_of_2lines, vertical_dis_points_lines, ave_angles
 from render_tools import show_walls_offsetz, show_walls_1by1
 
-DEBUG = False
+DEBUG = True
 
 def preprocess_windows(windows0, walls):
   '''
   both windows0 ad walls are standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
   '''
-  if DEBUG and True:
+  if DEBUG and False:
       print('input')
       show_all([windows0,walls])
   #Bbox3D.draw_bboxes(walls, 'Z', False)
@@ -28,12 +28,15 @@ def preprocess_windows(windows0, walls):
   windows_corrected = correct_bad_windows(windows_bad, walls_bw)
   windows1[win_bad_ids] = windows_corrected
 
-  if DEBUG:
+  if DEBUG and False:
     print('out')
     show_all([windows1,walls])
   return windows1
 
 def find_wall_ids_for_windows(windows, walls):
+  #if DEBUG:
+  #  windows = windows[15:17,:]
+  #  Bbox3D.draw_points_bboxes(windows[:,0:3], walls, 'Z', False)
   win_in_walls = Bbox3D.points_in_bbox(windows[:,0:3], walls)
   wall_nums_per_win = win_in_walls.sum(1)
   if wall_nums_per_win.max() > 1:
@@ -60,11 +63,11 @@ def find_wall_ids_for_windows(windows, walls):
     thickness_small = windows_thickness_missed.max() < 0.25
     thickness_rate_small = windows_thickness_rate_missed.max() < 0.25
     if not(thickness_small or thickness_rate_small):
-      show_high(windows, walls, missed_win_ids, [])
+      #show_high(windows, walls, missed_win_ids, [])
       print(f'windows_missed:\n{windows[missed_win_ids]}')
       print("There is some windows, cannot find responding wall and thickness is not small.")
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       assert False
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       pass
 
     #cen_lines_wall = Bbox3D.bboxes_centroid_lines(walls, 'X', 'Z')
@@ -85,7 +88,7 @@ def find_wall_ids_for_windows(windows, walls):
   win_bad_ids = win_bad_ids0[win_bad_ids1]
   wall_ids_for_bad_win = wall_ids0[win_bad_ids1]
 
-  if DEBUG:
+  if DEBUG and False:
     for i in range(win_bad_ids.shape[0]):
       print(f'bad window {i}/{win_bad_ids.shape[0]}')
       show_high(windows, walls, win_bad_ids[i], wall_ids_for_bad_win[i])
@@ -99,7 +102,7 @@ def correct_bad_windows(windows_bad, walls):
   windows_cor[:,3] = np.sqrt(windows_bad[:,3]**2 + windows_bad[:,4]**2)
   yaws = limit_period(walls[:,-1], 0, np.pi/2)
   windows_cor[:,3] -= 0.175 * np.sin(yaws*2)
-  if DEBUG and True:
+  if DEBUG and False:
     show_all([windows_bad, windows_cor, walls])
   return windows_cor
 
