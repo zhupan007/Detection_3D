@@ -20,7 +20,7 @@ CLASSES += ['floor']
 #CLASSES += ['room']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 1.0
+POINTS_KEEP_RATE = 0.4
 DEL_CLASSES = True
 
 def show_walls_1by1(wall_bboxes):
@@ -55,7 +55,7 @@ def down_sample_points(points, keep_rate=0.3):
   return points_d
 
 
-def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=1):
+def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
   print(f'parsed_dir:{parsed_dir}')
   bboxes = []
   labels = []
@@ -105,8 +105,10 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=1):
 
     #pcl = cut_points_roof(pcl)
 
+    Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE, animation_fn='points.mp4', ani_size=[100, 950, 570, 1350])
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     bboxes[:,2] += 0.1
-    Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False)
+    Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
     #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
 
 
@@ -148,7 +150,7 @@ def render_pth_file(pth_fn, show_by_class=True):
   #show_walls_offsetz(all_bboxes)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
-  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
+  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
 
   if show_by_class:
     for clas in bboxes.keys():
@@ -233,13 +235,11 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names.sort()
   print(f'totally {len(house_names)} houses')
 
-  house_names = house_names[0:20]
+  house_names = house_names[200:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  #house_names = SceneSamples.paper_samples
-  house_names = ['0005b50577f5871e1c0bb7a687f6cbc3']
-  house_names = ['00602d3d932a8d5305234360a9d1e0ad']
-  house_names = ['097e98b7ff01f8563a92a4cb6c74170e']
+  house_names = SceneSamples.paper_samples_1
+  house_names = ['0348b9030a2ab02345e65ef28a1be6d2']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

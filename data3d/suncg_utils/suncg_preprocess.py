@@ -400,8 +400,8 @@ class Suncg():
       self.house_fns = house_fns[3000: 4000]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and False:
-      scene_id = '13304f20f6327c21aa285069efb03ca1'
+    if Debug and 0:
+      scene_id = '0fd6fd0c8a6b0e205354249f1058666f'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
     self.house_fns = rm_bad_scenes(self.house_fns)
@@ -1139,8 +1139,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  suncg.parse_houses_pool()
-  #suncg.parse_houses()
+  #suncg.parse_houses_pool()
+  suncg.parse_houses()
 
 if __name__ == '__main__':
   parse_house()
