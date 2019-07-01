@@ -4,9 +4,11 @@ class SceneSamples():
     #---------------------------------------------------------------------------
     paper_samples = ['00602d3d932a8d5305234360a9d1e0ad', '0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca']
     # [200:300]
-    paper_samples_1 = ['0173543a6c15604c28070aafa61868be', '01b05d5581c18177f6e8444097d89db4','01ef4e9bebeb6252257b2d48d3819630'] + \
+    paper_samples_1 = ['0173543a6c15604c28070aafa61868be'] + \
                     ['02164f84a9e7321f3071b2214df8c738', '029197d89108bb6ea25d0d254a5f37f4', '0348a36dd0901c93081838056b111ed6'] + \
                     ['0348b9030a2ab02345e65ef28a1be6d2']
+
+    paper_samples_2 = ['01b05d5581c18177f6e8444097d89db4', '01ef4e9bebeb6252257b2d48d3819630']
 
     #---------------------------------------------------------------------------
     err_scenes = []
@@ -31,10 +33,6 @@ class SceneSamples():
     # very hard
     very_hard_wall_window_close = ['0055398beb892233e0664d843eb451ca'] # a lot of windows are almost same with wall
     very_hard_windows_close = ['001e3c88f922f42b5a3f546def6eb83f']
-
-
-
-
 
     #---------------------------------------------------------------------------
 

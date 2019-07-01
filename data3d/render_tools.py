@@ -16,12 +16,14 @@ SPLITED_DIR = '/DS/SUNCG/suncg_v1_torch_splited'
 #CLASSES = ['wall', 'ceiling']
 CLASSES = ['wall', 'window', 'door']
 #CLASSES = ['ceiling', 'floor']
-CLASSES += ['floor']
+#CLASSES += ['floor']
 #CLASSES += ['room']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.4
+POINTS_KEEP_RATE = 0.6
 DEL_CLASSES = True
+
+AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
 
 def show_walls_1by1(wall_bboxes):
   n = wall_bboxes.shape[0]
@@ -57,6 +59,7 @@ def down_sample_points(points, keep_rate=0.3):
 
 def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
   print(f'parsed_dir:{parsed_dir}')
+  house_name = os.path.basename(parsed_dir)
   bboxes = []
   labels = []
   for obj in CLASSES:
@@ -105,11 +108,10 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
 
     #pcl = cut_points_roof(pcl)
 
-    Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE, animation_fn='points.mp4', ani_size=[100, 950, 570, 1350])
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE, animation_fn='points.mp4', ani_size=AniSizes[house_name])
     bboxes[:,2] += 0.1
-    Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
-    #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False)
+    #Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
+    Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE, animation_fn='mesh.mp4', ani_size=AniSizes[house_name] )
 
 
 
@@ -238,8 +240,8 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = house_names[200:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  house_names = SceneSamples.paper_samples_1
-  house_names = ['0348b9030a2ab02345e65ef28a1be6d2']
+  house_names = SceneSamples.paper_samples_2[1:2]
+  #house_names = ['0348b9030a2ab02345e65ef28a1be6d2']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

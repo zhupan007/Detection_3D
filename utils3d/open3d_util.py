@@ -12,14 +12,15 @@ def gen_animation(pcds, ani_fn, ani_size):
     if not os.path.exists("./image/"):
         os.makedirs("./image/")
 
-    k = 5
-    s = 3.0
+    k = 20
+    s = 5.0
     gen_animation.index = -1
     gen_animation.imgs = []
 
     def rotate_view(vis):
         render_op = vis.get_render_option()
-        render_op.point_size = 1
+        render_op.point_size = 0
+        render_op.mesh_show_back_face = True
         gen_animation.index = gen_animation.index + 1
         i = gen_animation.index
         print(f'i: {gen_animation.index}')
@@ -54,6 +55,10 @@ def gen_animation(pcds, ani_fn, ani_size):
 
     ims = []
     for i, img in enumerate( gen_animation.imgs[1:] ):
+
+      #im = plt.imshow(img, animated=True)
+      #plt.show()
+
       if ani_size is not None:
         h0,h1, w0,w1 = ani_size
         img = img[h0:h1,w0:w1,:]

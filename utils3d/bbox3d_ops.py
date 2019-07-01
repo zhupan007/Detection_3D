@@ -227,13 +227,15 @@ class Bbox3D():
       gen_animation(pcds, animation_fn, ani_size)
 
   @staticmethod
-  def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, points_keep_rate=POINTS_KEEP_RATE):
+  def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, points_keep_rate=POINTS_KEEP_RATE, animation_fn=None, ani_size=None):
     mesh = Bbox3D.bboxes_mesh(gt_boxes0, up_axis, is_yx_zb, labels, names)
     #Bbox3D.video(mesh)
     if points is not None:
       pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate)
       mesh.append(pcl)
     draw_cus(mesh)
+    if animation_fn is not None:
+      gen_animation(mesh, animation_fn, ani_size)
 
   @staticmethod
   def draw_bboxes(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True, highlight_ids=None):
