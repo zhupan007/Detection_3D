@@ -8,7 +8,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 sys.path.append(BASE_DIR)
 sys.path.append(ROOT_DIR)
-from open3d_util import  draw_cus
+from open3d_util import  draw_cus, gen_animation
 
 from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
 
@@ -170,6 +170,16 @@ class Bbox3D():
       return xyz_size
 
   @staticmethod
+  def video(pcds):
+      def rotate_view(vis):
+          ctr = vis.get_view_control()
+          ctr.rotate(10, 0)
+          return False
+
+      open3d.visualization.draw_geometries_with_animation_callback(pcds,
+                                                              rotate_view)
+
+  @staticmethod
   def draw_points_open3d(points, color=[0,1,1], show=False, points_keep_rate=POINTS_KEEP_RATE):
     points = cut_points_roof(points, points_keep_rate)
     pcl = open3d.PointCloud()
@@ -186,7 +196,13 @@ class Bbox3D():
     return pcl
 
   @staticmethod
-  def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, random_color=True, points_keep_rate=POINTS_KEEP_RATE):
+  def draw_points(points, color=[0,1,1], points_keep_rate=POINTS_KEEP_RATE, animation_fn=None, ani_size=None):
+    pcds = Bbox3D.draw_points_open3d(points, color, show=True, points_keep_rate=points_keep_rate)
+    if animation_fn is not None:
+      gen_animation([pcds], animation_fn, ani_size)
+
+  @staticmethod
+  def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, random_color=True, points_keep_rate=POINTS_KEEP_RATE, animation_fn=None, ani_size=None):
     '''
     points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None)
     '''
@@ -201,18 +217,25 @@ class Bbox3D():
       lineset = []
     if points is not None:
       #open3d.draw_geometries(bboxes_lineset_ls + [pcl] + lineset)
-      draw_cus(bboxes_lineset_ls + [pcl] + lineset)
+      pcds = bboxes_lineset_ls + [pcl] + lineset
     else:
       #open3d.draw_geometries(bboxes_lineset_ls + lineset)
-      draw_cus(bboxes_lineset_ls + lineset)
+      pcds = bboxes_lineset_ls + lineset
+
+    draw_cus(pcds)
+    if animation_fn is not None:
+      gen_animation(pcds, animation_fn, ani_size)
 
   @staticmethod
-  def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, points_keep_rate=POINTS_KEEP_RATE):
+  def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, points_keep_rate=POINTS_KEEP_RATE, animation_fn=None, ani_size=None):
     mesh = Bbox3D.bboxes_mesh(gt_boxes0, up_axis, is_yx_zb, labels, names)
+    #Bbox3D.video(mesh)
     if points is not None:
       pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate)
       mesh.append(pcl)
     draw_cus(mesh)
+    if animation_fn is not None:
+      gen_animation(mesh, animation_fn, ani_size)
 
   @staticmethod
   def draw_bboxes(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True, highlight_ids=None):

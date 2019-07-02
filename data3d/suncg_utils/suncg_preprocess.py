@@ -32,7 +32,8 @@ SAGE = False
 ONLY_LEVEL_1 = True
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
-PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
+PARSED_DIR = '_parsed__'
+PARSED_PATH = f'{SUNCG_V1_DIR}/{PARSED_DIR}'
 def show_pcl(pcl):
     pcd = open3d.PointCloud()
     pcd.points = open3d.Vector3dVector(pcl[:,0:3])
@@ -397,11 +398,11 @@ class Suncg():
       self.house_fns = house_fns[1800: 3000]
     else:
       #self.house_fns = house_fns[1500: 1800]
-      self.house_fns = house_fns[3000: 4000]
+      self.house_fns = house_fns[4000: 5000]
       #self.house_fns = house_fns[0:1500]
 
-    if Debug and False:
-      scene_id = '13304f20f6327c21aa285069efb03ca1'
+    if Debug and 0:
+      scene_id = '0fd6fd0c8a6b0e205354249f1058666f'
 
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
     self.house_fns = rm_bad_scenes(self.house_fns)
@@ -427,7 +428,7 @@ class Suncg():
           parse_house_onef(fn)
       else:
         try:
-          parse_house_onef(fn)
+          parse_house_onef(fn, find_fail_scene=True)
         except:
           print('\n\t\tThis file fails\n')
           hn = os.path.basename( os.path.dirname(fn) )
@@ -438,7 +439,7 @@ class Suncg():
     if record_fail_fn:
         fail_hs.close()
 
-def parse_house_onef( house_fn):
+def parse_house_onef( house_fn, find_fail_scene=False ):
     '''
     1. Generate depth image
     2. point cloud for each depth image
@@ -446,8 +447,8 @@ def parse_house_onef( house_fn):
     '''
     is_gen_house_obj = Debug and False
     is_gen_bbox = 1
-    is_gen_cam = 1
-    is_gen_pcl = 1
+    is_gen_cam = 1 - find_fail_scene
+    is_gen_pcl = 1 - find_fail_scene
 
     if is_gen_house_obj:
       gen_house_obj(house_fn)
@@ -788,7 +789,7 @@ def depth_2_pcl(depth_fn, cam_pos):
     return pcl
 
 def get_pcl_path(house_fn):
-    parsed_dir = 'parsed'
+    parsed_dir = PARSED_DIR
     tmp = house_fn.split('/')
     tmp[-3] = parsed_dir
     del tmp[-1]
@@ -1001,12 +1002,12 @@ def add_exta_cam_locations(cam_fn, show=False):
   return cam_fn_new
 
 def gen_house_names_1level():
-  house_names0 = os.listdir(PARSED_DIR)
+  house_names0 = os.listdir(PARSED_PATH)
   house_names0.sort()
 
   house_names = []
   for hn in house_names0:
-    house_intact, intacts = check_house_intact(os.path.join(PARSED_DIR, hn))
+    house_intact, intacts = check_house_intact(os.path.join(PARSED_PATH, hn))
     if house_intact:
         if hn not in SceneSamples.bad_scenes:
             house_names.append(hn)
@@ -1016,7 +1017,7 @@ def gen_house_names_1level():
   remain_ids = []
   house_names_1l = []
   for hn in house_names:
-    hfn = os.path.join(PARSED_DIR, hn)
+    hfn = os.path.join(PARSED_PATH, hn)
     summary = read_summary(hfn)
     level_num = summary['level_num']
     if level_num == 1:
