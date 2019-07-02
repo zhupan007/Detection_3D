@@ -40,7 +40,8 @@ def find_wall_ids_for_windows(windows, walls):
   win_in_walls = Bbox3D.points_in_bbox(windows[:,0:3], walls)
   wall_nums_per_win = win_in_walls.sum(1)
   if wall_nums_per_win.max() > 1:
-    win_mw_ids, wall_ids_ = np.where(win_in_walls)
+    #win_mw_ids, wall_ids_ = np.where(win_in_walls)
+    win_mw_ids = np.where(wall_nums_per_win > 1)[0]
 
     windows_thickness_multi = windows[win_mw_ids, 4]
     windows_thickness_rate_multi = windows[win_mw_ids, 4] / windows[win_mw_ids, 3]
@@ -49,9 +50,9 @@ def find_wall_ids_for_windows(windows, walls):
     if not(thickness_small or thickness_rate_small):
       show_high(windows, walls, win_mw_ids, [])
       print(f'windows_missed:\n{windows[win_mw_ids]}')
-      print("There is some windows, cfind multiple responding walls and thickness is not small.")
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      print("There is some windows, find multiple responding walls and thickness is not small.")
       assert False
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       pass
 
 
