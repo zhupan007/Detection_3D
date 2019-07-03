@@ -57,7 +57,7 @@ def down_sample_points(points, keep_rate=0.3):
   return points_d
 
 
-def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
+def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=1):
   print(f'parsed_dir:{parsed_dir}')
   house_name = os.path.basename(parsed_dir)
   bboxes = []
@@ -111,7 +111,8 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
     #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE, animation_fn='points.mp4', ani_size=AniSizes[house_name])
     bboxes[:,2] += 0.1
     #Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
-    Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE, animation_fn='mesh.mp4', ani_size=AniSizes[house_name] )
+    Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE )
+    #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE, animation_fn='mesh.mp4', ani_size=AniSizes[house_name] )
 
 
 
@@ -150,9 +151,10 @@ def render_pth_file(pth_fn, show_by_class=True):
   labels = np.array(labels)
 
   #show_walls_offsetz(all_bboxes)
-  #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
-  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
+  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
+  #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
 
   if show_by_class:
     for clas in bboxes.keys():
@@ -241,7 +243,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   #house_names = SceneSamples.very_hard_wall_window_close
   house_names = SceneSamples.paper_samples_2[1:2]
-  #house_names = ['0348b9030a2ab02345e65ef28a1be6d2']
+  house_names = ['11535fb0648bb4634360fca94e95af23']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')
@@ -271,8 +273,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 

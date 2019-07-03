@@ -1,4 +1,7 @@
 # xyz May 2019
+import os
+from scene_samples import SceneSamples
+from shutil import copytree, rmtree
 
 def read_obj(fn):
     with open(fn, 'r') as f:
@@ -44,9 +47,18 @@ def read_obj(fn):
         for l in lines_ceiling:
             f.write(l)
 
+    src_dir = os.path.dirname(fn)
+    hn = os.path.basename(src_dir)
+    dst_dir = os.path.join('/home/z/SUNCG/suncg_v1/parsed', hn)
+    if os.path.exists(dst_dir):
+      rmtree(dst_dir)
+    copytree(src_dir, dst_dir)
+    pass
+
 if __name__ == '__main__':
     folder = '/home/z/SUNCG/suncg_v1/parsed'
     folder = '/DS/SUNCG/suncg_v1/parsed'
-    house_name = '0f49e723572f3f03e2c9a288599b9f12'
-    fn = f'{folder}/{house_name}/house.obj'
-    read_obj(fn)
+    for hn in SceneSamples.paper_samples_2:
+      #house_name = '0f49e723572f3f03e2c9a288599b9f12'
+      fn = f'{folder}/{hn}/house.obj'
+      read_obj(fn)

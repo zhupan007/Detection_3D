@@ -769,6 +769,10 @@ class Bbox3D():
     (1) Use points_aug0 to constrain size_x and size_z
     (2) Use points0 to constrain size_y (the thickness)
     '''
+    if points_aug0.shape[0] < 10:
+      # no points inside the box, rm it
+      return None
+
     bbox0 = bbox0.reshape([7])
     assert up_axis == 'Z'
     from geometric_util import Rz
@@ -835,7 +839,7 @@ class Bbox3D():
       bboxes = np.concatenate([bbox0, bbox_new], 0)
       Bbox3D.draw_points_bboxes(points_aug0, bboxes, up_axis='Z', is_yx_zb=False)
 
-    return bbox_new
+    return bbox_new.reshape([1,7])
 
   @staticmethod
   def line_intersection_2d(line0, line1, must_on0=False, must_on1=False,

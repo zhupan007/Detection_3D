@@ -232,11 +232,18 @@ class IndoorData():
         intersec_corners_idx_i, intersec_corners_i = Bbox3D.detect_all_intersection_corners(bboxes_i, 'Z')
       else:
         intersec_corners_idx_i = [None]*bn_i
+      invalid_bn = 0
       for k in range(bn_i):
-        croped_bboxes_i.append( Bbox3D.crop_bbox_by_points(
-                        bboxes_i[k], points_i[k], points_aug_i[k], 'Z', intersec_corners_idx_i[k]) )
+        croped_box_k =  Bbox3D.crop_bbox_by_points(
+                          bboxes_i[k], points_i[k], points_aug_i[k], 'Z', intersec_corners_idx_i[k])
+        if  croped_box_k is  not None:
+          croped_bboxes_i.append( croped_box_k )
+        else:
+          invalid_bn += 1
+          #Bbox3D.draw_points_bboxes(points_splited[i], bboxes_i[k:k+1], up_axis='Z', is_yx_zb=False, points_keep_rate=1.0)
+          pass
       if len(croped_bboxes_i) > 0:
-        croped_bboxes_i = np.concatenate(croped_bboxes_i, 0).reshape([-1,7])
+        croped_bboxes_i = np.concatenate(croped_bboxes_i, 0)
       else:
         croped_bboxes_i = np.array([]).reshape([-1,7])
 
@@ -625,13 +632,12 @@ def creat_splited_pcl_box():
   '''
   parsed_dir = PARSED_DIR
   splited_path = f'{SPLITED_DIR}/houses'
-  house_names = os.listdir(parsed_dir)
-  house_names.sort()
+  #house_names = os.listdir(parsed_dir)
 
-  house_names = ['0067620211b8e6459ff24ebe0780a21c']
-  house_names = SceneSamples.paper_samples
+  house_names = ['11535fb0648bb4634360fca94e95af23']
+  #house_names = SceneSamples.paper_samples
 
-  #house_names = get_house_names_1level()
+  house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
@@ -667,7 +673,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  #creat_splited_pcl_box()
-  gen_train_list()
+  creat_splited_pcl_box()
+  #gen_train_list()
   pass
 

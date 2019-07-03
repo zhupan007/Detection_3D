@@ -32,8 +32,10 @@ SAGE = False
 ONLY_LEVEL_1 = True
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
-PARSED_DIR = '_parsed__'
-PARSED_PATH = f'{SUNCG_V1_DIR}/{PARSED_DIR}'
+PARSED_DIR_GOING = '_parsed__'
+PARSED_DIR_READY = 'parsed'
+#PARSED_PATH = f'{SUNCG_V1_DIR}/{PARSED_DIR_GOING}'
+
 def show_pcl(pcl):
     pcd = open3d.PointCloud()
     pcd.points = open3d.Vector3dVector(pcl[:,0:3])
@@ -403,15 +405,17 @@ class Suncg():
 
     if Debug and 0:
       scene_id = '0fd6fd0c8a6b0e205354249f1058666f'
-
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
+
+      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper_samples_2]
+
     self.house_fns = rm_bad_scenes(self.house_fns)
 
     print(f'house num: {len(self.house_fns)}')
 
   def parse_houses_pool(self):
     import multiprocessing as mp
-    threads = 12 if SAGE else 6
+    threads = 12 if SAGE else 4
     p = mp.Pool(processes=threads)
     p.map(parse_house_onef, self.house_fns)
     p.close()
@@ -445,10 +449,12 @@ def parse_house_onef( house_fn, find_fail_scene=False ):
     2. point cloud for each depth image
     3. Merge point clouds
     '''
-    is_gen_house_obj = Debug and False
     is_gen_bbox = 1
     is_gen_cam = 1 - find_fail_scene
     is_gen_pcl = 1 - find_fail_scene
+
+    is_gen_house_obj = Debug and 0
+    #is_gen_bbox = is_gen_cam = is_gen_pcl = 0
 
     if is_gen_house_obj:
       gen_house_obj(house_fn)
@@ -788,8 +794,7 @@ def depth_2_pcl(depth_fn, cam_pos):
     #show_pcl(pcl)
     return pcl
 
-def get_pcl_path(house_fn):
-    parsed_dir = PARSED_DIR
+def get_pcl_path(house_fn, parsed_dir = PARSED_DIR_GOING):
     tmp = house_fn.split('/')
     tmp[-3] = parsed_dir
     del tmp[-1]
@@ -801,7 +806,7 @@ def get_pcl_path(house_fn):
 
 def gen_house_obj(house_fn):
     house_dir = os.path.dirname(house_fn)
-    parsed_dir = get_pcl_path(house_fn)
+    parsed_dir = get_pcl_path(house_fn, PARSED_DIR_READY)
 
     obj_fn = os.path.join(parsed_dir, 'house.obj')
     if os.path.exists(obj_fn):
@@ -1002,22 +1007,22 @@ def add_exta_cam_locations(cam_fn, show=False):
   return cam_fn_new
 
 def gen_house_names_1level():
-  house_names0 = os.listdir(PARSED_PATH)
+  parsed_path = f'{SUNCG_V1_DIR}/parsed'
+  house_names0 = os.listdir(parsed_path)
   house_names0.sort()
 
   house_names = []
   for hn in house_names0:
-    house_intact, intacts = check_house_intact(os.path.join(PARSED_PATH, hn))
+    house_intact, intacts = check_house_intact(os.path.join(parsed_path, hn))
     if house_intact:
         if hn not in SceneSamples.bad_scenes:
             house_names.append(hn)
 
-  print(f'totally {len(house_names0)} houses, got {len(house_names)} 1 level houses')
 
   remain_ids = []
   house_names_1l = []
   for hn in house_names:
-    hfn = os.path.join(PARSED_PATH, hn)
+    hfn = os.path.join(parsed_path, hn)
     summary = read_summary(hfn)
     level_num = summary['level_num']
     if level_num == 1:
@@ -1026,6 +1031,8 @@ def gen_house_names_1level():
   house_names_1l = np.array(house_names_1l)
   fn = os.path.join(SUNCG_V1_DIR, 'house_names_1level.txt')
   house_names_1l.tofile(fn, sep='\n', format='%s')
+
+  print(f'totally {len(house_names0)} houses, got {len(house_names)} intact \n {house_names_1l.shape[0]} one level houses')
   print(f'save {fn}')
 
 def gen_train_eval_split():
@@ -1140,8 +1147,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  suncg.parse_houses_pool()
-  #suncg.parse_houses()
+  #suncg.parse_houses_pool()
+  suncg.parse_houses()
 
 if __name__ == '__main__':
   parse_house()
