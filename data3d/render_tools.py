@@ -20,7 +20,7 @@ CLASSES = ['wall', 'window', 'door']
 #CLASSES += ['room']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.8
+POINTS_KEEP_RATE = 0.6
 DEL_CLASSES = True
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
@@ -150,10 +150,13 @@ def render_pth_file(pth_fn, show_by_class=False):
     labels += [i]*n
   labels = np.array(labels)
 
-  Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
+  #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
   #show_walls_offsetz(all_bboxes)
-  Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+  #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
   Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
+  Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
 
@@ -281,16 +284,16 @@ def summarize():
       house_names_1level = h1f.read().split('\n')
 
   num_points = []
-  areas = []
+  xyareas = []
   i = 0
   for hn in house_names_1level:
     i += 1
     parsed_dir = f'{PARSED_DIR}/{hn}'
     summary = read_summary(parsed_dir)
 
-    if 'area' in summary:
+    if 'xyarea' in summary:
       pn = summary['points_num']
-      area = summary['area']
+      xyarea = summary['xyarea']
     else:
       pcl_fn = f'{parsed_dir}/pcl_camref.ply'
       pcd = open3d.read_point_cloud(pcl_fn)
@@ -301,30 +304,30 @@ def summarize():
       pcl = np.concatenate([points, colors], 1)
 
       scene_size = pcl_size(pcl)
-      area = np.product(scene_size)
+      xyarea = np.product(scene_size[0:2])
       pn = pcl.shape[0]
       #if 'pcl_size' not in summary:
       #  write_summary(parsed_dir, 'pcl_size', scene_size, 'a')
-      if 'area' not in summary:
-        write_summary(parsed_dir, 'area', area, 'a')
+      if 'xyarea' not in summary:
+        write_summary(parsed_dir, 'xyarea', xyarea, 'a')
 
 
-    areas.append(area)
+    xyareas.append(xyarea)
     num_points.append(pn)
 
     print(f'{i} {hn}  point num: {pn}')
 
   num_points = np.array(num_points).astype(np.double)
-  areas = np.array(areas).astype(np.double)
+  xyareas = np.array(xyareas).astype(np.double)
 
   ave_np = np.mean(num_points).astype(np.int)
   sum_np = np.sum(num_points) / 1e6
-  ave_area = np.mean(areas)
-  sum_area = np.sum(areas) / 1e3
+  ave_xyarea = np.mean(xyareas)
+  sum_xyarea = np.sum(xyareas) / 1e3
 
   print(f'\n\nTotall {num_points.shape[0]} scenes')
   print(f'ave num: {ave_np:.3f}\nsum n: {sum_np:.5f} M')
-  print(f'ave area: {ave_area:.5f}\n sum area: {sum_area:.5f} K')
+  print(f'ave xyarea: {ave_xyarea:.5f}\n sum xyarea: {sum_xyarea:.5f} K')
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
   pass
 

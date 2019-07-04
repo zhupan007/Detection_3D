@@ -492,7 +492,7 @@ def read_summary(base_dir):
       if len(items)==0:
           continue
       item = items[0][:-1]
-      if item in ['area']:
+      if item in ['xyarea']:
         summary[item] = float(items[1])
       elif item in ['pcl_size']:
         pass
@@ -748,9 +748,9 @@ def gen_pcl(house_fn):
     #open3d.draw_geometries([pcd])
 
     write_summary(parsed_dir, 'points_num', new_num, 'a')
-    pcl_size, area = get_pcl_size(pcls_all[:,0:3])
+    pcl_size, xyarea = get_pcl_size(pcls_all[:,0:3])
     write_summary(parsed_dir, 'pcl_size', pcl_size, 'a')
-    write_summary(parsed_dir, 'area', area, 'a')
+    write_summary(parsed_dir, 'xyarea', xyarea, 'a')
     #open3d.draw_geometries([pcd])
     return True
 
@@ -758,8 +758,8 @@ def get_pcl_size(xyzs):
   xyz_min = xyzs.min(0)
   xyz_max = xyzs.max(0)
   xyz_size = xyz_max - xyz_min
-  area = np.product(xyz_size)
-  return xyz_size, area
+  xyarea = np.product(xyz_size[0:2])
+  return xyz_size, xyarea
 
 def read_cam_pos(cam_fn):
   cam_pos = np.loadtxt(cam_fn)
