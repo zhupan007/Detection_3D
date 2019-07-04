@@ -20,7 +20,7 @@ CLASSES = ['wall', 'window', 'door']
 #CLASSES += ['room']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.6
+POINTS_KEEP_RATE = 0.8
 DEL_CLASSES = True
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
@@ -108,6 +108,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=1):
 
     #pcl = cut_points_roof(pcl)
 
+    Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
     #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE, animation_fn='points.mp4', ani_size=AniSizes[house_name])
     bboxes[:,2] += 0.1
     #Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
@@ -122,7 +123,7 @@ def pcl_size(pcl):
     xyz_size = xyz_max - xyz_min
     return xyz_size
 
-def render_pth_file(pth_fn, show_by_class=True):
+def render_pth_file(pth_fn, show_by_class=False):
   pcl, bboxes = torch.load(pth_fn)
   #points = pcl[:,0:3]
   #colors = pcl[:,3:6]
@@ -150,6 +151,7 @@ def render_pth_file(pth_fn, show_by_class=True):
     labels += [i]*n
   labels = np.array(labels)
 
+  Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
   #show_walls_offsetz(all_bboxes)
   Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
@@ -228,7 +230,6 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       31a69e882e51c7c5dfdc0da464c3c02d **
   '''
   house_names = ['b021ab18bb170a167d569dcfcaf58cd4'] #
-  house_names = ['0163e180b8c372c9a7f123dc01ae43ed']
 
   #house_names = os.listdir(PARSED_DIR)
 
@@ -239,11 +240,9 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names.sort()
   print(f'totally {len(house_names)} houses')
 
-  house_names = house_names[200:]
-
   #house_names = SceneSamples.very_hard_wall_window_close
-  house_names = SceneSamples.paper_samples_2[1:2]
-  house_names = ['11535fb0648bb4634360fca94e95af23']
+  #house_names = SceneSamples.paper_samples_2[1:2]
+  house_names = ['00922f91aa09dbdda3a74489ea0e21eb']
 
   for k,house_name in enumerate( house_names ):
     print(f'\n{k}: {house_name}')

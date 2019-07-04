@@ -69,6 +69,7 @@ def inference_3d(
         expected_results_sigma_tol=4,
         iou_thresh_eval = 0.5,
         output_folder=None,
+        epoch = None,
 ):
     # convert to a torch.device for efficiency
     device = torch.device(device)
@@ -110,4 +111,6 @@ def inference_3d(
                     predictions=predictions,
                     iou_thresh_eval = iou_thresh_eval,
                     output_folder=output_folder,
+                    epoch = epoch,
+                    is_train = False,
                     **extra_args)

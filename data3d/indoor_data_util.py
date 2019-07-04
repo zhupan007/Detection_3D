@@ -15,7 +15,7 @@ from data3d.suncg_utils.scene_samples import SceneSamples
 #sys.path.append(ROOT_DIR)
 from suncg_utils.wall_preprocessing import show_walls_1by1, show_walls_offsetz
 
-DEBUG = True
+DEBUG = False
 if DEBUG:
   from second.data.data_render import DataRender
 
@@ -670,10 +670,11 @@ def gen_train_list():
     f.write('\n'.join(train_hosue_names))
   with open(test_fn, 'w') as f:
     f.write('\n'.join(test_house_names))
+  print(f'gen_train_list ok: {train_fn}')
 
 
 if __name__ == '__main__':
-  creat_splited_pcl_box()
-  #gen_train_list()
+  #creat_splited_pcl_box()
+  gen_train_list()
   pass
 

@@ -1,7 +1,7 @@
 from .suncg import suncg_evaluation
 
 
-def evaluate(dataset, predictions, iou_thresh_eval,  output_folder, **kwargs):
+def evaluate(dataset, predictions, iou_thresh_eval,  output_folder, epoch, is_train, **kwargs):
     """evaluate dataset using different methods based on dataset type.
     Args:
         dataset: Dataset object
@@ -14,7 +14,7 @@ def evaluate(dataset, predictions, iou_thresh_eval,  output_folder, **kwargs):
     """
 
     args = dict(
-        dataset=dataset, predictions=predictions, iou_thresh_eval=iou_thresh_eval, output_folder=output_folder, **kwargs
+        dataset=dataset, predictions=predictions, iou_thresh_eval=iou_thresh_eval, output_folder=output_folder, epoch=epoch, is_train=is_train, **kwargs
     )
 
     return suncg_evaluation(**args)

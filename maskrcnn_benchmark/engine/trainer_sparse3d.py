@@ -165,7 +165,7 @@ def do_train(
       logger.info(f'\nepoch {epoch_id}\n')
       eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all,
                           iou_thresh_eval=iou_thresh_eval,
-                          output_folder=eval_out_dir, box_only=False, epoch=epoch_id)
+                          output_folder=eval_out_dir, box_only=False, epoch=epoch_id, is_train=True)
       pass
     return min_loss
 

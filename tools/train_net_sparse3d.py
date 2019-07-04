@@ -90,7 +90,7 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
     return model, min_loss
 
 
-def test(cfg, model, distributed):
+def test(cfg, model, distributed, epoch):
     if distributed:
         model = model.module
     torch.cuda.empty_cache()  # TODO check if it helps
@@ -117,6 +117,7 @@ def test(cfg, model, distributed):
             expected_results_sigma_tol=cfg.TEST.EXPECTED_RESULTS_SIGMA_TOL,
             iou_thresh_eval = cfg.TEST.IOU_THRESHOLD,
             output_folder=output_folder,
+            epoch = epoch
         )
         synchronize()
     pass
@@ -196,11 +197,14 @@ def main():
     logger.info("Running with config:\n{}".format(cfg))
 
     min_loss = 10000
+    epochs_between_test = cfg.SOLVER.EPOCHS_BETWEEN_TEST
     for loop in range(cfg.SOLVER.EPOCHS // cfg.SOLVER.EPOCHS_BETWEEN_TEST):
       model, min_loss = train(cfg, args.local_rank, args.distributed, loop, args.only_test, min_loss)
 
       if not args.skip_test:
-          test(cfg, model, args.distributed)
+          test(cfg, model, args.distributed,
+           epoch = (1+loop) * epochs_between_test,
+               )
 
 def get_train_example_num(cfg):
     from data3d.suncg_utils.suncg_dataset import SUNCGDataset

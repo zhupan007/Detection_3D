@@ -27,7 +27,7 @@ FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
 ENABLE_NO_RECTANGLE = ['Ceiling', 'Floor', 'Room']
-SAGE = True
+SAGE = False
 
 ONLY_LEVEL_1 = True
 
@@ -407,7 +407,7 @@ class Suncg():
       scene_id = '0fd6fd0c8a6b0e205354249f1058666f'
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
-      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper_samples_2]
+      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper_samples_0]
 
     self.house_fns = rm_bad_scenes(self.house_fns)
 
@@ -1147,8 +1147,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  #suncg.parse_houses_pool()
-  suncg.parse_houses()
+  suncg.parse_houses_pool()
+  #suncg.parse_houses()
 
 if __name__ == '__main__':
   parse_house()

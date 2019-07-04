@@ -25,10 +25,11 @@ def get_obj_nums(gt_boxlists, dset_metas):
             obj_gt_nums[obj].append( sum(labels==l) )
     return obj_gt_nums
 
-def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger, epoch=None):
+def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger, epoch=None, is_train=None):
     # TODO need to make the use_07_metric format available
     # for the user to choose
 
+    logger.info(f'\n\nis_train: {is_train}\n')
     if sum([len(p) for p in predictions]) == 0:
       print('\n\n\tno predictions to evaluate\n\n')
       return
