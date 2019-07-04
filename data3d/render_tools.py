@@ -116,7 +116,6 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=1):
     #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE, animation_fn='mesh.mp4', ani_size=AniSizes[house_name] )
 
 
-
 def pcl_size(pcl):
     xyz_max = pcl[:,0:3].max(0)
     xyz_min = pcl[:,0:3].min(0)
@@ -276,11 +275,43 @@ def main():
             r_splited = 1
     )
 
+def summary():
+  with open(f'{SUNCG_V1_DIR}/house_names_1level.txt', 'r') as h1f:
+      house_names_1level = h1f.read().split('\n')
+
+  num_points = []
+  scene_sizes= []
+  i = 0
+  for hn in house_names_1level:
+    i += 1
+    if i==10:
+      break
+    parsed_dir = f'{PARSED_DIR}/{hn}'
+    pcl_fn = f'{parsed_dir}/pcl_camref.ply'
+    pcd = open3d.read_point_cloud(pcl_fn)
+    points = np.asarray(pcd.points)
+    points = cam2world_pcl(points)
+    colors = np.asarray(pcd.colors)
+    pcl = np.concatenate([points, colors], 1)
+
+    scene_size = pcl_size(pcl)
+    n = pcl.shape[0]
+    num_points.append(n)
+    scene_sizes.append(scene_size)
+    print(f'scene pcl size:{scene_size}')
+    print(f'point num: {pcl.shape[0]}')
+
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  ave_np = np.mean(num_points)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  pass
+
 
 
 if __name__ == '__main__':
     #render_fn()
-    main()
+    #main()
+    summary()
 
 
 
