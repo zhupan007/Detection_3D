@@ -27,7 +27,7 @@ FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
 ENABLE_NO_RECTANGLE = ['Ceiling', 'Floor', 'Room']
-SAGE = True
+SAGE = False
 
 ONLY_LEVEL_1 = True
 
@@ -491,7 +491,13 @@ def read_summary(base_dir):
       items = [e for e in line.split(' ') if e!='']
       if len(items)==0:
           continue
-      summary[items[0][:-1]] = int(items[1])
+      item = items[0][:-1]
+      if item in ['area']:
+        summary[item] = float(items[1])
+      elif item in ['pcl_size']:
+        pass
+      else:
+        summary[item] = int(items[1])
   return summary
 
 def check_house_intact(base_dir):
@@ -742,8 +748,18 @@ def gen_pcl(house_fn):
     #open3d.draw_geometries([pcd])
 
     write_summary(parsed_dir, 'points_num', new_num, 'a')
+    pcl_size, area = get_pcl_size(pcls_all[:,0:3])
+    write_summary(parsed_dir, 'pcl_size', pcl_size, 'a')
+    write_summary(parsed_dir, 'area', area, 'a')
     #open3d.draw_geometries([pcd])
     return True
+
+def get_pcl_size(xyzs):
+  xyz_min = xyzs.min(0)
+  xyz_max = xyzs.max(0)
+  xyz_size = xyz_max - xyz_min
+  area = np.product(xyz_size)
+  return xyz_size, area
 
 def read_cam_pos(cam_fn):
   cam_pos = np.loadtxt(cam_fn)
@@ -1149,7 +1165,7 @@ def parse_house():
   '''
   suncg = Suncg(SUNCG_V1_DIR)
   suncg.parse_houses_pool()
-  #suncg.parse_houses()
+  #suncg.parse_houses(False)
 
 if __name__ == '__main__':
   parse_house()

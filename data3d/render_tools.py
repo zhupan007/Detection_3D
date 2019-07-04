@@ -275,34 +275,56 @@ def main():
             r_splited = 1
     )
 
-def summary():
+def summarize():
+  from suncg_utils.suncg_preprocess import read_summary, write_summary
   with open(f'{SUNCG_V1_DIR}/house_names_1level.txt', 'r') as h1f:
       house_names_1level = h1f.read().split('\n')
 
   num_points = []
-  scene_sizes= []
+  areas = []
   i = 0
   for hn in house_names_1level:
     i += 1
-    if i==10:
-      break
     parsed_dir = f'{PARSED_DIR}/{hn}'
-    pcl_fn = f'{parsed_dir}/pcl_camref.ply'
-    pcd = open3d.read_point_cloud(pcl_fn)
-    points = np.asarray(pcd.points)
-    points = cam2world_pcl(points)
-    colors = np.asarray(pcd.colors)
-    pcl = np.concatenate([points, colors], 1)
+    summary = read_summary(parsed_dir)
 
-    scene_size = pcl_size(pcl)
-    n = pcl.shape[0]
-    num_points.append(n)
-    scene_sizes.append(scene_size)
-    print(f'scene pcl size:{scene_size}')
-    print(f'point num: {pcl.shape[0]}')
+    if 'area' in summary:
+      pn = summary['points_num']
+      area = summary['area']
+    else:
+      pcl_fn = f'{parsed_dir}/pcl_camref.ply'
+      pcd = open3d.read_point_cloud(pcl_fn)
 
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
-  ave_np = np.mean(num_points)
+      points = np.asarray(pcd.points)
+      points = cam2world_pcl(points)
+      colors = np.asarray(pcd.colors)
+      pcl = np.concatenate([points, colors], 1)
+
+      scene_size = pcl_size(pcl)
+      area = np.product(scene_size)
+      pn = pcl.shape[0]
+      #if 'pcl_size' not in summary:
+      #  write_summary(parsed_dir, 'pcl_size', scene_size, 'a')
+      if 'area' not in summary:
+        write_summary(parsed_dir, 'area', area, 'a')
+
+
+    areas.append(area)
+    num_points.append(pn)
+
+    print(f'{i} {hn}  point num: {pn}')
+
+  num_points = np.array(num_points).astype(np.double)
+  areas = np.array(areas).astype(np.double)
+
+  ave_np = np.mean(num_points).astype(np.int)
+  sum_np = np.sum(num_points) / 1e6
+  ave_area = np.mean(areas)
+  sum_area = np.sum(areas) / 1e3
+
+  print(f'\n\nTotall {num_points.shape[0]} scenes')
+  print(f'ave num: {ave_np:.3f}\nsum n: {sum_np:.5f} M')
+  print(f'ave area: {ave_area:.5f}\n sum area: {sum_area:.5f} K')
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
   pass
 
@@ -311,7 +333,7 @@ def summary():
 if __name__ == '__main__':
     #render_fn()
     #main()
-    summary()
+    summarize()
 
 
 
