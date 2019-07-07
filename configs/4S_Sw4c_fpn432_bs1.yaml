@@ -1,5 +1,5 @@
 DEBUG:
-  eval_in_train: 5
+  eval_in_train: 10
   eval_in_train_per_iter: -1
 INPUT:
   #CLASSES: ['background', 'wall']
@@ -39,7 +39,7 @@ SOLVER:
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (70,)
-  CHECKPOINT_PERIOD_EPOCHS: 20
+  CHECKPOINT_PERIOD_EPOCHS: 30
   WARMUP_EPOCHS: 2.0
   TRACK_RUNNING_STATS: False
 OUTPUT_DIR: "res_Sw4c_4S_fpn432_bs1"

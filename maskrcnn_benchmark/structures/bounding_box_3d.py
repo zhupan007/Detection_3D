@@ -368,7 +368,7 @@ class BoxList3D(object):
     def clamp_size(self):
       self.bbox3d[:,3:6] = torch.clamp(self.bbox3d[:,3:6], min=0.001)
 
-    def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None):
+    def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None, points_keep_rate=None):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy()
@@ -400,7 +400,7 @@ class BoxList3D(object):
         labels = labels, random_color=False)
       else:
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb',\
-        labels = labels,  random_color=False)
+        labels = labels,  random_color=False, points_keep_rate=points_keep_rate)
 
     def show_centroids(self, max_num=-1, points=None):
       import numpy as np
