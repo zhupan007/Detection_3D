@@ -40,3 +40,18 @@ def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
 
   return data__loader
 
+
+def check_data(cfg):
+  data_loader_train = make_data_loader(cfg, True)
+  data_loader_val = make_data_loader(cfg, False)
+
+  n = len(data_loader_val)
+  for i, data in enumerate(data_loader_val):
+    print(f'val {i} / {n}')
+
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  n = len(data_loader_train)
+  for i, data in enumerate(data_loader_train):
+    print(f'train {i} / {n}')
+
+

@@ -20,7 +20,7 @@ CLASSES = ['wall', 'window', 'door']
 #CLASSES += ['room']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.6
+POINTS_KEEP_RATE = 0.9
 DEL_CLASSES = True
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
@@ -150,7 +150,9 @@ def render_pth_file(pth_fn, show_by_class=False):
     labels += [i]*n
   labels = np.array(labels)
 
-  #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
+  Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
+  return
+
   #show_walls_offsetz(all_bboxes)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
@@ -243,7 +245,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   print(f'totally {len(house_names)} houses')
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  #house_names = SceneSamples.paper_samples_2[1:2]
+  house_names = SceneSamples.paper_samples_0
   house_names = ['00922f91aa09dbdda3a74489ea0e21eb']
 
   for k,house_name in enumerate( house_names ):
@@ -288,6 +290,9 @@ def summarize():
   i = 0
   for hn in house_names_1level:
     i += 1
+    #if i>10:
+    #  break
+
     parsed_dir = f'{PARSED_DIR}/{hn}'
     summary = read_summary(parsed_dir)
 
@@ -325,9 +330,15 @@ def summarize():
   ave_xyarea = np.mean(xyareas)
   sum_xyarea = np.sum(xyareas) / 1e3
 
-  print(f'\n\nTotall {num_points.shape[0]} scenes')
+  scene_n = num_points.shape[0]
+  big_xyarea = xyareas > 900
+  big_xyarea_n = np.sum(big_xyarea)
+  big_xyarea_ratio = 1.0 * big_xyarea_n / scene_n
+
+  print(f'\n\nTotall {scene_n} scenes')
   print(f'ave num: {ave_np:.3f}\nsum n: {sum_np:.5f} M')
   print(f'ave xyarea: {ave_xyarea:.5f}\n sum xyarea: {sum_xyarea:.5f} K')
+  print(f'big area ratio: {big_xyarea_ratio}')
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
   pass
 
@@ -335,8 +346,8 @@ def summarize():
 
 if __name__ == '__main__':
     #render_fn()
-    #main()
-    summarize()
+    main()
+    #summarize()
 
 
 

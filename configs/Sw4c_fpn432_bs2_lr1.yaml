@@ -1,5 +1,5 @@
 DEBUG:
-  eval_in_train: 5
+  eval_in_train: 2
   eval_in_train_per_iter: -1
 INPUT:
   #CLASSES: ['background', 'wall']
@@ -32,7 +32,7 @@ DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
   EPOCHS: 200
-  EPOCHS_BETWEEN_TEST: 5
+  EPOCHS_BETWEEN_TEST: 2
   IMS_PER_BATCH: 2
   BASE_LR: 0.001
   WEIGHT_DECAY: 0.000

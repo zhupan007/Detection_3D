@@ -26,7 +26,7 @@ from maskrcnn_benchmark.utils.imports import import_file
 from maskrcnn_benchmark.utils.logger import setup_logger
 from maskrcnn_benchmark.utils.miscellaneous import mkdir
 
-from data3d.data import make_data_loader
+from data3d.data import make_data_loader, check_data
 from data3d.dataset_metas import DSET_METAS
 
 
@@ -167,6 +167,8 @@ def main():
     cfg.merge_from_list(args.opts)
     intact_cfg(cfg)
     cfg.freeze()
+
+    #check_data(cfg)
 
     train_example_num = get_train_example_num(cfg)
     cfg['OUTPUT_DIR'] = f'{cfg.OUTPUT_DIR}_T{train_example_num}'

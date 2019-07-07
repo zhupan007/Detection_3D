@@ -491,13 +491,15 @@ def read_summary(base_dir):
       items = [e for e in line.split(' ') if e!='']
       if len(items)==0:
           continue
-      item = items[0][:-1]
-      if item in ['xyarea']:
-        summary[item] = float(items[1])
-      elif item in ['pcl_size']:
+      style = items[0][:-1]
+      #print(style)
+      #print(items[1])
+      if style in ['xyarea', 'area']:
+        summary[style] = float(items[1])
+      elif style in ['pcl_size']:
         pass
       else:
-        summary[item] = int(items[1])
+        summary[style] = int(items[1])
   return summary
 
 def check_house_intact(base_dir):
