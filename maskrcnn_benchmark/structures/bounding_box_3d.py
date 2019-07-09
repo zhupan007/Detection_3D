@@ -8,6 +8,8 @@ from utils3d.geometric_torch import limit_period, OBJ_DEF
 FLIP_LEFT_RIGHT = 0
 FLIP_TOP_BOTTOM = 1
 
+POINTS_KEEP_RATE = 1.0
+
 # TODO redundant, remove
 def _cat(tensors, dim=0):
     """
@@ -36,11 +38,11 @@ def cat_boxlist_3d(bboxes_ls, per_example, use_constants0=False):
       size3d = None
     else:
         if not per_example:
-          size3d_0 = bboxes_ls[0].size3d
+          size3d = bboxes_ls[0].size3d
           for bbox3d in bboxes_ls:
             #is_size_close =  torch.abs(bbox3d.size3d - size3d).max() < 0.01
             #if not is_size_close:
-            if not torch.isclose( bbox3d.size3d, size3d_0 ).all():
+            if not torch.isclose( bbox3d.size3d, size3d ).all():
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
         else:
@@ -368,7 +370,7 @@ class BoxList3D(object):
     def clamp_size(self):
       self.bbox3d[:,3:6] = torch.clamp(self.bbox3d[:,3:6], min=0.001)
 
-    def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None, points_keep_rate=None):
+    def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None, points_keep_rate=POINTS_KEEP_RATE):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy()
@@ -501,7 +503,7 @@ class BoxList3D(object):
       print(f'\nobjectness quality by pos anchors: {gap}\n')
 
     def show_by_objectness(self, threshold, targets=None,
-          rpn_box_regression=None, anchors=None, regression_targets=None, below=False):
+          rpn_box_regression=None, anchors=None, regression_targets=None, below=False, points=None, points_keep_rate=POINTS_KEEP_RATE):
       import numpy as np
       from maskrcnn_benchmark.layers.smooth_l1_loss import get_yaw_loss
 
@@ -523,7 +525,7 @@ class BoxList3D(object):
         print(f'\n\nnum_gt={len(targets)}\nnum_top={num_top}\n\n')
       print(f"\n objectness over {threshold}: \t{num_top} \n {top_objectness} \nmin is {min_top_objectness}")
       top_preds = self[ids]
-      top_preds.show(boxes_show_together=targets)
+      top_preds.show(boxes_show_together=targets, points=points)
 
       # show the min objectness of tops
       if len(ids)>0:

@@ -165,11 +165,11 @@ class RPNModule(torch.nn.Module):
         self.loss_evaluator = loss_evaluator
         self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
 
-    def forward(self, points_sparse, features_sparse, targets=None):
+    def forward(self, inputs_sparse, features_sparse, targets=None):
         """
         Arguments:
-            points_sparse (ImageList): points_sparse for which we want to compute the predictions
-            features (list[Tensor]): features computed from the points_sparse that are
+            inputs_sparse (ImageList): inputs_sparse for which we want to compute the predictions
+            features (list[Tensor]): features computed from the inputs_sparse that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
             targets (list[BoxList): ground-truth boxes present in the image (optional)
@@ -190,7 +190,7 @@ class RPNModule(torch.nn.Module):
         # n is a flatten of all the locations of all examples in a batch.
         # Because the feature map size in a batch may be diff for each example
         objectness, rpn_box_regression = self.head(features)
-        anchors = self.anchor_generator(points_sparse, features_sparse, targets)
+        anchors = self.anchor_generator(inputs_sparse, features_sparse, targets)
         objectness, rpn_box_regression = cat_scales_obj_reg(objectness, rpn_box_regression, anchors)
         scale_num = len(anchors)
         anchors = cat_scales_anchor(anchors)
@@ -206,10 +206,10 @@ class RPNModule(torch.nn.Module):
         if SHOW_TARGETS_ANCHORS:
             import numpy as np
             batch_size = len(targets)
-            examples_scope = examples_bidx_2_sizes(points_sparse[0][:,-1])
+            examples_scope = examples_bidx_2_sizes(inputs_sparse[0][:,-1])
             for bi in range(batch_size):
               se = examples_scope[bi]
-              points = points_sparse[1][se[0]:se[1],0:3].cpu().data.numpy()
+              points = inputs_sparse[1][se[0]:se[1],0:3].cpu().data.numpy()
               print(f'\n targets')
               targets[bi].show(points=points)
               anchor_num = len(anchors)
@@ -226,7 +226,7 @@ class RPNModule(torch.nn.Module):
           pass
 
         if self.training:
-            return self._forward_train(anchors, objectness, rpn_box_regression, targets)
+            return self._forward_train(anchors, objectness, rpn_box_regression, targets, debugs={'inputs_sparse': inputs_sparse})
         else:
             return self._forward_test(anchors, objectness, rpn_box_regression, targets)
 
@@ -239,7 +239,7 @@ class RPNModule(torch.nn.Module):
         for bi,pdb in enumerate(pred_boxes.seperate_examples()):
           pdb.show_by_objectness(0.97, targets[bi])
 
-    def _forward_train(self, anchors, objectness, rpn_box_regression, targets):
+    def _forward_train(self, anchors, objectness, rpn_box_regression, targets, debugs={}):
         if self.cfg.MODEL.RPN_ONLY:
             # When training an RPN-only model, the loss is determined by the
             # predicted objectness and rpn_box_regression values and there is
@@ -259,7 +259,7 @@ class RPNModule(torch.nn.Module):
 
         if not self.seperate_classifier.need_seperate:
           loss_objectness, loss_rpn_box_reg = self.loss_evaluator(
-              anchors, objectness.squeeze(1), rpn_box_regression, targets
+              anchors, objectness.squeeze(1), rpn_box_regression, targets, debugs
           )
           boxes.set_as_prediction()
           losses = {
@@ -268,7 +268,7 @@ class RPNModule(torch.nn.Module):
           }
         else:
           loss_objectness, loss_rpn_box_reg = self.seperate_classifier.seperate_rpn_loss_evaluator(
-                  self.loss_evaluator, anchors, objectness, rpn_box_regression, targets)
+                  self.loss_evaluator, anchors, objectness, rpn_box_regression, targets, debugs=debugs)
           boxes[0].set_as_prediction()
           boxes[1].set_as_prediction()
 

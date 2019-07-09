@@ -79,7 +79,7 @@ class SeperateClassifier():
         show_box_fields(anchors, 'F')
       return boxes
 
-    def seperate_rpn_loss_evaluator(self, loss_evaluator_fn, anchors, objectness, rpn_box_regression, targets):
+    def seperate_rpn_loss_evaluator(self, loss_evaluator_fn, anchors, objectness, rpn_box_regression, targets, debugs={}):
       #targets0, targets1 = self.seperate_targets(targets)
       loss_objectness0, loss_rpn_box_reg0 = loss_evaluator_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], self.targets0)
       loss_objectness1, loss_rpn_box_reg1 = loss_evaluator_fn(anchors, objectness[:,1], rpn_box_regression[:,7:14], self.targets1)
