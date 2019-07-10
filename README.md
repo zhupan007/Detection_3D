@@ -153,6 +153,8 @@ later, SpConv and SparseConvCnn should only need to install one
 
 # run
 - run.sh
+- load test resut:   
+  maskrcnn_benchmark/engine/inference_3d.py: inference_3d/load_pred
 
 # Debug
  - data3d/evaluation/suncg/suncg_eval.py: SHOW_GOOD_PRED

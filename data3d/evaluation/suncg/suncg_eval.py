@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 
 DEBUG = True
 SHOW_PRED = DEBUG and False
-DRAW_RECALL_PRECISION = DEBUG and False
+DRAW_RECALL_PRECISION = DEBUG and True
 SHOW_FILE_NAMES = DEBUG and False
 
-DRAW_REGRESSION_IOU = DEBUG and False
+DRAW_REGRESSION_IOU = DEBUG and True
 
 def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
@@ -167,7 +167,8 @@ def performance_str(result, dataset, regression_res):
               scores_mean.append( regression_res[clsn]['ave_std_score'][0] )
               scores_std.append( regression_res[clsn] ['ave_std_score'][1] )
               scores_min.append( regression_res[clsn] ['min_max_score'][0] )
-              missed_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][0] )
+              ms_gt_rate = 1.0 * regression_res[clsn] ['missed_multi_sum_gtnum'][0] / regression_res[clsn] ['missed_multi_sum_gtnum'][2]
+              missed_gt_rates.append( ms_gt_rate)
               multi_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][1] )
               gt_nums.append( regression_res[clsn] ['missed_multi_sum_gtnum'][2] )
             else:
@@ -273,6 +274,9 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
     assert min(batch_sizes) == max(batch_sizes)
     batch_size = batch_sizes[0]
 
+    ious_all = defaultdict(list)
+    scores_all = defaultdict(list)
+
     small_iou_preds = []
     for bi in range(batch_size):
         small_iou_preds.append([])
@@ -297,9 +301,14 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
                 ious_bi.append( peg_max_score['iou'] )
                 good_pred_ids_bi.append( peg_max_score['pred_idx'] )
             scores_bi = np.array(scores_bi)
+            ious_bi = np.array(ious_bi)
+
+            ious_all[obj].append(ious_bi)
+            scores_all[obj].append(scores_bi)
+
             score_mask = scores_bi >= score_thres
             scores_bi = scores_bi[score_mask]
-            ious_bi = np.array(ious_bi)[score_mask]
+            ious_bi = ious_bi[score_mask]
             ious[obj].append(ious_bi)
             scores[obj].append(scores_bi)
             good_pred_ids_bi = np.array(good_pred_ids_bi)[score_mask]
@@ -375,16 +384,24 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
 
     if DRAW_REGRESSION_IOU:
         for obj in ious_flat:
-            fig = plt.figure(1)
-            plt.plot(ious_flat[obj],'o')
-            plt.xlabel(f'{obj} index')
-            plt.ylabel('iou')
-            title = f'iou of {obj} prediction'
+            fig, axs = plt.subplots(1, 1, sharey=True, tight_layout=True)
+            io = ious_flat[obj]
+            axs.hist(io, bins=20)
+            plt.xlabel(f'iou of {obj} prediction')
+            plt.ylabel('count')
+            title = f'iou histogram of {obj} prediction'
             #plt.title(title)
             plt.show()
-            fname = f'iou_{obj}.png'
+            fname = f'iou_hist_{obj}.png'
             fig.savefig(fname)
             print(fname)
+
+
+            #fig = plt.figure(1)
+            #s = scores_flat[obj]
+            #plt.plot(s, io ,'.')
+            #plt.show()
+
             pass
 
     return regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds
