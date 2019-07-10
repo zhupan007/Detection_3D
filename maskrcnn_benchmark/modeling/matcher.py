@@ -168,6 +168,7 @@ class Matcher(object):
         if IGNORE_HIGHEST_MATCH_NEARBY:
             assert not POS_HIGHEST_MATCH_NEARBY
             ignore_threshold = highest_quality_foreach_gt - 0.05
+            ignore_threshold = torch.max((ignore_threshold*0+1)*0.02, ignore_threshold)
             ignore_mask0 =  match_quality_matrix0 > ignore_threshold.view(-1,1)
             ignore_mask1 = ignore_mask0.any(dim=0)
             neg_mask = matches==Matcher.BELOW_LOW_THRESHOLD
