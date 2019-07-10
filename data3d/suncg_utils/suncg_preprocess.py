@@ -1166,8 +1166,8 @@ def parse_house():
     object_bbox in world frame
   '''
   suncg = Suncg(SUNCG_V1_DIR)
-  suncg.parse_houses_pool()
-  #suncg.parse_houses(False)
+  #suncg.parse_houses_pool()
+  suncg.parse_houses(False)
 
 if __name__ == '__main__':
   parse_house()

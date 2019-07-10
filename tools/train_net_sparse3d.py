@@ -207,6 +207,8 @@ def main():
           test(cfg, model, args.distributed,
            epoch = (1+loop) * epochs_between_test,
                )
+          if args.only_test:
+            break
 
 def get_train_example_num(cfg):
     from data3d.suncg_utils.suncg_dataset import SUNCGDataset
