@@ -2,15 +2,16 @@ class SceneSamples():
     '''
     '''
     #---------------------------------------------------------------------------
-    paper_samples = ['00602d3d932a8d5305234360a9d1e0ad', '0058113bdc8bee5f387bb5ad316d7b28', '0055398beb892233e0664d843eb451ca']
-    paper_samples_0 = ['005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4','00922f91aa09dbdda3a74489ea0e21eb']
+    paper_samples = ['0058113bdc8bee5f387bb5ad316d7b28']
+    paper_samples_1  = ['00602d3d932a8d5305234360a9d1e0ad',  '0055398beb892233e0664d843eb451ca']
+    paper_samples_2 = ['005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4','00922f91aa09dbdda3a74489ea0e21eb']
     # [200:300]
-    paper_samples_1 = ['0173543a6c15604c28070aafa61868be'] + \
+    paper_samples_3 = ['0173543a6c15604c28070aafa61868be'] + \
                     ['02164f84a9e7321f3071b2214df8c738', '0348a36dd0901c93081838056b111ed6'] + \
                     ['0348b9030a2ab02345e65ef28a1be6d2']
 
-    paper_samples_2 = ['01b05d5581c18177f6e8444097d89db4', '01ef4e9bebeb6252257b2d48d3819630']
-    paper_samples_3 = ['11535fb0648bb4634360fca94e95af23']
+    paper_samples_4 = ['01b05d5581c18177f6e8444097d89db4', '01ef4e9bebeb6252257b2d48d3819630']
+    paper_samples_5 = ['11535fb0648bb4634360fca94e95af23']
 
     #---------------------------------------------------------------------------
     err_scenes = []

@@ -278,7 +278,7 @@ class RPNLossComputation(object):
         else:
             print('no target missed')
         pos_anchors_bi.show_together(targets[bi])
-        #neg_anchors_bi.show_together(targets[bi])
+        neg_anchors_bi.show_together(targets[bi])
 
         for l in labels_all:
             mask_l = labels_pos == l
