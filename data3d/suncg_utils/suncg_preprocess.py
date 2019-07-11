@@ -400,9 +400,7 @@ class Suncg():
       #self.house_fns = house_fns[5000: 7000]
       self.house_fns = house_fns[7000: 9000]
     else:
-      #self.house_fns = house_fns[1500: 1800]
-      self.house_fns = house_fns[4000: 5000]
-      #self.house_fns = house_fns[0:1500]
+      self.house_fns = house_fns[4460:5000]
 
     if Debug and 0:
       scene_id = '0fd6fd0c8a6b0e205354249f1058666f'

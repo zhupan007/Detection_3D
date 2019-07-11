@@ -655,11 +655,11 @@ def gen_train_list():
       train_num = int(num*0.7)
       train_num = min(num, 100)
   else:
-      import random
-      random.shuffle(house_names)
+      np.random.shuffle(house_names)
       train_num = int(num*0.8)
-  train_hosue_names = house_names[0:train_num]
-  test_house_names = house_names[train_num:]
+  print(f'train_num: {train_num}\ntest_num:{num-train_num}')
+  train_hosue_names = np.sort(house_names[0:train_num])
+  test_house_names = np.sort(house_names[train_num:])
 
   split_path = os.path.join(SPLITED_DIR, 'train_test_splited')
   if not os.path.exists(split_path):
@@ -674,7 +674,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  creat_splited_pcl_box()
-  #gen_train_list()
+  #creat_splited_pcl_box()
+  gen_train_list()
   pass
 

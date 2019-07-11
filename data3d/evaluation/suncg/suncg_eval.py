@@ -11,7 +11,7 @@ plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
 SHOW_PRED = DEBUG and False
-DRAW_RECALL_PRECISION = DEBUG and True
+DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
 DRAW_REGRESSION_IOU = DEBUG and True
