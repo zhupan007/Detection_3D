@@ -190,7 +190,7 @@ class RPNLossComputation(object):
 
         return labels, regression_targets
 
-    def __call__(self, anchors, objectness, box_regression, targets):
+    def __call__(self, anchors, objectness, box_regression, targets, debugs=None):
         """
         Arguments:
             anchors (BoxList): box num: N
