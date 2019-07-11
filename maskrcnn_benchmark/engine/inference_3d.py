@@ -62,8 +62,8 @@ def load_prediction(output_folder, data_loader):
     fn = os.path.join(output_folder, "predictions.pth")
     assert os.path.exists (fn)
     predictions = torch.load(fn)
-    #predictions = predictions[0:len(data_loader)]
-    assert len(predictions) == len(data_loader)
+    predictions = predictions[0:len(data_loader)]
+    #assert len(predictions) == len(data_loader)
     print(f'load {len(predictions)} predictions')
     return predictions
 

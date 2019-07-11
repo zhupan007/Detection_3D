@@ -7,6 +7,7 @@ import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 import matplotlib.pyplot as plt
+plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
 SHOW_PRED = DEBUG and False
@@ -115,7 +116,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     if DRAW_RECALL_PRECISION:
         draw_recall_precision_10steps(result['recall_precision_10steps'], dset_metas, '10steps')
-        draw_recall_precision_10steps(result['rec_prec_org'], dset_metas, 'original')
+        draw_recall_precision_10steps(result['rec_prec_org'], dset_metas, '')
     return result
 
 
@@ -387,9 +388,9 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
             fig, axs = plt.subplots(1, 1, sharey=True, tight_layout=True)
             io = ious_flat[obj]
             axs.hist(io, bins=20)
-            plt.xlabel(f'iou of {obj} prediction')
+            plt.xlabel(f'iou')
             plt.ylabel('count')
-            title = f'iou histogram of {obj} prediction'
+            title = f'iou histogram of {obj}'
             #plt.title(title)
             plt.show()
             fname = f'iou_hist_{obj}.png'
