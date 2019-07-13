@@ -14,7 +14,7 @@ SHOW_PRED = DEBUG and False
 DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
-DRAW_REGRESSION_IOU = DEBUG and True
+DRAW_REGRESSION_IOU = DEBUG and False
 
 def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
