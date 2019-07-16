@@ -11,10 +11,10 @@ plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
 SHOW_PRED = DEBUG and False
-DRAW_RECALL_PRECISION = DEBUG and True
+DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
-DRAW_REGRESSION_IOU = DEBUG and True
+DRAW_REGRESSION_IOU = DEBUG and False
 
 ONLY_SAVE_NO_SHOW = True
 
@@ -395,6 +395,8 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eva
         for obj in ious_flat:
             fig, axs = plt.subplots(1, 1, sharey=True, tight_layout=True)
             io = ious_flat[obj]
+            if len(io.shape) == 0:
+              continue
 
             io_hist, bin_edges = np.histogram(io, bins=np.arange(11)/10.0)
             io_hist = io_hist *1.0/ io_hist.sum()
@@ -408,7 +410,11 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eva
             #plt.title(title)
             fname = f'iou_hist_{obj}.png'
             fig.savefig(fname)
-            io0_rate = np.sum(io<0.1)/io.shape[0]
+            try:
+              io0_rate = np.sum(io<0.1)/io.shape[0]
+            except:
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
             print(f'\nio<0.1: {io0_rate}')
             print(fname)
             if not ONLY_SAVE_NO_SHOW:

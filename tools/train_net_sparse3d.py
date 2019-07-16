@@ -205,7 +205,7 @@ def main():
 
       if not args.skip_test:
           test(cfg, model, args.distributed,
-           epoch = (1+loop) * epochs_between_test,
+           epoch = (1+loop) * epochs_between_test - 1,
                )
           if args.only_test:
             break

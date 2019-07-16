@@ -69,8 +69,14 @@ class FPN2MLPFeatureExtractor(nn.Module):
         representation_size = cfg.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM
         self.pooler = pooler
         self.voxel_scale = voxel_scale
-        #self.conv3d = nn.Conv3d(cfg.MODEL.BACKBONE.OUT_CHANNELS, 256,
-        #                       kernel_size=[3,3,3], stride=[2,2,2])
+
+        pooler_z = cfg.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION[2]
+        conv3d_ = nn.Conv3d(cfg.MODEL.BACKBONE.OUT_CHANNELS, representation_size,
+                               kernel_size=[1,1,pooler_z], stride=[1,1,1])
+        bn = nn.BatchNorm3d(representation_size, track_running_stats=cfg.SOLVER.TRACK_RUNNING_STATS)
+        relu = nn.ReLU(inplace=True)
+        self.conv3d = nn.Sequential(conv3d_, bn, relu)
+
         self.fc6 = nn.Linear(input_size, representation_size)
         self.fc7 = nn.Linear(representation_size, representation_size)
 
@@ -90,7 +96,8 @@ class FPN2MLPFeatureExtractor(nn.Module):
 
     def forward(self, x0, proposals):
         proposals = self.convert_metric_to_pixel(proposals)
-        x1 = self.pooler(x0, proposals)
+        x1_ = self.pooler(x0, proposals)
+        x1 = self.conv3d(x1_)
 
         #x2 = F.relu(self.conv3d(x1))
         x2 = x1.view(x1.size(0), -1)
