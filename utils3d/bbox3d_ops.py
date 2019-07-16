@@ -16,6 +16,7 @@ DEBUG = True
 
 FRAME_SHOW = -1
 POINTS_KEEP_RATE = 0.5
+POINTS_SAMPLE_RATE = 1.0
 BOX_XSURFACE_COLOR_DIF = False
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
@@ -72,12 +73,19 @@ def corners4_to_mesh2(corners, color=[255,0,0]):
   return mesh
 
 
-def cut_points_roof(points, keep_rate=POINTS_KEEP_RATE):
+def down_sample_points(points0, sample_rate):
+  n = points0.shape[0]
+  indices = np.random.choice(n, int(n*sample_rate), replace=False)
+  points = points0[indices]
+  return points
+
+def cut_points_roof(points, keep_rate=POINTS_KEEP_RATE, sample_rate=POINTS_SAMPLE_RATE):
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate
   mask = points[:,2] < threshold
   points_cutted = points[mask]
+  points_cutted = down_sample_points(points_cutted, sample_rate)
   return points_cutted
 
 class Bbox3D():
@@ -180,8 +188,8 @@ class Bbox3D():
                                                               rotate_view)
 
   @staticmethod
-  def draw_points_open3d(points, color=[0,1,1], show=False, points_keep_rate=POINTS_KEEP_RATE):
-    points = cut_points_roof(points, points_keep_rate)
+  def draw_points_open3d(points, color=[0,1,1], show=False, points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE):
+    points = cut_points_roof(points, points_keep_rate, points_sample_rate)
     pcl = open3d.PointCloud()
     pcl.points = open3d.Vector3dVector(points[:,0:3])
     if points.shape[1] >= 6:
@@ -202,12 +210,13 @@ class Bbox3D():
       gen_animation([pcds], animation_fn, ani_size)
 
   @staticmethod
-  def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, random_color=True, points_keep_rate=POINTS_KEEP_RATE, animation_fn=None, ani_size=None):
+  def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, random_color=True,
+                         points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, animation_fn=None, ani_size=None):
     '''
     points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None)
     '''
     if points is not None:
-      pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate)
+      pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate)
 
     bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color)
 
@@ -223,15 +232,17 @@ class Bbox3D():
       pcds = bboxes_lineset_ls + lineset
 
     draw_cus(pcds)
+
     if animation_fn is not None:
       gen_animation(pcds, animation_fn, ani_size)
 
   @staticmethod
-  def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, points_keep_rate=POINTS_KEEP_RATE, animation_fn=None, ani_size=None):
+  def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None,
+                              points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, animation_fn=None, ani_size=None):
     mesh = Bbox3D.bboxes_mesh(gt_boxes0, up_axis, is_yx_zb, labels, names)
     #Bbox3D.video(mesh)
     if points is not None:
-      pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate)
+      pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate)
       mesh.append(pcl)
     draw_cus(mesh)
     if animation_fn is not None:
@@ -249,6 +260,10 @@ class Bbox3D():
   @staticmethod
   def bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True):
     from color_list import COLOR_LIST
+    if labels is not None:
+      ml = labels.max() + 1
+      colors  = COLOR_LIST[0:ml]
+      print('colors used: {colors}')
     gt_boxes0 = gt_boxes0.reshape([-1,7])
     #gt_boxes0 = np.array([gtb for gtb in gt_boxes0 if gtb[3]>=0])
 

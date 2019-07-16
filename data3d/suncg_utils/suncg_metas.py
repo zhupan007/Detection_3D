@@ -29,4 +29,17 @@ class SUNCG_METAS:
         self.class_2_label = class_2_label
         self.label_2_class = label_2_class
 
+    def label_num(self):
+      return len(self.label_2_class)
+
+    def show_colors(self):
+      from utils3d.color_list import show_class_colors
+      classes = self.classes
+      classes[0] = 'missed gt,\nincorrect pred'
+      show_class_colors(classes)
+
 SUNCG_METAS0 = SUNCG_METAS(SUNCG_METAS.classes_order)
+
+if __name__ == '__main__':
+    dset_metas = SUNCG_METAS(['background', 'wall', 'window', 'door'])
+    dset_metas.show_colors()

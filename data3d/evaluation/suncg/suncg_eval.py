@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
-SHOW_PRED = DEBUG and True
+SHOW_PRED = DEBUG and False
 DRAW_RECALL_PRECISION = DEBUG and True
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -92,7 +92,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
         ap = result['ap'][1:]
         if np.isnan(ap).all():
             return result
-        gt_boxlists_ = modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums)
+        gt_boxlists_ = modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums, dset_metas)
         pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas)
         for i in range(len(pred_boxlists)):
             pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
@@ -105,7 +105,8 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             xyz_size = xyz_max - xyz_min
             print(f'xyz_size:{xyz_size}')
 
-            preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+0.3, twolabels=False)
+            #preds.show__together(gt_boxlists_[i], points=None, offset_x=xyz_size[0]+0.3, twolabels=False)
+            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+0.3, twolabels=False, mesh=False, points_keep_rate=0.5, points_sample_rate=0.2)
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 
 
@@ -222,7 +223,7 @@ def performance_str(result, dataset, regression_res):
 
 
 def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
-    # incorrect pred: 0,  others: class label + 1
+    # incorrect pred: 0,  others: class label
 
     batch_size = len(pred_nums)
     pred_labels = []
@@ -233,7 +234,7 @@ def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
         for obj in good_pred_ids:
             l = dset_metas.class_2_label[obj]
             if good_pred_ids[obj][bi].shape[0] > 0:
-                labels_i[good_pred_ids[obj][bi]] = l + 1
+                labels_i[good_pred_ids[obj][bi]] = l
         pred_labels.append(labels_i)
 
         pred = pred_boxlists[bi].copy()
@@ -241,21 +242,21 @@ def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
         new_pred_boxlists.append(pred)
     return new_pred_boxlists
 
-def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums):
-    # missed:0, multi: 1, matched: class label + 1
+def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums, dset_metas):
+    # missed:0, matched: class label , multi: 1
 
     batch_size = len(gt_nums)
     gt_labels = []
     new_gt_boxlists = []
     for bi in range(batch_size):
         #labels_i = np.zeros([gt_nums[bi]], dtype=np.int32)
-        labels_i = gt_boxlists[bi].get_field('labels') + 1
+        labels_i = gt_boxlists[bi].get_field('labels')
         #labels_i = np.random.choice(gt_nums[bi], gt_nums[bi], replace=False)+2
         start = 0 # the gt_ids is only of one class (TAG: GT_MASK)
         for obj in missed_gt_ids:
             #gt_label_i = dset_metas.class_2_label[obj]
             labels_i[ missed_gt_ids[obj][bi] + start ] = 0
-            labels_i[ multi_preds_gt_ids[obj][bi] + start ] = 1
+            labels_i[ multi_preds_gt_ids[obj][bi] + start ] = dset_metas.label_num()
             start += obj_gt_nums[obj][bi]
         gt_labels.append(labels_i)
 

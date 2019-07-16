@@ -80,7 +80,7 @@ def inference_3d(
         iou_thresh_eval = 0.5,
         output_folder=None,
         epoch = None,
-        load_pred = True,
+        load_pred = False,
 ):
     # convert to a torch.device for efficiency
     device = torch.device(device)

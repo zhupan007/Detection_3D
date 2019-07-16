@@ -3,10 +3,10 @@ import numpy as np
 IS_SHUFFLE = False
 
 COLOR_LIST = np.array( [
-[255,0,0],
 [0,0,255],
+[255,0,0],
 [0,255,0],
-[0,0,0],
+[0, 255, 255],
 [255,127,80],
 [127,255,212],
 [153,102,204],
@@ -14,6 +14,7 @@ COLOR_LIST = np.array( [
 [0,127,255],
 [137,207,240],
 [229,43,80],
+[255,255,0],
 [80,200,120],
 [251,206,177],
 [0,149,182],
@@ -86,7 +87,7 @@ COLOR_LIST = np.array( [
 [127,0,255],
 [64,130,109],
 #[255,255,255],
-[255,255,0],
+[0,0,0],
 ])
 
 shuffle = np.array([\
@@ -106,18 +107,44 @@ COLOR_LIST = np.tile(COLOR_LIST, [4,1]) / 255.0
 
 import matplotlib.pyplot as plt
 from skimage import io
+plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
-if __name__ == '__main__':
+def show_all():
   print(COLOR_LIST)
   print(COLOR_LIST.shape)
   n = COLOR_LIST.shape[0]
-  COLOR_LIST = COLOR_LIST.reshape([1,-1,3])
+  COLOR_LIST_ = COLOR_LIST.reshape([1,-1,3])
   for i in range(0,n, 5):
     e = min(i+10, n)
     print(f'{i}:{e}')
-    print(COLOR_LIST[:,i:e])
-    im = plt.imshow( COLOR_LIST[:,i:e,:], interpolation='none', aspect='auto')
+    print(COLOR_LIST_[:,i:e])
+    im = plt.imshow( COLOR_LIST_[:,i:e,:], interpolation='none', aspect='auto')
     plt.colorbar(im, orientation='horizontal')
     plt.show()
     pass
+
+def show_class_colors(classes):
+  n = len(classes)
+  colors = COLOR_LIST[0:n].reshape([1,-1,3])
+  fig, ax = plt.subplots()
+  im = ax.imshow(colors)
+  ax.set_xticks(np.arange(n))
+  ax.set_xticklabels(classes)
+  ax.set_yticks([])
+  plt.show()
+  fig.savefig('category_colors.png')
+
+
+
+
+def show___class_colors(classes):
+  n = len(classes)
+  COLOR_LIST_ = COLOR_LIST.reshape([1,-1,3])
+  im = plt.imshow( COLOR_LIST_[:,0:n,:], interpolation='none', aspect='auto')
+  plt.colorbar(im, orientation='horizontal')
+  plt.show()
+  pass
+
+if __name__ == '__main__':
+  show_all()
 

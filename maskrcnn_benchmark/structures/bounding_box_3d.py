@@ -9,6 +9,7 @@ FLIP_LEFT_RIGHT = 0
 FLIP_TOP_BOTTOM = 1
 
 POINTS_KEEP_RATE = 1.0
+POINTS_SAMPLE_RATE = 1.0
 
 # TODO redundant, remove
 def _cat(tensors, dim=0):
@@ -370,7 +371,7 @@ class BoxList3D(object):
     def clamp_size(self):
       self.bbox3d[:,3:6] = torch.clamp(self.bbox3d[:,3:6], min=0.001)
 
-    def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None, points_keep_rate=POINTS_KEEP_RATE):
+    def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None, points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy()
@@ -402,7 +403,7 @@ class BoxList3D(object):
         labels = labels, random_color=False)
       else:
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb',\
-        labels = labels,  random_color=False, points_keep_rate=points_keep_rate)
+        labels = labels,  random_color=False, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate)
 
     def show_centroids(self, max_num=-1, points=None):
       import numpy as np
@@ -416,7 +417,8 @@ class BoxList3D(object):
       else:
         Bbox3D.draw_points_centroids(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
 
-    def show_together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None, offset_x=None, twolabels=False):
+    def show__together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None, offset_x=None, twolabels=False,
+                       mesh=False, points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy().copy()
@@ -442,7 +444,10 @@ class BoxList3D(object):
       boxes = np.concatenate([boxes, boxes_1], 0)
 
       if points is None:
-        Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
+        if mesh:
+          Bbox3D.draw_bboxes_mesh(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels)
+        else:
+          Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
       else:
         if isinstance(points, torch.Tensor):
           points = points.cpu().data.numpy()
@@ -450,7 +455,10 @@ class BoxList3D(object):
               tp = points.copy()
               tp[:,0] += offset_x
               points = np.concatenate([points, tp], 0)
-        Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False)
+        if mesh:
+          Bbox3D.draw_points_bboxes_mesh(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, points_sample_rate=points_sample_rate)
+        else:
+          Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False, points_keep_rate=points_keep_rate,  points_sample_rate=points_sample_rate)
 
     def show_highlight(self, ids, points=None):
         from utils3d.bbox3d_ops import Bbox3D
