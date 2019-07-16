@@ -10,11 +10,13 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
-SHOW_PRED = DEBUG and False
-DRAW_RECALL_PRECISION = DEBUG and False
+SHOW_PRED = DEBUG and True
+DRAW_RECALL_PRECISION = DEBUG and True
 SHOW_FILE_NAMES = DEBUG and False
 
-DRAW_REGRESSION_IOU = DEBUG and False
+DRAW_REGRESSION_IOU = DEBUG and True
+
+ONLY_SAVE_NO_SHOW = True
 
 def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
@@ -31,6 +33,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     # for the user to choose
 
     logger.info(f'\n\nis_train: {is_train}\n')
+    logger.info(f'iou_thresh: {iou_thresh_eval}\n')
     if sum([len(p) for p in predictions]) == 0:
       print('\n\n\tno predictions to evaluate\n\n')
       return
@@ -71,9 +74,9 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
       return
 
     regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds = \
-        parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger)
+        parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger, iou_thresh_eval)
 
-    recall_precision_10steps = result["recall_precision_10steps"]
+    recall_precision_score_10steps = result["recall_precision_score_10steps"]
     result_str = performance_str(result, dataset, regression_res)
     logger.info(result_str)
 
@@ -115,15 +118,15 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     if DRAW_RECALL_PRECISION:
-        draw_recall_precision_10steps(result['recall_precision_10steps'], dset_metas, '10steps')
-        draw_recall_precision_10steps(result['rec_prec_org'], dset_metas, '')
+        #draw_recall_precision_score_10steps(result['recall_precision_score_10steps'], dset_metas, '10steps')
+        draw_recall_precision_score_10steps(result['rec_prec_score_org'], dset_metas, '')
     return result
 
 
 def performance_str(result, dataset, regression_res):
     result_str = "\nmAP: {:.4f}\n".format(result["map"])
     ap = result['ap']
-    recall_precision_10steps = result["recall_precision_10steps"]
+    recall_precision_score_10steps = result["recall_precision_score_10steps"]
 
     class_num = len(ap)
     class_names = []
@@ -146,10 +149,10 @@ def performance_str(result, dataset, regression_res):
         if i==0:
             clsn = 'mean'
         class_names.append(clsn )
-        rec7_precision.append( recall_precision_10steps[i][7][1] )
-        rec9_precision.append( recall_precision_10steps[i][9][1] )
-        rec7_score.append( recall_precision_10steps[i][7][2] )
-        rec9_score.append( recall_precision_10steps[i][9][2] )
+        rec7_precision.append( recall_precision_score_10steps[i][7][1] )
+        rec9_precision.append( recall_precision_score_10steps[i][9][1] )
+        rec7_score.append( recall_precision_score_10steps[i][7][2] )
+        rec9_score.append( recall_precision_score_10steps[i][9][2] )
         if i==0:
             ious_mean.append( np.nan )
             ious_std.append( np.nan)
@@ -262,7 +265,7 @@ def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, ob
 
     return new_gt_boxlists
 
-def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.5):
+def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eval, score_thres=0.5):
     missed_gt_ids = defaultdict(list)
     multi_preds_gt_ids = defaultdict(list)
     ious = defaultdict(list)
@@ -307,12 +310,16 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
             ious_all[obj].append(ious_bi)
             scores_all[obj].append(scores_bi)
 
+            # (1) score > score_thres, (2) iou > iou_thresh
             score_mask = scores_bi >= score_thres
-            scores_bi = scores_bi[score_mask]
-            ious_bi = ious_bi[score_mask]
+            iou_mask = ious_bi > iou_thresh_eval
+            valid_mask = score_mask * iou_mask
+
+            scores_bi = scores_bi[valid_mask]
+            ious_bi = ious_bi[valid_mask]
             ious[obj].append(ious_bi)
             scores[obj].append(scores_bi)
-            good_pred_ids_bi = np.array(good_pred_ids_bi)[score_mask]
+            good_pred_ids_bi = np.array(good_pred_ids_bi)[valid_mask]
             good_pred_ids[obj].append( good_pred_ids_bi )
 
             #-------------------------------
@@ -387,21 +394,37 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, score_thres=0.
         for obj in ious_flat:
             fig, axs = plt.subplots(1, 1, sharey=True, tight_layout=True)
             io = ious_flat[obj]
-            axs.hist(io, bins=20)
+
+            io_hist, bin_edges = np.histogram(io, bins=np.arange(11)/10.0)
+            io_hist = io_hist *1.0/ io_hist.sum()
+            plt.bar(bin_edges[0:-1], io_hist, width=0.1, align='edge')
+
+            #axs.hist(io, bins=20, density=True)
+            #plt.plot()
             plt.xlabel(f'iou')
             plt.ylabel('count')
             title = f'iou histogram of {obj}'
             #plt.title(title)
-            plt.show()
             fname = f'iou_hist_{obj}.png'
             fig.savefig(fname)
+            io0_rate = np.sum(io<0.1)/io.shape[0]
+            print(f'\nio<0.1: {io0_rate}')
             print(fname)
+            if not ONLY_SAVE_NO_SHOW:
+              plt.show()
+            plt.close()
 
 
             #fig = plt.figure(1)
             #s = scores_flat[obj]
             #plt.plot(s, io ,'.')
-            #plt.show()
+            #plt.xlabel(f'score')
+            #plt.ylabel('iou')
+            #fname = f'score_iou_{obj}.png'
+            #fig.savefig(fname)
+            #if not ONLY_SAVE_NO_SHOW:
+            #  plt.show()
+            #plt.close()
 
             pass
 
@@ -414,25 +437,29 @@ def regression_res_str(regression_res):
         reg_str += f'{key}:\n{value}\n'
     return reg_str
 
-def draw_recall_precision_10steps(recall_precision_10steps, dset_metas, flag):
-    num_classes = len(recall_precision_10steps)
+def draw_recall_precision_score_10steps(recall_precision_list, dset_metas, flag):
+    num_classes = len(recall_precision_list)
     for i in range(num_classes):
         obj = dset_metas.label_2_class[i]
         if i==0:
             if flag == '10steps':
                 continue
             obj = 'ave'
-        rp = recall_precision_10steps[i]
-        print(f'\n{obj}\n{rp}')
+        rp = recall_precision_list[i]
+        #print(f'\n{obj} recall - precision - score\n{rp}')
         fig = plt.figure(i)
-        plt.plot(rp[:,0], rp[:,1])
-        plt.ylabel('precision')
+        plt.plot(rp[:,0], rp[:,1], label='precision')
+        plt.plot(rp[:,0], rp[:,2], label='score threshold')
+        plt.legend()
+        #plt.ylabel('precision')
         plt.xlabel('recall')
         title = flag+' '+obj+' recall-precision'
         plt.title(title)
         fig.savefig(title+'.png')
         print('save: '+title+'.png')
-    plt.show()
+        if not ONLY_SAVE_NO_SHOW:
+          plt.show()
+        plt.close()
 
 #def get_obejct_numbers(boxlist, dset_metas):
 #    labels = boxlist.get_field('labels').data.numpy()
@@ -458,9 +485,10 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use
     prec, rec, pred_for_each_gt, scores = calc_detection_suncg_prec_rec(
         pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh, dset_metas=dset_metas
     )
-    rec_prec_org = [np.concatenate([np.array(r).reshape([-1,1]), np.array(p).reshape([-1,1])],1) for r,p in zip(rec, prec)]
-    ap, recall_precision_10steps = calc_detection_suncg_ap(prec, rec, scores, use_07_metric=use_07_metric)
-    return {"ap": ap, "map": np.nanmean(ap), "rec_prec_org":rec_prec_org, "recall_precision_10steps":recall_precision_10steps, "pred_for_each_gt":pred_for_each_gt}
+    rec_prec_score_org = [np.concatenate([np.array(r).reshape([-1,1]), np.array(p).reshape([-1,1]), np.array(s).reshape([-1,1])],1) \
+                    for r,p,s in zip(rec, prec, scores)]
+    ap, recall_precision_score_10steps = calc_detection_suncg_ap(prec, rec, scores, use_07_metric=use_07_metric)
+    return {"ap": ap, "map": np.nanmean(ap), "rec_prec_score_org":rec_prec_score_org, "recall_precision_score_10steps":recall_precision_score_10steps, "pred_for_each_gt":pred_for_each_gt}
 
 
 def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_metas):
@@ -576,10 +604,10 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_m
         score_l = np.array(score[l])
         if score_l.shape[0] == 0:
           continue
-        scores[l] = score_l
         match_l = np.array(match[l], dtype=np.int8)
 
         order = score_l.argsort()[::-1]
+        scores[l] = score_l[order]
         match_l = match_l[order]
 
         tp = np.cumsum(match_l == 1)
@@ -592,6 +620,11 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_m
         #if n_pos[l] > 0:
         rec[l] = tp / n_pos[l]
 
+    #plt.plot(rec[1], label='rec')
+    #plt.plot(prec[1], label='prec')
+    #plt.plot(scores[1], label='score')
+    #plt.legend()
+    #plt.show()
     return prec, rec, pred_for_each_gt, scores
 
 def calc_detection_suncg_ap(prec, rec, scores, use_07_metric=False):
@@ -621,11 +654,11 @@ def calc_detection_suncg_ap(prec, rec, scores, use_07_metric=False):
 
     n_fg_class = len(prec)
     ap = np.empty(n_fg_class)
-    recall_precision_10steps = np.empty([n_fg_class, 11, 3])
+    recall_precision_score_10steps = np.empty([n_fg_class, 11, 3])
     for l in range(n_fg_class):
         if prec[l] is None or rec[l] is None:
             ap[l] = np.nan
-            recall_precision_10steps[l] = np.nan
+            recall_precision_score_10steps[l] = np.nan
             continue
 
         if use_07_metric:
@@ -647,7 +680,7 @@ def calc_detection_suncg_ap(prec, rec, scores, use_07_metric=False):
                     s = np.min(scores[l][rec[l] <= t])
                 ap[l] += p / 11
                 rp.append([t, p, s]) # [recall, precision, score_thres]
-            recall_precision_10steps[l] = np.array(rp)
+            recall_precision_score_10steps[l] = np.array(rp)
         else:
             # correct AP calculation
             # first append sentinel values at the end
@@ -664,6 +697,6 @@ def calc_detection_suncg_ap(prec, rec, scores, use_07_metric=False):
             ap[l] = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
 
     # set the first as average
-    recall_precision_10steps[0] = recall_precision_10steps[1:].mean(0)
+    recall_precision_score_10steps[0] = recall_precision_score_10steps[1:].mean(0)
     ap[0] = ap[1:].mean()
-    return ap, recall_precision_10steps
+    return ap, recall_precision_score_10steps

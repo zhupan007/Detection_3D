@@ -60,7 +60,8 @@ def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
 
 def load_prediction(output_folder, data_loader):
     fn = os.path.join(output_folder, "predictions.pth")
-    assert os.path.exists (fn)
+    if not os.path.exists (fn):
+      return None
     predictions = torch.load(fn)
     predictions = predictions[0:len(data_loader)]
     #assert len(predictions) == len(data_loader)
@@ -79,7 +80,7 @@ def inference_3d(
         iou_thresh_eval = 0.5,
         output_folder=None,
         epoch = None,
-        load_pred = False,
+        load_pred = True,
 ):
     # convert to a torch.device for efficiency
     device = torch.device(device)
@@ -92,7 +93,8 @@ def inference_3d(
     dataset = data_loader.dataset
     logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
     start_time = time.time()
-    if not load_pred:
+    predictions_load = load_prediction(output_folder, data_loader)
+    if (not load_pred) or (predictions_load is None):
       predictions = compute_on_dataset(model, data_loader, device)
       # wait for all processes to complete before measuring the time
       synchronize()
@@ -111,7 +113,7 @@ def inference_3d(
       if output_folder:
           torch.save(predictions, os.path.join(output_folder, "predictions.pth"))
     else:
-      predictions = load_prediction(output_folder, data_loader)
+      predictions = predictions_load
 
 
     extra_args = dict(
