@@ -163,10 +163,21 @@ def do_train(
 
     if eval_in_train>0 and epoch_id % eval_in_train == 0:
       logger.info(f'\nepoch {epoch_id}\n')
-      eval_res = evaluate(dataset=data_loader.dataset, predictions=predictions_all,
+      preds = down_sample_for_eval_training(predictions_all)
+      eval_res = evaluate(dataset=data_loader.dataset, predictions=preds,
                           iou_thresh_eval=iou_thresh_eval,
                           output_folder=eval_out_dir, box_only=False, epoch=epoch_id, is_train=True)
       pass
     return min_loss
 
+
+def down_sample_for_eval_training(predictions):
+  import numpy as np
+  n = len(dataset)
+  max_eval = 1000
+  if n < max_eval:
+    return predictions
+  indices = np.sort(np.random.choice(n, max_eval, replace=False)).tolist()
+  predictions = [predictions[i] for i in indices]
+  return predictions
 

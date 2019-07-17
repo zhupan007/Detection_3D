@@ -99,7 +99,6 @@ class FPN2MLPFeatureExtractor(nn.Module):
         x1_ = self.pooler(x0, proposals)
         x1 = self.conv3d(x1_)
 
-        #x2 = F.relu(self.conv3d(x1))
         x2 = x1.view(x1.size(0), -1)
 
         x3 = F.relu(self.fc6(x2))

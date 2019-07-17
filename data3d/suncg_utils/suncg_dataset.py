@@ -62,6 +62,13 @@ class SUNCGDataset(torch.utils.data.Dataset):
     info = f"{scene}/{basename}"
     return info
 
+  def sampling(self, indices):
+    self.files_org = self.files.copy()
+    self.files =  [self.files[i] for i in indices]
+
+  def back_to_org(self):
+    self.files = self.files_org
+
   def __getitem__(self, index):
         is_train = self.is_train
         scale = self.scale

@@ -59,12 +59,13 @@ def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
 
 
 def load_prediction(output_folder, data_loader):
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     fn = os.path.join(output_folder, "predictions.pth")
     if not os.path.exists (fn):
       return None
     predictions = torch.load(fn)
+    assert len(predictions) == len(data_loader)
     predictions = predictions[0:len(data_loader)]
-    #assert len(predictions) == len(data_loader)
     print(f'load {len(predictions)} predictions')
     return predictions
 
