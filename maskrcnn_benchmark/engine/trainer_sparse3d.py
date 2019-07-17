@@ -173,7 +173,7 @@ def do_train(
 
 def down_sample_for_eval_training(predictions):
   import numpy as np
-  n = len(dataset)
+  n = len(predictions)
   max_eval = 1000
   if n < max_eval:
     return predictions

@@ -94,8 +94,13 @@ def inference_3d(
     dataset = data_loader.dataset
     logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
     start_time = time.time()
-    predictions_load = load_prediction(output_folder, data_loader)
-    if (not load_pred) or (predictions_load is None):
+
+    if load_pred:
+      predictions_load = load_prediction(output_folder, data_loader)
+      if predictions_load is None:
+        load_pred = False
+
+    if not load_pred:
       predictions = compute_on_dataset(model, data_loader, device)
       # wait for all processes to complete before measuring the time
       synchronize()
@@ -113,8 +118,6 @@ def inference_3d(
 
       if output_folder:
           torch.save(predictions, os.path.join(output_folder, "predictions.pth"))
-    else:
-      predictions = predictions_load
 
 
     extra_args = dict(
