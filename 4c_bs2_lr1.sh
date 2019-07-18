@@ -5,7 +5,7 @@ export PYTHONPATH=$PWD
 #TEST='--skip-test'
 #TEST='--only-test' 
 
-CONFIG_FILE='4c_fpn432_bs2_lr1.yaml'
+CONFIG_FILE='ROI2D_4c_fpn432_bs2_lr1.yaml'
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 

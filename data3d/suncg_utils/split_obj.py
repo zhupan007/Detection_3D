@@ -58,7 +58,7 @@ def read_obj(fn):
 if __name__ == '__main__':
     folder = '/home/z/SUNCG/suncg_v1/parsed'
     folder = '/DS/SUNCG/suncg_v1/parsed'
-    for hn in SceneSamples.paper_samples_0:
+    for hn in SceneSamples.paper1_samples:
       #house_name = '0f49e723572f3f03e2c9a288599b9f12'
       fn = f'{folder}/{hn}/house.obj'
       read_obj(fn)

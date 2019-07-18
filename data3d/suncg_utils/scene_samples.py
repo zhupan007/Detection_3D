@@ -13,8 +13,21 @@ class SceneSamples():
     paper_samples_4 = ['01b05d5581c18177f6e8444097d89db4', '01ef4e9bebeb6252257b2d48d3819630']
     paper_samples_5 = ['11535fb0648bb4634360fca94e95af23']
 
-    #---------------------------------------------------------------------------
     err_scenes = []
+    #---------------------------------------------------------------------------
+    # samples between [4K, 5K]
+    occlusion = ['1e5b5abaf37672f31a68c64c86721e69']
+    angle = ['1d51690abecf3d4d5fcb818a0721d23c', '1db62509ded045cbedfa7cd80fcfadba', '1deb63245dd9d06a5bbf1af2857049c4']
+    complex_structures = ['1d84d7ca97f9e05534bf408779406e30', '1d938aa8a23c8507e035f5a7d4614180','1dba3a1039c6ec1a3c141a1cb0ad0757', '1e694c1e4862169a5f153c8719887bfc','1e717bef798945693244d7702bb65605']
+    parallel_close_wall_very_small_angle = ['1d997f4d7ab8ff946279c3cc48b9ac95']
+    parallel_close_wall = ['1e1803ee618089e619878995307e3d4d', '1e7a7945cd9ce60ce43f47cb72f72286']
+    extent_wall_small_angle = ['1de7aee49963c9f1b658ed5b0178e266']
+    wall_window_close = ['1da8a8bda13441351fd933480f0fc819', '1e7a7945cd9ce60ce43f47cb72f72286']
+
+    paper1_samples = occlusion + angle + complex_structures + parallel_close_wall_very_small_angle + parallel_close_wall + extent_wall_small_angle + wall_window_close
+
+    err_scenes += ['1da0456aa433300489e95a35f0f3cd9d', '1e3ed936ba615c69fe170e35cc1f6c41']
+    #---------------------------------------------------------------------------
 
 
     #---------------------------------------------------------------------------
@@ -55,7 +68,7 @@ class SceneSamples():
 
     #---------------------------------------------------------------------------
 
-    bad_scenes_curved_walls = ['020179798688014a482f483e1a5debe5', '019853e4742f679151c34f2732c33c16']
+    bad_scenes_curved_walls = ['020179798688014a482f483e1a5debe5', '019853e4742f679151c34f2732c33c16', '1de4b3e04dc05c81ec9bf6a5ffe52252']
 
     # bad samples: not used in the training (1) BIM definition ambiguous
     bad_scenes_BIM_ambiguous = ['004e36a61e574321adc8da7b48c331f2', '00466151039216eb333369aa60ea3efe', '008969b6e13d18db3abc9d954cebe6a5', '0165e8534588c269219c9aafa9d888da']

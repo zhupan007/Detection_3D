@@ -27,7 +27,7 @@ FunctionUncomplemented = True
 MIN_CAM_NUM = 10
 MIN_POINT_NUM = 10000*10
 ENABLE_NO_RECTANGLE = ['Ceiling', 'Floor', 'Room']
-SAGE = False
+SAGE = True
 
 ONLY_LEVEL_1 = True
 
@@ -406,7 +406,7 @@ class Suncg():
       scene_id = '0fd6fd0c8a6b0e205354249f1058666f'
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
-      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper_samples_0]
+      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper1_samples]
 
     self.house_fns = rm_bad_scenes(self.house_fns)
 
@@ -414,7 +414,7 @@ class Suncg():
 
   def parse_houses_pool(self):
     import multiprocessing as mp
-    threads = 12 if SAGE else 8
+    threads = 8 if SAGE else 8
     p = mp.Pool(processes=threads)
     p.map(parse_house_onef, self.house_fns)
     p.close()
@@ -453,7 +453,8 @@ def parse_house_onef( house_fn, find_fail_scene=False ):
     is_gen_pcl = 1 - find_fail_scene
 
     is_gen_house_obj = Debug and 0
-    #is_gen_bbox = is_gen_cam = is_gen_pcl = 0
+    if is_gen_house_obj:
+      is_gen_bbox = is_gen_cam = is_gen_pcl = 0
 
     if is_gen_house_obj:
       gen_house_obj(house_fn)
@@ -1168,8 +1169,8 @@ def parse_house():
   suncg.parse_houses(False)
 
 if __name__ == '__main__':
-  #parse_house()
-  gen_house_names_1level()
+  parse_house()
+  #gen_house_names_1level()
 
   #check_house_status()
 
