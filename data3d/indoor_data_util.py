@@ -646,8 +646,26 @@ def creat_splited_pcl_box():
     IndoorData.split_scene(scene_dir, splited_path)
     print(f'split ok: {scene_dir}')
 
+def rm_some_files(house_names0):
+  train_fn0 = '/DS/SUNCG/suncg_v1_torch_splited/train_test_splited/train_4069.txt'
+  val_fn0 = '/DS/SUNCG/suncg_v1_torch_splited/train_test_splited/val_4069.txt'
+  with open(train_fn0, 'r') as f:
+    train_hns = f.readlines()
+    train_hns = [h.split('\n')[0] for h in train_hns]
+  with open(val_fn0, 'r') as f:
+    val_hns = f.readlines()
+    val_hns = [h.split('\n')[0] for h in val_hns]
+  rm_hns = train_hns + val_hns
+
+  house_names1 = [h for h in house_names0 if h not in rm_hns]
+  return house_names1
+
 def gen_train_list():
   house_names = os.listdir(os.path.join(SPLITED_DIR, 'houses'))
+
+  house_names = rm_some_files(house_names)
+
+
   num = len(house_names)
   if DEBUG:
       house_names.sort()

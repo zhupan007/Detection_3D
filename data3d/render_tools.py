@@ -349,8 +349,8 @@ def summarize():
 
 if __name__ == '__main__':
     #render_fn()
-    main()
-    #summarize()
+    #main()
+    summarize()
 
 
 
