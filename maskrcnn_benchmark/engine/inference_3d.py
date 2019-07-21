@@ -81,7 +81,7 @@ def inference_3d(
         iou_thresh_eval = 0.5,
         output_folder=None,
         epoch = None,
-        load_pred = False,
+        load_pred = 0,
 ):
     # convert to a torch.device for efficiency
     device = torch.device(device)
@@ -100,7 +100,9 @@ def inference_3d(
       if predictions_load is None:
         load_pred = False
 
-    if not load_pred:
+    if load_pred:
+      predictions = predictions_load
+    else:
       predictions = compute_on_dataset(model, data_loader, device)
       # wait for all processes to complete before measuring the time
       synchronize()

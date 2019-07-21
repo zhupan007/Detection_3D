@@ -106,7 +106,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             print(f'xyz_size:{xyz_size}')
 
             #preds.show__together(gt_boxlists_[i], points=None, offset_x=xyz_size[0]+0.3, twolabels=False)
-            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+0.3, twolabels=False, mesh=False, points_keep_rate=0.5, points_sample_rate=0.2)
+            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.7, points_sample_rate=0.3)
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 
 

@@ -1,7 +1,7 @@
 
 # sage2 3d
-#scp -r z@129.94.237.104:/home/z/Research/Detection_3D/res_* ./
-scp -r ./res_*  z@129.94.237.104:/home/z/Research/Detection_3D/
+scp -r z@129.94.237.104:/home/z/Research/Detection_3D/res_* ./
+#scp -r ./res_*  z@129.94.237.104:/home/z/Research/Detection_3D/
 
 
 # sage1 Kc9

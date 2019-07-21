@@ -242,11 +242,11 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   house_names.sort()
 
-  house_names = house_names[4051+109:]
+  house_names = house_names[700:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  house_names = SceneSamples.paper1_samples
-  #house_names = ['1da8a8bda13441351fd933480f0fc819']
+  #house_names = SceneSamples.paper1_samples
+  #house_names = ['1d51690abecf3d4d5fcb818a0721d23c']
 
   print(f'totally {len(house_names)} houses')
 
@@ -279,8 +279,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 0,
-            r_splited = 1
+            r_whole = 1,
+            r_splited = 0
     )
 
 def summarize():
@@ -349,8 +349,8 @@ def summarize():
 
 if __name__ == '__main__':
     #render_fn()
-    #main()
-    summarize()
+    main()
+    #summarize()
 
 
 
