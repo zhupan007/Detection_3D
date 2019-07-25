@@ -81,10 +81,13 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     logger.info(result_str)
 
     if output_folder:
+        dn = len(predictions)
         if epoch is not None:
-          result_str = f'\nepoch: {epoch}\n' +  result_str
-        with open(os.path.join(output_folder, "result.txt"), "a") as fid:
+          result_str = f'\nepoch: {epoch}\ndata number: {dn}\n' +  result_str
+        res_fn = os.path.join(output_folder, f"result_{dn}.txt")
+        with open(res_fn, "a") as fid:
             fid.write(result_str)
+            print('write ok:\n' + res_fn + '\n')
 
     if SHOW_PRED:
         SHOW_SMALL_IOU = False

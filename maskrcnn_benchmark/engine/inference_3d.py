@@ -59,15 +59,16 @@ def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
 
 
 def load_prediction(output_folder, data_loader):
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    fn = os.path.join(output_folder, "predictions.pth")
+    fn = os.path.join(output_folder, f"predictions_{len(data_loader)}.pth")
     if not os.path.exists (fn):
       return None
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     predictions = torch.load(fn)
-    assert len(predictions) == len(data_loader)
+    #assert len(predictions) == len(data_loader)
     predictions = predictions[0:len(data_loader)]
-    print(f'load {len(predictions)} predictions')
+    print(f'\nload {len(predictions)} predictions OK\n')
     return predictions
+
 
 def inference_3d(
         model,
@@ -81,7 +82,7 @@ def inference_3d(
         iou_thresh_eval = 0.5,
         output_folder=None,
         epoch = None,
-        load_pred = 0,
+        load_pred = 1,
 ):
     # convert to a torch.device for efficiency
     device = torch.device(device)
@@ -119,7 +120,7 @@ def inference_3d(
           return
 
       if output_folder:
-          torch.save(predictions, os.path.join(output_folder, "predictions.pth"))
+          torch.save(predictions, os.path.join(output_folder, f"predictions_{len(predictions)}.pth"))
 
 
     extra_args = dict(
