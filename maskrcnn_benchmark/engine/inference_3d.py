@@ -60,9 +60,10 @@ def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
 
 def load_prediction(output_folder, data_loader):
     fn = os.path.join(output_folder, f"predictions_{len(data_loader)}.pth")
+    print(fn)
     if not os.path.exists (fn):
+      print('file not exist:\n'+fn)
       return None
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     predictions = torch.load(fn)
     #assert len(predictions) == len(data_loader)
     predictions = predictions[0:len(data_loader)]
@@ -96,6 +97,7 @@ def inference_3d(
     logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
     start_time = time.time()
 
+    output_folder = output_folder + f'_{len(data_loader)}'
     if load_pred:
       predictions_load = load_prediction(output_folder, data_loader)
       if predictions_load is None:

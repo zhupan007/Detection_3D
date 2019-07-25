@@ -11,10 +11,10 @@ plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
 SHOW_PRED = DEBUG and False
-DRAW_RECALL_PRECISION = DEBUG and False
+DRAW_RECALL_PRECISION = DEBUG and True
 SHOW_FILE_NAMES = DEBUG and False
 
-DRAW_REGRESSION_IOU = DEBUG and False
+DRAW_REGRESSION_IOU = DEBUG and True
 
 ONLY_SAVE_NO_SHOW = True
 
@@ -149,7 +149,7 @@ def performance_str(result, dataset, regression_res):
     gt_nums = []
 
     for i in range(class_num):
-        clsn = dataset.map_class_id_to_class_name(i)
+        clsn = dataset.mpre_stclass_id_to_class_name(i)
         if i==0:
             clsn = 'mean'
         class_names.append(clsn )
@@ -209,6 +209,8 @@ def performance_str(result, dataset, regression_res):
     result_str += f'{"ap &":13}' + ' & '.join([f'{p:<10.4f}' for p in ap]) + '\\\\\n'
     result_str += f'{"r7p &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec7_precision]) + '\\\\\n'
     result_str += f'{"r9p &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec9_precision]) + '\\\\\n'
+    result_str += f'{"s=0.5 ap &":13}' + ' & '.join([f'{p:<10.4f}' for p in result['pre_stscore_thr']]) + '\\\\\n'
+    result_str += f'{"s=0.5 rec &":13}' + ' & '.join([f'{p:<10.4f}' for p in result['rec_score_thr']]) + '\\\\\n'
     result_str += f'{"iou mean &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_mean]) + '\\\\\n'
     result_str += f'{"iou std &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_std]) + '\\\\\n'
     result_str += f'{"iou min &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_min]) + '\\\\\n'
@@ -498,7 +500,10 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use
     rec_prec_score_org = [np.concatenate([np.array(r).reshape([-1,1]), np.array(p).reshape([-1,1]), np.array(s).reshape([-1,1])],1) \
                     for r,p,s in zip(rec, prec, scores)]
     ap, recall_precision_score_10steps = calc_detection_suncg_ap(prec, rec, scores, use_07_metric=use_07_metric)
-    return {"ap": ap, "map": np.nanmean(ap), "rec_prec_score_org":rec_prec_score_org, "recall_precision_score_10steps":recall_precision_score_10steps, "pred_for_each_gt":pred_for_each_gt}
+    score_thres = 0.5
+    pre_st, rec_st = calc_score_threshold_ap(prec, rec, scores, score_thres)
+    return {"ap": ap, "map": np.nanmean(ap), "rec_prec_score_org":rec_prec_score_org, "recall_precision_score_10steps":recall_precision_score_10steps,
+            "pred_for_each_gt":pred_for_each_gt, "pre_stscore_thr": pre_st, "rec_score_thr": rec_st}
 
 
 def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_metas):
@@ -710,3 +715,20 @@ def calc_detection_suncg_ap(prec, rec, scores, use_07_metric=False):
     recall_precision_score_10steps[0] = recall_precision_score_10steps[1:].mean(0)
     ap[0] = ap[1:].mean()
     return ap, recall_precision_score_10steps
+
+def calc_score_threshold_ap(prec, rec, scores, score_thres):
+  n_fg_class = len(prec)
+  pre_st = np.empty(n_fg_class)
+  rec_st = np.empty(n_fg_class)
+  for l in range(n_fg_class):
+    if scores[l] is None:
+      pre_st[l] = np.nan
+      continue
+    score_mask = np.nan_to_num(scores[l]) > score_thres
+    pre_st[l] =  np.mean( prec[l][score_mask])
+    rec_st[l] =  np.max( rec[l][score_mask])
+    pass
+  pre_st[0] = np.mean(pre_st[1:])
+  rec_st[0] = np.mean(rec_st[1:])
+  return pre_st, rec_st
+
