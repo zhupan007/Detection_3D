@@ -103,7 +103,8 @@ def test(cfg, model, distributed, epoch):
     if cfg.OUTPUT_DIR:
         for idx, dataset_name in enumerate(dataset_names):
             dn = len(data_loaders_val[idx])
-            output_folder = os.path.join(cfg.OUTPUT_DIR, "inference_3d", dataset_name+f'_{dn}')
+            iou_thr = int (10*cfg.TEST.IOU_THRESHOLD)
+            output_folder = os.path.join(cfg.OUTPUT_DIR, "inference_3d", dataset_name+f'_{dn}_iou_{iou_thr}')
             mkdir(output_folder)
             output_folders[idx] = output_folder
     for output_folder, dataset_name, data_loader_val in zip(output_folders, dataset_names, data_loaders_val):
