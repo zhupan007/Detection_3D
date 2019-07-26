@@ -1,4 +1,4 @@
-# A modification version from chainercv repository.
+#u  A modification version from chainercv repository.
 # (See https://github.com/chainer/chainercv/blob/master/chainercv/evaluations/eval_detection_suncg.py)
 from __future__ import division
 import os
@@ -74,7 +74,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
       return
 
     regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds = \
-        parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger, iou_thresh_eval)
+        parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger, iou_thresh_eval, output_folder)
 
     recall_precision_score_10steps = result["recall_precision_score_10steps"]
     result_str = performance_str(result, dataset, regression_res)
@@ -86,6 +86,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
           result_str = f'\nepoch: {epoch}\ndata number: {dn}\n' +  result_str
         res_fn = os.path.join(output_folder, f"result_{dn}.txt")
         with open(res_fn, "a") as fid:
+            fid.write(f'\n\niou_thresh: {iou_thresh_eval}\n')
             fid.write(result_str)
             print('write ok:\n' + res_fn + '\n')
 
@@ -123,7 +124,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
     if DRAW_RECALL_PRECISION:
         #draw_recall_precision_score_10steps(result['recall_precision_score_10steps'], dset_metas, '10steps')
-        draw_recall_precision_score_10steps(result['rec_prec_score_org'], dset_metas, '')
+        draw_recall_precision_score_10steps(result['rec_prec_score_org'], dset_metas, '', output_folder)
     return result
 
 
@@ -138,6 +139,9 @@ def performance_str(result, dataset, regression_res):
     rec9_precision = []
     rec7_score = []
     rec9_score = []
+
+    score_thr_pre = []
+    score_thr_rec = []
     ious_mean = []
     ious_std = []
     ious_min = []
@@ -149,7 +153,7 @@ def performance_str(result, dataset, regression_res):
     gt_nums = []
 
     for i in range(class_num):
-        clsn = dataset.mpre_stclass_id_to_class_name(i)
+        clsn = dataset.map_class_id_to_class_name(i)
         if i==0:
             clsn = 'mean'
         class_names.append(clsn )
@@ -158,6 +162,8 @@ def performance_str(result, dataset, regression_res):
         rec7_score.append( recall_precision_score_10steps[i][7][2] )
         rec9_score.append( recall_precision_score_10steps[i][9][2] )
         if i==0:
+            score_thr_pre.append(   np.nan )
+            score_thr_rec.append(   np.nan )
             ious_mean.append( np.nan )
             ious_std.append( np.nan)
             ious_min.append( np.nan )
@@ -169,17 +175,20 @@ def performance_str(result, dataset, regression_res):
             gt_nums.append( np.nan )
         else:
             if clsn in regression_res:
+              score_thr_pre.append( regression_res[clsn]['prec_st'] )
+              score_thr_rec.append( regression_res[clsn]['rec_st'] )
               ious_mean.append( regression_res[clsn]['ave_std_iou'][0] )
               ious_std.append( regression_res[clsn]['ave_std_iou'][1] )
               ious_min.append( regression_res[clsn]['min_max_iou'][0] )
               scores_mean.append( regression_res[clsn]['ave_std_score'][0] )
               scores_std.append( regression_res[clsn] ['ave_std_score'][1] )
               scores_min.append( regression_res[clsn] ['min_max_score'][0] )
-              ms_gt_rate = 1.0 * regression_res[clsn] ['missed_multi_sum_gtnum'][0] / regression_res[clsn] ['missed_multi_sum_gtnum'][2]
-              missed_gt_rates.append( ms_gt_rate)
-              multi_gt_rates.append( regression_res[clsn] ['missed_multi_sum_gtnum'][1] )
+              missed_gt_rates.append( regression_res[clsn]['matched_missed_multi_rate'][1] )
+              multi_gt_rates.append( regression_res[clsn] ['matched_missed_multi_rate'][2] )
               gt_nums.append( regression_res[clsn] ['missed_multi_sum_gtnum'][2] )
             else:
+              score_thr_pre.append(   np.nan )
+              score_thr_rec.append(   np.nan )
               ious_mean.append(   np.nan )
               ious_std.append(  np.nan )
               ious_min.append(  np.nan )
@@ -191,6 +200,8 @@ def performance_str(result, dataset, regression_res):
               gt_nums.append(  0 )
 
 
+    score_thr_pre[0] = np.mean(score_thr_pre[1:])
+    score_thr_rec[0] = np.mean(score_thr_rec[1:])
     ious_mean[0] = np.mean(ious_mean[1:])
     ious_std[0] = np.mean(ious_std[1:])
     ious_min[0] = np.min(ious_min[1:])
@@ -209,8 +220,8 @@ def performance_str(result, dataset, regression_res):
     result_str += f'{"ap &":13}' + ' & '.join([f'{p:<10.4f}' for p in ap]) + '\\\\\n'
     result_str += f'{"r7p &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec7_precision]) + '\\\\\n'
     result_str += f'{"r9p &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec9_precision]) + '\\\\\n'
-    result_str += f'{"s=0.5 ap &":13}' + ' & '.join([f'{p:<10.4f}' for p in result['pre_stscore_thr']]) + '\\\\\n'
-    result_str += f'{"s=0.5 rec &":13}' + ' & '.join([f'{p:<10.4f}' for p in result['rec_score_thr']]) + '\\\\\n'
+    result_str += f'{"s=0.5 prec &":13}' + ' & '.join([f'{p:<10.4f}' for p in score_thr_pre]) + '\\\\\n'
+    result_str += f'{"s=0.5 rec &":13}' + ' & '.join([f'{p:<10.4f}' for p in score_thr_rec]) + '\\\\\n'
     result_str += f'{"iou mean &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_mean]) + '\\\\\n'
     result_str += f'{"iou std &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_std]) + '\\\\\n'
     result_str += f'{"iou min &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_min]) + '\\\\\n'
@@ -219,7 +230,7 @@ def performance_str(result, dataset, regression_res):
     result_str += f'{"score mean &":13}' + ' & '.join([f'{p:<10.4f}' for p in scores_mean]) + '\\\\\n'
     result_str += f'{"score std &":13}' + ' & '.join([f'{p:<10.4f}' for p in  scores_std]) + '\\\\\n'
     result_str += f'{"score min &":13}' + ' & '.join([f'{p:<10.4f}' for p in  scores_min]) + '\\\\\n'
-    result_str += f'{"missed gt &":13}' + ' & '.join([f'{p:<10.4f}' for p in  missed_gt_rates]) + '\\\\\n'
+    #result_str += f'{"missed gt &":13}' + ' & '.join([f'{p:<10.4f}' for p in  missed_gt_rates]) + '\\\\\n'
     result_str += f'{"multi gt &":13}' + ' & '.join([f'{p:<10.4f}' for p in  multi_gt_rates]) + '\\\\\n'
     result_str += f'{"gt num &":13}' + ' & '.join([f'{p:<10d}' for p in gt_nums]) + '\\\\\n'
     result_str += '\n'
@@ -271,12 +282,15 @@ def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, ob
 
     return new_gt_boxlists
 
-def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eval, score_thres=0.5):
+def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eval, output_folder, score_thres=0.5):
     missed_gt_ids = defaultdict(list)
     multi_preds_gt_ids = defaultdict(list)
     ious = defaultdict(list)
     scores = defaultdict(list)
     good_pred_ids = defaultdict(list)
+    score_thres_nums = defaultdict(list)
+    success_nums = defaultdict(list)
+
     ious_flat = {}
     scores_flat = {}
     regression_res = {}
@@ -293,105 +307,117 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eva
     small_iou_threshold = 0.5
 
     for obj in pred_for_each_gt.keys():
-        for bi in range(batch_size):
-            if len(pred_for_each_gt[obj]) == 0:
-                continue
-            peg = pred_for_each_gt[obj][bi]
+          for bi in range(batch_size):
+                if len(pred_for_each_gt[obj]) == 0:
+                    continue
+                peg = pred_for_each_gt[obj][bi]
 
-            #-------------------------------
-            # get scores and iou
-            ious_bi = []
-            scores_bi = []
-            good_pred_ids_bi = []
-            for pi in peg:
-                # if a gt matches multiple preds, the max score one is positive
-                # here the first one actually has the max score
-                peg_max_score = peg[pi][0]
-                scores_bi.append( peg_max_score['score'] )
-                ious_bi.append( peg_max_score['iou'] )
-                good_pred_ids_bi.append( peg_max_score['pred_idx'] )
-            scores_bi = np.array(scores_bi)
-            ious_bi = np.array(ious_bi)
+                #-------------------------------
+                # get scores and iou
+                ious_bi = []
+                scores_bi = []
+                good_pred_ids_bi = []
+                gt_ids_bi = []
+                for gt_id in peg:
+                    # if a gt matches multiple preds, the max score one is positive
+                    # here the first one actually has the max score
+                    gt_ids_bi.append(gt_id)
+                    peg_max_score = peg[gt_id][0]
+                    scores_bi.append( peg_max_score['score'] )
+                    ious_bi.append( peg_max_score['iou'] )
+                    good_pred_ids_bi.append( peg_max_score['pred_idx'] )
+                scores_bi = np.array(scores_bi)
+                ious_bi = np.array(ious_bi)
+                gt_ids_bi = np.array(gt_ids_bi)
 
-            ious_all[obj].append(ious_bi)
-            scores_all[obj].append(scores_bi)
+                ious_all[obj].append(ious_bi)
+                scores_all[obj].append(scores_bi)
 
-            # (1) score > score_thres, (2) iou > iou_thresh
-            score_mask = scores_bi >= score_thres
-            iou_mask = ious_bi > iou_thresh_eval
-            valid_mask = score_mask * iou_mask
 
-            scores_bi = scores_bi[valid_mask]
-            ious_bi = ious_bi[valid_mask]
-            ious[obj].append(ious_bi)
-            scores[obj].append(scores_bi)
-            good_pred_ids_bi = np.array(good_pred_ids_bi)[valid_mask]
-            good_pred_ids[obj].append( good_pred_ids_bi )
+                # (1) successful detection: (score > score_thres + iou > iou_thresh)
+                score_mask = scores_bi >= score_thres
+                iou_mask = ious_bi > iou_thresh_eval
+                success_mask = score_mask * iou_mask
 
-            #-------------------------------
-            # small iou
-            small_iou_preds_bi = []
-            for pi in peg:
-                for peg_ in peg[pi]:
-                    if peg_['score'] < score_thres:
-                      continue
-                    if peg_['iou'] < small_iou_threshold:
-                        bad_p = {}
-                        bad_p['pred_idx'] = peg_['pred_idx']
-                        bad_p['iou'] = peg_['iou']
-                        bad_p['score'] = peg_['score']
-                        bad_p['gt_idx'] = pi
-                        bad_p['class'] = obj
-                        small_iou_preds_bi.append(bad_p)
-            small_iou_preds[bi] += small_iou_preds_bi
+                # record for calculating recall and precision when score>0.5
+                score_thres_nums[obj].append( score_mask.sum() )
+                success_nums[obj].append( success_mask.sum())
 
-            #-------------------------------
-            # get missed_gt_ids  and multi_preds_gt_ids
-            gt_ids = np.array([k for k in peg.keys()])
-            #gt_ids is only the index inside of one single class gts: (TAG: GT_MASK)
-            pred_num_each_gt = np.histogram(gt_ids, bins=range(obj_gt_nums[obj][bi]+1))[0]
-            pred_num_hist = np.histogram(pred_num_each_gt, bins=[0,1,2,3,4])[0]
-            #print(f'{pred_num_hist[0]} gt boxes are missed \n{pred_num_hist[1]} t Boxes got one prediction')
-            #print(f'{pred_num_hist[2]} gt boxes got 2 predictions')
-            missed_gt_ids_bi = np.where(pred_num_each_gt==0)[0]
-            multi_preds_gt_ids_bi = np.where(pred_num_each_gt>1)[0]
+                scores_bi = scores_bi[success_mask]
+                ious_bi = ious_bi[success_mask]
+                gt_ids_bi = gt_ids_bi[success_mask]
 
-            missed_gt_ids[obj].append(missed_gt_ids_bi)
-            multi_preds_gt_ids[obj].append(multi_preds_gt_ids_bi)
+                ious[obj].append(ious_bi)
+                scores[obj].append(scores_bi)
+                good_pred_ids_bi = np.array(good_pred_ids_bi)[success_mask]
+                good_pred_ids[obj].append( good_pred_ids_bi )
 
-            pass
+                #-------------------------------
+                # small iou
+                small_iou_preds_bi = []
+                for pi in peg:
+                    for peg_ in peg[pi]:
+                        if peg_['score'] < score_thres:
+                          continue
+                        if peg_['iou'] < small_iou_threshold:
+                            bad_p = {}
+                            bad_p['pred_idx'] = peg_['pred_idx']
+                            bad_p['iou'] = peg_['iou']
+                            bad_p['score'] = peg_['score']
+                            bad_p['gt_idx'] = pi
+                            bad_p['class'] = obj
+                            small_iou_preds_bi.append(bad_p)
+                small_iou_preds[bi] += small_iou_preds_bi
 
-        ious_flat[obj] = np.concatenate(ious[obj], 0)
-        scores_flat[obj] = np.concatenate(scores[obj], 0)
+                #-------------------------------
+                #gt_ids is only the index inside of one single class gts: (TAG: GT_MASK)
+                pred_num_each_gt = np.histogram(gt_ids_bi, bins=range(obj_gt_nums[obj][bi]+1))[0]
+                pred_num_hist = np.histogram(pred_num_each_gt, bins=[0,1,2,3,4])[0]
+                #print(f'{pred_num_hist[0]} gt boxes are missed \n{pred_num_hist[1]} t Boxes got one prediction')
+                #print(f'{pred_num_hist[2]} gt boxes got 2 predictions')
+                missed_gt_ids_bi = np.where(pred_num_each_gt==0)[0]
+                multi_preds_gt_ids_bi = np.where(pred_num_each_gt>1)[0]
 
-        if ious_flat[obj].shape[0] == 0:
-           ious_flat[obj] = np.array(np.nan)
-           scores_flat[obj] = np.array(np.nan)
+                missed_gt_ids[obj].append(missed_gt_ids_bi)
+                multi_preds_gt_ids[obj].append(multi_preds_gt_ids_bi)
 
-        ave_iou = np.mean(ious_flat[obj])
-        std_iou = np.std(ious_flat[obj])
-        max_iou = np.max(ious_flat[obj])
-        min_iou = np.min(ious_flat[obj])
-        ave_score = np.mean(scores_flat[obj])
-        std_score = np.std(scores_flat[obj])
-        max_score =  np.max(scores_flat[obj])
-        min_score =  np.min(scores_flat[obj])
+                pass
 
-        regression_res[obj] = {}
-        regression_res[obj]['min_max_iou'] = [min_iou, max_iou]
-        regression_res[obj]['ave_std_iou'] = [ave_iou, std_iou]
-        regression_res[obj]['min_max_score'] = [min_score, max_score]
-        regression_res[obj]['ave_std_score'] = [ave_score, std_score]
+          ious_flat[obj] = np.concatenate(ious[obj], 0)
+          scores_flat[obj] = np.concatenate(scores[obj], 0)
 
-        missed_gt_num = sum([len(gti) for gti in missed_gt_ids[obj] ])
-        multi_gt_num = sum([len(gti) for gti in multi_preds_gt_ids[obj] ])
-        gt_num_sum = sum(obj_gt_nums[obj])
-        regression_res[obj]['missed_multi_sum_gtnum'] = [missed_gt_num, multi_gt_num, gt_num_sum]
-        missed_rate = 1.0*missed_gt_num / gt_num_sum
-        multi_rate = 1.0*multi_gt_num / gt_num_sum
-        matched_rate = 1 - missed_rate - multi_rate
-        regression_res[obj]['missed_multi_rate'] = [matched_rate, missed_rate, multi_rate]
-        pass
+          if ious_flat[obj].shape[0] == 0:
+             ious_flat[obj] = np.array(np.nan)
+             scores_flat[obj] = np.array(np.nan)
+
+          ave_iou = np.mean(ious_flat[obj])
+          std_iou = np.std(ious_flat[obj])
+          max_iou = np.max(ious_flat[obj])
+          min_iou = np.min(ious_flat[obj])
+          ave_score = np.mean(scores_flat[obj])
+          std_score = np.std(scores_flat[obj])
+          max_score =  np.max(scores_flat[obj])
+          min_score =  np.min(scores_flat[obj])
+          rec_st = 1.0* np.sum(success_nums[obj]) / np.sum(obj_gt_nums[obj])
+          prec_st = 1.0* np.sum(success_nums[obj]) / np.sum(score_thres_nums[obj])
+
+          regression_res[obj] = {}
+          regression_res[obj]['min_max_iou'] = [min_iou, max_iou]
+          regression_res[obj]['ave_std_iou'] = [ave_iou, std_iou]
+          regression_res[obj]['min_max_score'] = [min_score, max_score]
+          regression_res[obj]['ave_std_score'] = [ave_score, std_score]
+          regression_res[obj]['prec_st'] = prec_st
+          regression_res[obj]['rec_st'] = rec_st
+
+          missed_gt_num = sum([len(gti) for gti in missed_gt_ids[obj] ])
+          multi_gt_num = sum([len(gti) for gti in multi_preds_gt_ids[obj] ])
+          gt_num_sum = sum(obj_gt_nums[obj])
+          regression_res[obj]['missed_multi_sum_gtnum'] = [missed_gt_num, multi_gt_num, gt_num_sum]
+          missed_rate = 1.0*missed_gt_num / gt_num_sum
+          multi_rate = 1.0*multi_gt_num / gt_num_sum
+          matched_rate = 1 - missed_rate - multi_rate
+          regression_res[obj]['matched_missed_multi_rate'] = [matched_rate, missed_rate, multi_rate]
+          pass
 
     reg_str = regression_res_str(regression_res)
     logger.info(reg_str)
@@ -413,7 +439,7 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eva
             plt.ylabel('count')
             title = f'iou histogram of {obj}'
             #plt.title(title)
-            fname = f'iou_hist_{obj}.png'
+            fname = f'{output_folder}/iou_hist_{obj}.png'
             fig.savefig(fname)
             try:
               io0_rate = np.sum(io<0.1)/io.shape[0]
@@ -449,7 +475,7 @@ def regression_res_str(regression_res):
         reg_str += f'{key}:\n{value}\n'
     return reg_str
 
-def draw_recall_precision_score_10steps(recall_precision_list, dset_metas, flag):
+def draw_recall_precision_score_10steps(recall_precision_list, dset_metas, flag, output_folder):
     num_classes = len(recall_precision_list)
     for i in range(num_classes):
         obj = dset_metas.label_2_class[i]
@@ -467,8 +493,9 @@ def draw_recall_precision_score_10steps(recall_precision_list, dset_metas, flag)
         plt.xlabel('recall')
         title = flag+' '+obj+' recall-precision'
         plt.title(title)
-        fig.savefig(title+'.png')
-        print('save: '+title+'.png')
+        fig_fn = output_folder + '/' + title+'.png'
+        fig.savefig(fig_fn)
+        print('save: '+fig_fn)
         if not ONLY_SAVE_NO_SHOW:
           plt.show()
         plt.close()
@@ -500,10 +527,8 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use
     rec_prec_score_org = [np.concatenate([np.array(r).reshape([-1,1]), np.array(p).reshape([-1,1]), np.array(s).reshape([-1,1])],1) \
                     for r,p,s in zip(rec, prec, scores)]
     ap, recall_precision_score_10steps = calc_detection_suncg_ap(prec, rec, scores, use_07_metric=use_07_metric)
-    score_thres = 0.5
-    pre_st, rec_st = calc_score_threshold_ap(prec, rec, scores, score_thres)
     return {"ap": ap, "map": np.nanmean(ap), "rec_prec_score_org":rec_prec_score_org, "recall_precision_score_10steps":recall_precision_score_10steps,
-            "pred_for_each_gt":pred_for_each_gt, "pre_stscore_thr": pre_st, "rec_score_thr": rec_st}
+            "pred_for_each_gt":pred_for_each_gt}
 
 
 def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_metas):
@@ -716,19 +741,4 @@ def calc_detection_suncg_ap(prec, rec, scores, use_07_metric=False):
     ap[0] = ap[1:].mean()
     return ap, recall_precision_score_10steps
 
-def calc_score_threshold_ap(prec, rec, scores, score_thres):
-  n_fg_class = len(prec)
-  pre_st = np.empty(n_fg_class)
-  rec_st = np.empty(n_fg_class)
-  for l in range(n_fg_class):
-    if scores[l] is None:
-      pre_st[l] = np.nan
-      continue
-    score_mask = np.nan_to_num(scores[l]) > score_thres
-    pre_st[l] =  np.mean( prec[l][score_mask])
-    rec_st[l] =  np.max( rec[l][score_mask])
-    pass
-  pre_st[0] = np.mean(pre_st[1:])
-  rec_st[0] = np.mean(rec_st[1:])
-  return pre_st, rec_st
 

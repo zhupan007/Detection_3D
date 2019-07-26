@@ -59,7 +59,7 @@ def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
 
 
 def load_prediction(output_folder, data_loader):
-    fn = os.path.join(output_folder, f"predictions_{len(data_loader)}.pth")
+    fn = os.path.join(output_folder, f"predictions.pth")
     print(fn)
     if not os.path.exists (fn):
       print('file not exist:\n'+fn)
@@ -97,7 +97,7 @@ def inference_3d(
     logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
     start_time = time.time()
 
-    output_folder = output_folder + f'_{len(data_loader)}'
+    #output_folder = output_folder + f'_{len(data_loader)}'
     if load_pred:
       predictions_load = load_prediction(output_folder, data_loader)
       if predictions_load is None:
@@ -122,7 +122,7 @@ def inference_3d(
           return
 
       if output_folder:
-          torch.save(predictions, os.path.join(output_folder, f"predictions_{len(predictions)}.pth"))
+          torch.save(predictions, os.path.join(output_folder, f"predictions.pth"))
 
 
     extra_args = dict(

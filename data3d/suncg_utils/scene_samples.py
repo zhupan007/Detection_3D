@@ -30,6 +30,8 @@ class SceneSamples():
 
     paper1_samples = occlusion + angle + complex_structures + parallel_close_wall_very_small_angle + parallel_close_wall + extent_wall_small_angle + wall_window_close
 
+    intro = ['2a422d3b3d1efb94db2057db4aa95ad7', '2ac2a614bb98e22efb504ea1bcb89fc1']
+
     err_scenes += ['1da0456aa433300489e95a35f0f3cd9d', '1e3ed936ba615c69fe170e35cc1f6c41', '29249f38d5c95568795ab8713eea23b6', '2939fcd921cfe33bb657f87ad35a2d73', '29b884837db645baa306c2c7e7bd5106']+\
       ['29eab295c257844236e84ab8c805459c', '29efc6b3741fc57c63737e8f9b68f494', '2a4229d4567b6775ebbf9610973fc443', '2ac2a614bb98e22efb504ea1bcb89fc1']
     #---------------------------------------------------------------------------
