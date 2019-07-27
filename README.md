@@ -2,6 +2,7 @@
 
 
 # on going process
+- try fpn321
 - iou criterion problem
 - good rpn proposals are recognized as false negative, apply aug in iou of roi
 - 3d box encoding is not right: /home/z/Research/Detection_3D/second/pytorch/core/ box_torch_ops.py

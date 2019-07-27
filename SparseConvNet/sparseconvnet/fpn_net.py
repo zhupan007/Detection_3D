@@ -242,11 +242,10 @@ class FPN_Net(torch.nn.Module):
             print('\n\nFPN_Net out:')
             print(f'{self.fpn_scales_from_top} of ups')
             receptive_fields_fpn = [self.operations_down[-i-1]['rf'] for i in self.fpn_scales_from_top]
+            receptive_fields_fpn = receptive_fields_fpn + receptive_fields_fpn
             for j,t in enumerate(rpn_maps):
-              if j < len(receptive_fields_fpn):
-                  tmp = f'\t Receptive:{receptive_fields_fpn[j]}'
-              else:
-                  tmp = ''
+              s_j = self.rpn_3d_2d_selector[j]
+              tmp = f'\t Receptive:{receptive_fields_fpn[s_j]}'
               sparse_shape(t, post=tmp)
               sparse_real_size(t,'\t')
               print('\n')

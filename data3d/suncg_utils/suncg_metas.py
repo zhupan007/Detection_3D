@@ -9,6 +9,7 @@ class SUNCG_METAS:
         classes_order.append( label_2_class0[l] )
 
     def __init__(self, classes):
+        assert 'background' in classes
         if classes is None:
             classes = self.classes_order
         self.classes = classes

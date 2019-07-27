@@ -16,12 +16,13 @@ SPLITED_DIR = '/DS/SUNCG/suncg_v1_torch_splited'
 #CLASSES = ['wall', 'ceiling']
 CLASSES = ['wall', 'window', 'door']
 #CLASSES = ['ceiling', 'floor']
-#CLASSES += ['floor']
+CLASSES += ['floor']
 #CLASSES += ['room']
+
+CLASSES = ['ceiling', 'floor']
 
 SHOW_PCL = 1
 POINTS_KEEP_RATE = 0.97
-DEL_CLASSES = True
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
 
@@ -123,15 +124,14 @@ def pcl_size(pcl):
     return xyz_size
 
 def render_pth_file(pth_fn, show_by_class=False):
-  pcl, bboxes = torch.load(pth_fn)
+  pcl, bboxes0 = torch.load(pth_fn)
   #points = pcl[:,0:3]
   #colors = pcl[:,3:6]
   #normals = pcl[:,6:9]
 
-  if DEL_CLASSES:
-    for c in ['ceiling', 'room', 'floor']:
-      if c in bboxes:
-        del bboxes[c]
+  bboxes = {}
+  for c in CLASSES:
+      bboxes[c] = bboxes0[c]
 
   scene_size = pcl_size(pcl)
   print(f'scene pcl size:{scene_size}')
@@ -239,14 +239,13 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       house_names_1level = h1f.read().split('\n')
   house_names = house_names_1level
 
-
   house_names.sort()
 
   house_names = house_names[700:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
   #house_names = SceneSamples.paper1_samples
-  house_names = ['2ac2a614bb98e22efb504ea1bcb89fc1']
+  #house_names = ['2ac2a614bb98e22efb504ea1bcb89fc1']
 
   print(f'totally {len(house_names)} houses')
 
@@ -279,8 +278,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 def summarize():
