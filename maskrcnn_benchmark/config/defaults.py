@@ -308,7 +308,7 @@ _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 # see 2 images per batch
 _C.TEST.IMS_PER_BATCH = 8
 # min iou for positive prediction in evaluation
-_C.TEST.IOU_THRESHOLD = 0.2
+_C.TEST.IOU_THRESHOLD = 0.1
 
 # ---------------------------------------------------------------------------- #
 # Misc options

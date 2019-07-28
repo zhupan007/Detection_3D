@@ -3,7 +3,7 @@ export PYTHONPATH=$PWD
 #export CUDA_VISIBLE_DEVICES=1
 
 #TEST='--skip-test'
-TEST='--only-test' 
+#TEST='--only-test' 
 
 CONFIG_FILE='ROI2D_Sw4c_fpn432_bs2_lr1.yaml'
 
