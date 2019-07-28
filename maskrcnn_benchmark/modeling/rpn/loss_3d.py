@@ -22,17 +22,17 @@ SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
 CHECK_MATCHER = DEBUG and False
 
 SHOW_IGNORED_ANCHOR = DEBUG and False
-SHOW_POS_NEG_ANCHORS = DEBUG and False
+SHOW_POS_NEG_ANCHORS = DEBUG and  False
 
 SHOW_PRED_POS_ANCHORS = DEBUG and False
 CHECK_REGRESSION_TARGET_YAW = False
 
-def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
+def check_matcher(target, anchor, match_quality_matrix, matched_idxs, dset_metas):
   ONLY_MISSED_TARGET = False
 
   num_gt = target.bbox3d.shape[0]
   labels = target.get_field('labels').cpu().data.numpy().astype(np.int)
-  classes = [DSET_METAS.label_2_class0[l] for l in labels]
+  classes = [dset_metas.label_2_class[l] for l in labels]
   for j in range(num_gt):
     ious_j = match_quality_matrix[j]
     mathched_inds_j = torch.nonzero(matched_idxs == j).squeeze(1)
@@ -46,7 +46,7 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
     target.show_highlight([j])
 
     print(f"matched iou: {iou_m_j}")
-    a_m_j.show_together(target[j], points=anchor.bbox3d[:,0:3] )
+    a_m_j.show__together(target[j], points=anchor.bbox3d[:,0:3] )
 
     ious_j_top, ids_top_j = ious_j.topk(5)
     print(f"top ious:{ious_j_top}")
@@ -57,11 +57,11 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs):
       a_j_top = anchor[ids_top_j[k]]
       the_matched_idx = matched_idxs[ids_top_j[k]]
       print(f"\n\niou:{ious_j_top[k]}, matched idx:{the_matched_idx}")
-      a_j_top.show_together(target[j], points=anchor.bbox3d[:,0:3])
+      a_j_top.show__together(target[j], points=anchor.bbox3d[:,0:3])
       if the_matched_idx >= 0 and the_matched_idx!=j:
         iou_another = match_quality_matrix[the_matched_idx, ids_top_j[k]]
         print(f'this anchor matched with another target with iou: {iou_another}')
-        a_j_top.show_together(target[[j, the_matched_idx]], points=anchor.bbox3d[:,0:3])
+        a_j_top.show__together(target[[j, the_matched_idx]], points=anchor.bbox3d[:,0:3])
     import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
   pass
@@ -98,7 +98,7 @@ class RPNLossComputation(object):
           cendis = anchor.bbox3d[:,0:3].view(1,-1,3) - target.bbox3d[:,0:3].view(-1,1,3)
           cendis = cendis.norm(dim=2)
           matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff=yaw_diff, flag='RPN', cendis=cendis)
-          #anchor.show_together(target, 200)
+          #anchor.show__together(target, 200)
           # RPN doesn't need any fields from target
           # for creating the labels, so clear them all
           target = target.copy()
@@ -116,10 +116,10 @@ class RPNLossComputation(object):
           sampled_ign_inds = torch.nonzero(matched_idxs==-2).squeeze(1)
           anchors_ign = anchor[sampled_ign_inds]
           print(f'\n ignore {len(anchors_ign)} anchors')
-          anchors_ign.show_together(target)
+          anchors_ign.show__together(target)
 
         if CHECK_MATCHER and target.bbox3d.shape[0]>0:
-          check_matcher(target, anchor, match_quality_matrix, matched_idxs)
+          check_matcher(target, anchor, match_quality_matrix, matched_idxs, self.dset_metas)
 
         if SHOW_POS_ANCHOR_IOU_SAME_LOC:
           num_gt = target.bbox3d.shape[0]
@@ -133,19 +133,19 @@ class RPNLossComputation(object):
             anchors_pos_j = anchor[sampled_pos_inds]
             print(f'\n{iou_j.shape[0]} anchor matched as positive. All anchor centroids are shown.')
             print(f'ious:{iou_j}\n')
-            anchors_pos_j.show_together(target[j], points=anchor.bbox3d[:,0:3])
+            anchors_pos_j.show__together(target[j], points=anchor.bbox3d[:,0:3])
 
             for i in range(iou_j.shape[0]):
 
               print(f'\n{i}th pos anchor for gt box j\n iou: {iou_j[i]}')
-              #anchors_pos_j[i].show_together(target[j])
+              #anchors_pos_j[i].show__together(target[j])
 
               ious_same_loc = match_quality_matrix[j][inds_same_loc[i]]
               yaw_diff_same_loc = yaw_diff[j,inds_same_loc[i]]
               print(f'\nall same loc anchors \nious:{ious_same_loc}\nmatched_idxs:{matched_idxs_same_loc[i]}\nyaw_diff:{yaw_diff_same_loc}')
               print(f'-1:low, -2:between')
               anchors_same_loc_i = anchor[inds_same_loc[i]]
-              anchors_same_loc_i.show_together(target[j])
+              anchors_same_loc_i.show__together(target[j])
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
             pass
@@ -274,11 +274,11 @@ class RPNLossComputation(object):
         print(f'missed_targets_label: {missed_targets_label}, {missed_targets_name}')
         if len(missed_targets_ids)>0:
             print('missed targets')
-            missed_targets.show_together(targets_bi)
+            missed_targets.show__together(targets_bi)
         else:
             print('no target missed')
-        pos_anchors_bi.show_together(targets[bi])
-        neg_anchors_bi.show_together(targets[bi])
+        pos_anchors_bi.show__together(targets[bi])
+        neg_anchors_bi.show__together(targets[bi])
 
         for l in labels_all:
             mask_l = labels_pos == l
@@ -288,7 +288,7 @@ class RPNLossComputation(object):
             if len(idxs_l)==0:
                 print('no pos anchors')
             else:
-                pos_anchors_bi[idxs_l].show_together(targets_bi)
+                pos_anchors_bi[idxs_l].show__together(targets_bi)
 
       pass
 

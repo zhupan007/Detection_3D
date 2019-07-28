@@ -2,7 +2,9 @@
 
 
 # on going process
-- try fpn321
+- Considering put ceiling, floor and room to a separated classifier. Because the anchor policy is different, shared head may not satisfy.
+- For ceiling, floor, when length == thickness/width, yaw is confusing
+- try fpn321, to accelerate training speed
 - iou criterion problem
 - good rpn proposals are recognized as false negative, apply aug in iou of roi
 - 3d box encoding is not right: /home/z/Research/Detection_3D/second/pytorch/core/ box_torch_ops.py
