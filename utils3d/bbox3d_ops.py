@@ -162,6 +162,11 @@ class Bbox3D():
       bbox yx_zb
     '''
     assert boxes.copy().shape[1] == 7
+
+    # This should be implemented in data prepration. For ceiling, floor, room,
+    # temporaly performed here.
+    boxes = Bbox3D.define_walls_direction(boxes, 'Z', yx_zb=False, check_thickness=False)
+
     boxes = boxes[:,[0,1,2,4,3,5,6]]
     boxes[:,2] = boxes[:,2] - boxes[:,5]*0.5
     boxes[:,-1] -= np.pi*0.5
@@ -629,11 +634,11 @@ class Bbox3D():
       box[_yaw] = yaw0 + np.pi * 0.5 * is_increase
       pass
 
-    #if not box[3] > box[_up]:
+    #if not box[3] >= box[_up]:
     #  Bbox3D.draw_bboxes(box, 'Z', False)
     #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
     #  pass
-    assert box[3] > box[_up]
+    assert box[3] >= box[_up]
     if check_thickness:
       assert box[_up] < 0.3 # normally thickness is small
     return box

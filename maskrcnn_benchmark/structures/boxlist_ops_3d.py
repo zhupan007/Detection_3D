@@ -56,6 +56,10 @@ def remove_small_boxes3d(boxlist, min_size):
 
 
 def iou_one_dim(targets_z, anchors_z):
+    '''
+    For ceiling, and floor: z size of target is small, augment to 1
+    '''
+    targets_z[:,1] = torch.max(targets_z[:,1], targets_z[:,1]/targets_z[:,1])
     anchors_z[:,1] = anchors_z[:,0] + anchors_z[:,1]
     targets_z[:,1] = targets_z[:,0] + targets_z[:,1]
     targets_z = targets_z.unsqueeze(1)

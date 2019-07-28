@@ -15,7 +15,7 @@ ENABLE_POINTS_MISSED = DEBUG and True
 SHOW_RAW_INPUT = DEBUG and False
 SHOW_AUG_INPUT = DEBUG and False
 
-ADD_PAPER_SCENES = True
+ADD_PAPER_SCENES = False
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
@@ -191,6 +191,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
 
   def __len__(self):
     return len(self.files)
+
   def map_class_id_to_class_name(self, class_id):
     class_name = self.dset_metas.label_2_class[class_id]
     return class_name

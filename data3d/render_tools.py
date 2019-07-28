@@ -16,12 +16,13 @@ SPLITED_DIR = '/DS/SUNCG/suncg_v1_torch_splited'
 #CLASSES = ['wall', 'ceiling']
 CLASSES = ['wall', 'window', 'door']
 #CLASSES = ['ceiling', 'floor']
-#CLASSES += ['floor']
+CLASSES += ['floor']
 #CLASSES += ['room']
 
-SHOW_PCL = 0
-POINTS_KEEP_RATE = 0.8
-DEL_CLASSES = True
+CLASSES = ['ceiling', 'floor']
+
+SHOW_PCL = 1
+POINTS_KEEP_RATE = 0.97
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
 
@@ -76,7 +77,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
 
     #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
     #if not show_pcl:
-    Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+    #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
     #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
     #show_walls_offsetz(bboxes)
 
@@ -111,7 +112,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
     #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
     #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE, animation_fn='points.mp4', ani_size=AniSizes[house_name])
     bboxes[:,2] += 0.1
-    #Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
+    Bbox3D.draw_points_bboxes(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
     Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE )
     #Bbox3D.draw_points_bboxes_mesh(pcl, bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE, animation_fn='mesh.mp4', ani_size=AniSizes[house_name] )
 
@@ -123,15 +124,14 @@ def pcl_size(pcl):
     return xyz_size
 
 def render_pth_file(pth_fn, show_by_class=False):
-  pcl, bboxes = torch.load(pth_fn)
+  pcl, bboxes0 = torch.load(pth_fn)
   #points = pcl[:,0:3]
   #colors = pcl[:,3:6]
   #normals = pcl[:,6:9]
 
-  if DEL_CLASSES:
-    for c in ['ceiling', 'room', 'floor']:
-      if c in bboxes:
-        del bboxes[c]
+  bboxes = {}
+  for c in CLASSES:
+      bboxes[c] = bboxes0[c]
 
   scene_size = pcl_size(pcl)
   print(f'scene pcl size:{scene_size}')
@@ -150,13 +150,13 @@ def render_pth_file(pth_fn, show_by_class=False):
     labels += [i]*n
   labels = np.array(labels)
 
-  Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
+  #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
   #show_walls_offsetz(all_bboxes)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
-  #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
+  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
 
@@ -239,14 +239,13 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
       house_names_1level = h1f.read().split('\n')
   house_names = house_names_1level
 
-
   house_names.sort()
 
-  house_names = house_names[4051+109:]
+  house_names = house_names[700:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  house_names = SceneSamples.paper1_samples
-  #house_names = ['1da8a8bda13441351fd933480f0fc819']
+  #house_names = SceneSamples.paper1_samples
+  #house_names = ['2ac2a614bb98e22efb504ea1bcb89fc1']
 
   print(f'totally {len(house_names)} houses')
 
@@ -349,8 +348,8 @@ def summarize():
 
 if __name__ == '__main__':
     #render_fn()
-    #main()
-    summarize()
+    main()
+    #summarize()
 
 
 

@@ -164,8 +164,10 @@ _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 1000 #  2000
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"
 
+# FROM_TOP: TOP 0 is the most sparse layer
 _C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2]
-_C.MODEL.RPN.RPN_3D_2D_SELECTOR =  [1,2,3,4,5]
+# [indices of 3d, indeice of 2d]
+_C.MODEL.RPN.RPN_3D_2D_SELECTOR =  [1,3,4,5]
 _C.MODEL.RPN.ADD_GT_PROPOSALS = True
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options

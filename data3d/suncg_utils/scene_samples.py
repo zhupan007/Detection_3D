@@ -2,6 +2,8 @@ class SceneSamples():
     '''
     '''
     #---------------------------------------------------------------------------
+    geo_def = ['2a07667f31f99fc450eaecc8fbd8aa46']
+    #---------------------------------------------------------------------------
     paper_samples = ['0058113bdc8bee5f387bb5ad316d7b28']
     paper_samples_1  = ['00602d3d932a8d5305234360a9d1e0ad',  '0055398beb892233e0664d843eb451ca']
     paper_samples_2 = ['005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4','00922f91aa09dbdda3a74489ea0e21eb']
@@ -17,16 +19,21 @@ class SceneSamples():
     #---------------------------------------------------------------------------
     # samples between [4K, 5K]
     occlusion = ['1e5b5abaf37672f31a68c64c86721e69']
-    angle = ['1d51690abecf3d4d5fcb818a0721d23c', '1db62509ded045cbedfa7cd80fcfadba', '1deb63245dd9d06a5bbf1af2857049c4']
+    angle = ['1d51690abecf3d4d5fcb818a0721d23c', '1db62509ded045cbedfa7cd80fcfadba', '1deb63245dd9d06a5bbf1af2857049c4']+\
+          ['280d53b7678ee5d7d6ee1cada764d4a3', '292815803989642a171d23d0cd7e3a7b']
     complex_structures = ['1d84d7ca97f9e05534bf408779406e30', '1d938aa8a23c8507e035f5a7d4614180','1dba3a1039c6ec1a3c141a1cb0ad0757', '1e694c1e4862169a5f153c8719887bfc','1e717bef798945693244d7702bb65605']
     parallel_close_wall_very_small_angle = ['1d997f4d7ab8ff946279c3cc48b9ac95']
     parallel_close_wall = ['1e1803ee618089e619878995307e3d4d', '1e7a7945cd9ce60ce43f47cb72f72286']
     extent_wall_small_angle = ['1de7aee49963c9f1b658ed5b0178e266']
     wall_window_close = ['1da8a8bda13441351fd933480f0fc819', '1e7a7945cd9ce60ce43f47cb72f72286']
+    multi_windows_vertical = ['27e7978d19335c98323d377ce6688a5f', '284060d1077ae763243262612a831541', '28de6b671d96922c0059d4db81e00d5d']
 
     paper1_samples = occlusion + angle + complex_structures + parallel_close_wall_very_small_angle + parallel_close_wall + extent_wall_small_angle + wall_window_close
 
-    err_scenes += ['1da0456aa433300489e95a35f0f3cd9d', '1e3ed936ba615c69fe170e35cc1f6c41']
+    intro = ['2a422d3b3d1efb94db2057db4aa95ad7', '2ac2a614bb98e22efb504ea1bcb89fc1']
+
+    err_scenes += ['1da0456aa433300489e95a35f0f3cd9d', '1e3ed936ba615c69fe170e35cc1f6c41', '29249f38d5c95568795ab8713eea23b6', '2939fcd921cfe33bb657f87ad35a2d73', '29b884837db645baa306c2c7e7bd5106']+\
+      ['29eab295c257844236e84ab8c805459c', '29efc6b3741fc57c63737e8f9b68f494', '2a4229d4567b6775ebbf9610973fc443', '2ac2a614bb98e22efb504ea1bcb89fc1']
     #---------------------------------------------------------------------------
 
 
@@ -68,7 +75,8 @@ class SceneSamples():
 
     #---------------------------------------------------------------------------
 
-    bad_scenes_curved_walls = ['020179798688014a482f483e1a5debe5', '019853e4742f679151c34f2732c33c16', '1de4b3e04dc05c81ec9bf6a5ffe52252']
+    bad_scenes_curved_walls = ['020179798688014a482f483e1a5debe5', '019853e4742f679151c34f2732c33c16', '1de4b3e04dc05c81ec9bf6a5ffe52252']+\
+      ['27143c875575d97aa54cd686da3009f5']
 
     # bad samples: not used in the training (1) BIM definition ambiguous
     bad_scenes_BIM_ambiguous = ['004e36a61e574321adc8da7b48c331f2', '00466151039216eb333369aa60ea3efe', '008969b6e13d18db3abc9d954cebe6a5', '0165e8534588c269219c9aafa9d888da']

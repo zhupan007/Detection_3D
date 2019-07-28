@@ -2,18 +2,18 @@ DEBUG:
   eval_in_train: 1
   eval_in_train_per_iter: -1
 INPUT:
-  #CLASSES: ['background', 'wall']
-  CLASSES: ['background', 'wall', 'door', 'window']
+  #CLASSES: ['background', 'ceiling']
+  CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
   #SCENES: []
 MODEL:
-  #SEPERATE_CLASSES: ['wall']
+  SEPERATE_CLASSES: ['wall']
   BACKBONE:
     OUT_CHANNELS: 128
   RPN:
-    ANCHOR_SIZES_3D: [[0.4,1.5,1.5], [0.2,0.5,3], [0.4,1.5,3], [0.6,2.5,3]]
+    ANCHOR_SIZES_3D: [[0.4,1.5,1.5], [2,4,1.5],[4,6,1.5],   [0.2,0.5,3], [0.4,1.5,3], [0.6,2.5,3]]
     YAWS:  (0, -1.57, -0.785, 0.785)
-    RPN_SCALES_FROM_TOP: [4,3,2] 
-    RPN_3D_2D_SELECTOR: [1,3,4,5]
+    RPN_SCALES_FROM_TOP: [4,3,2,1] 
+    RPN_3D_2D_SELECTOR: [1,2,3,  4,5,6]
     YAW_THRESHOLD: 0.7
     FG_IOU_THRESHOLD: 0.55 #  0.7
     BG_IOU_THRESHOLD: 0.2 # 0.3
@@ -33,13 +33,13 @@ DATALOADER:
 SOLVER:
   EPOCHS: 100
   EPOCHS_BETWEEN_TEST: 1
-  IMS_PER_BATCH: 2
-  BASE_LR: 0.001
+  IMS_PER_BATCH: 1
+  BASE_LR: 0.005
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (20,)
   CHECKPOINT_PERIOD_EPOCHS: 1
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "res_ROI2D_4c_fpn432_bs2_lr1"
+OUTPUT_DIR: "res_Sw6c_fpn432_bs1_lr5"
 TEST:
-  IMS_PER_BATCH: 1
+  IMS_PER_BATCH: 6

@@ -3,11 +3,12 @@ import numpy as np
 IS_SHUFFLE = False
 
 COLOR_LIST = np.array( [
-[0,0,255],
-[255,0,0],
 [0,255,0],
-[0, 255, 255],
+[255,0,0],
+[0,0,255],
+[138,  43, 226],
 [255,127,80],
+[0, 255, 255],
 [127,255,212],
 [153,102,204],
 [127,255,0],
@@ -107,7 +108,7 @@ COLOR_LIST = np.tile(COLOR_LIST, [4,1]) / 255.0
 
 import matplotlib.pyplot as plt
 from skimage import io
-plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
+plt.rcParams.update({'font.size': 16, 'figure.figsize': (5,5)})
 
 def show_all():
   print(COLOR_LIST)
@@ -117,7 +118,7 @@ def show_all():
   for i in range(0,n, 5):
     e = min(i+10, n)
     print(f'{i}:{e}')
-    print(COLOR_LIST_[:,i:e])
+    print(COLOR_LIST_[:,i:e]*255)
     im = plt.imshow( COLOR_LIST_[:,i:e,:], interpolation='none', aspect='auto')
     plt.colorbar(im, orientation='horizontal')
     plt.show()
@@ -125,10 +126,13 @@ def show_all():
 
 def show_class_colors(classes):
   n = len(classes)
-  colors = COLOR_LIST[0:n].reshape([1,-1,3])
+  colors = COLOR_LIST[0:n]
+  k = 4
+  indices = (np.arange(k*n)/k).astype(np.int)
+  colors = colors[indices, :].reshape([1,-1,3])
   fig, ax = plt.subplots()
   im = ax.imshow(colors)
-  ax.set_xticks(np.arange(n))
+  ax.set_xticks(np.arange(n)*k+int(k*0.5)-1)
   ax.set_xticklabels(classes)
   ax.set_yticks([])
   plt.show()
