@@ -111,6 +111,7 @@ class RPNLossComputation(object):
 
         if SHOW_POS_NEG_ANCHORS:
             self.matched_idxs = matched_idxs
+            self.matched_iou = match_quality_matrix.max(0)[0]
 
         if SHOW_IGNORED_ANCHOR:
           sampled_ign_inds = torch.nonzero(matched_idxs==-2).squeeze(1)
@@ -247,6 +248,7 @@ class RPNLossComputation(object):
       labels_all = [l for  l in labels_all if l!=0]
       assert anchors.batch_size()  == 1
       anchors.add_field('matched_idxs', self.matched_idxs.cpu().data.numpy().astype(np.int))
+      anchors.add_field('matched_ious', self.matched_iou.cpu().data.numpy().astype(np.float))
       pos_inds_examples = anchors.seperate_items_to_examples(sampled_pos_inds)
       neg_inds_examples = anchors.seperate_items_to_examples(sampled_neg_inds)
       bs = anchors.batch_size()
@@ -258,6 +260,7 @@ class RPNLossComputation(object):
         pos_anchors_bi = anchors_bi[pos_inds_examples[bi]]
         neg_anchors_bi = anchors_bi[neg_inds_examples[bi]]
         matched_idxs = pos_anchors_bi.get_field('matched_idxs').cpu().data.numpy().astype(np.int)
+        matched_ious = pos_anchors_bi.get_field('matched_ious').cpu().data.numpy().astype(np.float)
         labels_pos = labels_bi[matched_idxs]
         #pos_label_nums = [ np.sum(labels_pos==l) for l in labels_all ]
         mask_targ = np.ones(len(targets_bi))
@@ -266,15 +269,16 @@ class RPNLossComputation(object):
         missed_targets_label = labels_bi[missed_targets_ids]
         missed_targets_name = [self.dset_metas.label_2_class[l] for l in missed_targets_label]
         missed_targets = targets_bi[missed_targets_ids]
-        missed_targets.bbox3d[:,2] += 0.2
 
+        print(f'{len(targets_bi)} targets')
         print(f'\n{len(targets[bi])} positive anchors')
         print(f'labels_pos: \n {labels_pos}')
+        print(f'matched_ious:{matched_ious}')
         print(f'missed_targets_ids: {missed_targets_ids}')
         print(f'missed_targets_label: {missed_targets_label}, {missed_targets_name}')
         if len(missed_targets_ids)>0:
             print('missed targets')
-            missed_targets.show__together(targets_bi)
+            targets_bi.show_highlight(missed_targets_ids)
         else:
             print('no target missed')
         pos_anchors_bi.show__together(targets[bi])

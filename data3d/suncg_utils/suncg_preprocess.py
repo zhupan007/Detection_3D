@@ -1169,8 +1169,8 @@ def parse_house():
   suncg.parse_houses(False)
 
 if __name__ == '__main__':
-  #parse_house()
-  gen_house_names_1level()
+  parse_house()
+  #gen_house_names_1level()
 
   #check_house_status()
 
