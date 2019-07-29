@@ -22,7 +22,7 @@ SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
 CHECK_MATCHER = DEBUG and False
 
 SHOW_IGNORED_ANCHOR = DEBUG and False
-SHOW_POS_NEG_ANCHORS = DEBUG and  False
+SHOW_POS_NEG_ANCHORS = DEBUG and False
 
 SHOW_PRED_POS_ANCHORS = DEBUG and False
 CHECK_REGRESSION_TARGET_YAW = False
@@ -46,7 +46,7 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs, dset_metas
     target.show_highlight([j])
 
     print(f"matched iou: {iou_m_j}")
-    a_m_j.show__together(target[j], points=anchor.bbox3d[:,0:3] )
+    a_m_j.show__together(target[j], points=anchor.centroids() )
 
     ious_j_top, ids_top_j = ious_j.topk(5)
     print(f"top ious:{ious_j_top}")
@@ -57,12 +57,11 @@ def check_matcher(target, anchor, match_quality_matrix, matched_idxs, dset_metas
       a_j_top = anchor[ids_top_j[k]]
       the_matched_idx = matched_idxs[ids_top_j[k]]
       print(f"\n\niou:{ious_j_top[k]}, matched idx:{the_matched_idx}")
-      a_j_top.show__together(target[j], points=anchor.bbox3d[:,0:3])
+      a_j_top.show__together(target[j], points=anchor.centroids())
       if the_matched_idx >= 0 and the_matched_idx!=j:
         iou_another = match_quality_matrix[the_matched_idx, ids_top_j[k]]
         print(f'this anchor matched with another target with iou: {iou_another}')
-        a_j_top.show__together(target[[j, the_matched_idx]], points=anchor.bbox3d[:,0:3])
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        a_j_top.show__together(target[[j, the_matched_idx]], points=anchor.centroids())
     pass
   pass
 
@@ -116,8 +115,15 @@ class RPNLossComputation(object):
         if SHOW_IGNORED_ANCHOR:
           sampled_ign_inds = torch.nonzero(matched_idxs==-2).squeeze(1)
           anchors_ign = anchor[sampled_ign_inds]
+          ignored_iou = match_quality_matrix.max(0)[0][sampled_ign_inds]
           print(f'\n ignore {len(anchors_ign)} anchors')
+          print(f'\n ignore ious:\n{ignored_iou}')
           anchors_ign.show__together(target)
+          #for i in range(0, len(anchors_ign), 3):
+          #  ids_ign = [j for j in range(i, i+3)]
+          #  print(f'iou: {ignored_iou[ids_ign]}')
+          #  anchors_ign[ids_ign].show__together(target)
+          pass
 
         if CHECK_MATCHER and target.bbox3d.shape[0]>0:
           check_matcher(target, anchor, match_quality_matrix, matched_idxs, self.dset_metas)
@@ -244,6 +250,7 @@ class RPNLossComputation(object):
         return objectness_loss, box_loss
 
     def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds, targets):
+      show_pos_anchors_for_each_label = False
       labels_all = list(self.dset_metas.label_2_class.keys())
       labels_all = [l for  l in labels_all if l!=0]
       assert anchors.batch_size()  == 1
@@ -261,6 +268,7 @@ class RPNLossComputation(object):
         neg_anchors_bi = anchors_bi[neg_inds_examples[bi]]
         matched_idxs = pos_anchors_bi.get_field('matched_idxs').cpu().data.numpy().astype(np.int)
         matched_ious = pos_anchors_bi.get_field('matched_ious').cpu().data.numpy().astype(np.float)
+        neg_ious = neg_anchors_bi.get_field('matched_ious').cpu().data.numpy().astype(np.float)
         labels_pos = labels_bi[matched_idxs]
         #pos_label_nums = [ np.sum(labels_pos==l) for l in labels_all ]
         mask_targ = np.ones(len(targets_bi))
@@ -282,17 +290,23 @@ class RPNLossComputation(object):
         else:
             print('no target missed')
         pos_anchors_bi.show__together(targets[bi])
-        neg_anchors_bi.show__together(targets[bi])
 
-        for l in labels_all:
-            mask_l = labels_pos == l
-            idxs_l = np.nonzero(mask_l)[0]
-            class_name = self.dset_metas.label_2_class[ l ]
-            print(f'pos anchors for {class_name}')
-            if len(idxs_l)==0:
-                print('no pos anchors')
-            else:
-                pos_anchors_bi[idxs_l].show__together(targets_bi)
+        biou_neg_mask = neg_ious > 0.2
+        biou_ids = np.where(biou_neg_mask)[0]
+        print(f'neg ious: {neg_ious[biou_ids]}')
+        neg_anchors_bi[biou_ids].show__together(targets[bi])
+
+
+        if show_pos_anchors_for_each_label:
+          for l in labels_all:
+              mask_l = labels_pos == l
+              idxs_l = np.nonzero(mask_l)[0]
+              class_name = self.dset_metas.label_2_class[ l ]
+              print(f'pos anchors for {class_name}')
+              if len(idxs_l)==0:
+                  print('no pos anchors')
+              else:
+                  pos_anchors_bi[idxs_l].show__together(targets_bi)
 
       pass
 

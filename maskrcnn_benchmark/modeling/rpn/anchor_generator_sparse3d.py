@@ -9,7 +9,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from utils3d.geometric_torch import OBJ_DEF
 
 DEBUG = True
-SHOW_ANCHOR_EACH_SCALE = DEBUG and False
+SHOW_ANCHOR_EACH_SCALE = DEBUG and  False
 CHECK_ANCHOR_STRIDES = False
 if DEBUG:
   from utils3d.bbox3d_ops import Bbox3D

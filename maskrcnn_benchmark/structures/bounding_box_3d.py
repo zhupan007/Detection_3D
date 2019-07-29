@@ -172,7 +172,11 @@ class BoxList3D(object):
         self.mode = mode
         self.examples_idxscope = examples_idxscope
         self.extra_fields = {}
-
+    def centroids(self):
+        centroids = self.bbox3d[:,0:3].clone()
+        if self.mode == 'yx_zb':
+            centroids[:,2] += self.bbox3d[:,5]*0.5
+        return centroids
     def check_bboxes(self):
       OBJ_DEF.check_bboxes(self.bbox3d, self.mode=='yx_zb')
 
