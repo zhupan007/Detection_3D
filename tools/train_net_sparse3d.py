@@ -219,10 +219,33 @@ def get_train_example_num(cfg):
 
 def intact_cfg(cfg):
   cfg.SPARSE3D.SCENE_SIZE = (np.array(cfg.SPARSE3D.VOXEL_FULL_SCALE).astype(np.float) / cfg.SPARSE3D.VOXEL_SCALE).tolist()
+  intact_anchor(cfg)
+  check_roi_parameters(cfg)
+  intact_for_separate_classifier(cfg)
+
+def intact_for_separate_classifier(cfg):
+  dset_metas = DSET_METAS(cfg.INPUT.CLASSES)
+  spec_classes_id = [dset_metas.class_2_label[c] for c in cfg.MODEL.SEPERATE_CLASSES]
+  cfg.MODEL.SEPERATE_CLASSES_ID = spec_classes_id
+  remaining_classes = [c for c in cfg.INPUT.CLASSES if c not in cfg.MODEL.SEPERATE_CLASSES ]
+  cfg.MODEL.REMAIN_CLASSES = remaining_classes
+  if len(spec_classes_id) > 0:
+    sep_r = 0.7
+    cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TRAIN =   int(sep_r * cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TRAIN)
+    cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST =    int(sep_r * cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST)
+    cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN =  int(sep_r * cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN)
+    cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST =   int(sep_r * cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST)
+    cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE= int(sep_r * cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE)
+    cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG =  int(sep_r * cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG)
+
+def intact_anchor(cfg):
   fpn_scalse = cfg.MODEL.RPN.RPN_SCALES_FROM_TOP
   strides = cfg.SPARSE3D.STRIDE
   nPlanesFront = cfg.SPARSE3D.nPlanesFront
   scales_selector_3d_2d = cfg.MODEL.RPN.RPN_3D_2D_SELECTOR
+  anchor_size = cfg.MODEL.RPN.ANCHOR_SIZES_3D
+  assert len(anchor_size) == len(fpn_scalse) == len(cfg.MODEL.RPN.USE_YAWS)
+  assert len(cfg.MODEL.RPN.YAWS) == len(cfg.MODEL.RPN.RATIOS)
 
   scale_num = len(nPlanesFront)
   assert scale_num == len(strides) + 1
@@ -238,7 +261,6 @@ def intact_cfg(cfg):
   #cfg.MODEL.RPN.ANCHOR_STRIDE = list(reversed([ANCHOR_STRIDE[i] for i in fpn_scalse]))
   #cfg.MODEL.RPN.ANCHOR_SIZES_3D = list(reversed( cfg.MODEL.RPN.ANCHOR_SIZES_3D ))
 
-  anchor_size = cfg.MODEL.RPN.ANCHOR_SIZES_3D
   ns = len(fpn_scalse)
   na = len(anchor_size)
   #assert ns*2==na, f"fpn_scalse num {ns}*2 != anchor_size num {na}. The anchor size for each scale should be seperately"
@@ -250,24 +272,6 @@ def intact_cfg(cfg):
 
   #if len(anchor_size)>1:
   #  assert anchor_size[0][0] > anchor_size[1][0], "ANCHOR_SIZES_3D should set from small to large after reversed, to match scale order of feature map"
-
-  check_roi_parameters(cfg)
-
-  # ----------------------
-  dset_metas = DSET_METAS(cfg.INPUT.CLASSES)
-  spec_classes_id = [dset_metas.class_2_label[c] for c in cfg.MODEL.SEPERATE_CLASSES]
-  cfg.MODEL.SEPERATE_CLASSES_ID = spec_classes_id
-  remaining_classes = [c for c in cfg.INPUT.CLASSES if c not in cfg.MODEL.SEPERATE_CLASSES ]
-  cfg.MODEL.REMAIN_CLASSES = remaining_classes
-  if len(spec_classes_id) > 0:
-    sep_r = 0.7
-    cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TRAIN =   int(sep_r * cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TRAIN)
-    cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST =    int(sep_r * cfg.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST)
-    cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN =  int(sep_r * cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TRAIN)
-    cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST =   int(sep_r * cfg.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST)
-    cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE= int(sep_r * cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE)
-    cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG =  int(sep_r * cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG)
-
 
 def check_roi_parameters(cfg):
   #spatial_scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL

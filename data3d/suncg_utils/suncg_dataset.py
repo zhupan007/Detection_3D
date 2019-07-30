@@ -98,6 +98,8 @@ class SUNCGDataset(torch.utils.data.Dataset):
         for obj in bboxes_dic_i_0:
           if ('all' in objects_to_detect) or (obj in objects_to_detect):
             bboxes_dic_i[obj] = Bbox3D.convert_to_yx_zb_boxes(bboxes_dic_i_0[obj])
+            if obj in ['ceiling', 'floor', 'room']:
+              bboxes_dic_i[obj] = Bbox3D.set_yaw_zero(bboxes_dic_i[obj], is_yx_zb=True)
         if SHOW_RAW_INPUT:
           show_pcl_boxdic(pcl_i, bboxes_dic_i)
 
@@ -196,6 +198,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
     class_name = self.dset_metas.label_2_class[class_id]
     return class_name
 
+
 def add_paper_samples(scene_names):
   for s in SceneSamples.paper_samples:
     if s not in scene_names:
@@ -265,6 +268,7 @@ def rm_bad_samples(scene_names):
     if sn not in SceneSamples.bad_scenes:
       scene_names_new.append(sn)
   return scene_names_new
+
 
 def show_pcl_boxes(pcl, boxes):
   from utils3d.bbox3d_ops import Bbox3D

@@ -121,6 +121,9 @@ _C.MODEL.RPN = CN()
 #_C.MODEL.RPN.ANCHOR3D_SIZES = (1,0.5,4, 3,0.5,4, 7,0.5,4)
 _C.MODEL.RPN.ANCHOR_SIZES_3D = [[0.1,0.3,3], [0.2,0.6,3], [0.4,1.2,3], [0.8,2.4,3]]# along yxz
 _C.MODEL.RPN.YAWS = (0, -1.57, -0.785, 0.785)
+_C.MODEL.RPN.RATIOS = [[1,1,1],[1,2,1],[2,1,1]]
+# Enable use yaws or ratios for each scale separately
+_C.MODEL.RPN.USE_YAWS = [1,1,1,1]
 
 _C.MODEL.RPN.USE_FPN = True
 ## Base RPN anchor sizes given in absolute pixels w.r.t. the scaled network input

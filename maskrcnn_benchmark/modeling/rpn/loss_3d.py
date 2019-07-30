@@ -281,7 +281,8 @@ class RPNLossComputation(object):
         print(f'{len(targets_bi)} targets')
         print(f'\n{len(targets[bi])} positive anchors')
         print(f'labels_pos: \n {labels_pos}')
-        print(f'matched_ious:{matched_ious}')
+        mean_matched_iou = matched_ious.mean()
+        print(f'matched_ious:{matched_ious}\nmean_matched_iou:{mean_matched_iou}')
         print(f'missed_targets_ids: {missed_targets_ids}')
         print(f'missed_targets_label: {missed_targets_label}, {missed_targets_name}')
         if len(missed_targets_ids)>0:
@@ -291,8 +292,7 @@ class RPNLossComputation(object):
             print('no target missed')
         pos_anchors_bi.show__together(targets[bi])
 
-        biou_neg_mask = neg_ious > 0.2
-        biou_ids = np.where(biou_neg_mask)[0]
+        biou_ids = np.argsort(neg_ious)[-5:]
         print(f'neg ious: {neg_ious[biou_ids]}')
         neg_anchors_bi[biou_ids].show__together(targets[bi])
 

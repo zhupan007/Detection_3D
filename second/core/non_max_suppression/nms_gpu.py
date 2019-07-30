@@ -561,7 +561,11 @@ def devRotateIoUEval(rbox1, rbox2, criterion=-1):
     elif criterion == 1:
         return area_inter / area2
     elif criterion == 2:
-        return area_inter / (area2 + max(0,area1*0.5 - area_inter))
+        small_thickness = min(rbox2[2], rbox2[3]) /  max(rbox2[2], rbox2[3]) < 0.25
+        if small_thickness:
+          return area_inter / (area2 + max(0,area1*0.5 - area_inter))
+        else:
+          return area_inter / (area1 + area2 - area_inter)
     else:
         return area_inter
 

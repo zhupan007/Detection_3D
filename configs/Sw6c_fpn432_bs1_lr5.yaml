@@ -1,5 +1,5 @@
 DEBUG:
-  eval_in_train: -1
+  eval_in_train: 10
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'ceiling']
@@ -11,13 +11,15 @@ MODEL:
   BACKBONE:
     OUT_CHANNELS: 128
   RPN:
-    ANCHOR_SIZES_3D: [[2,4,1.5],[4,6,1.5],   ]
+    ANCHOR_SIZES_3D: [[1.5,1.5,1.5],[3,3,1.5],   ]
     YAWS:  (0, -1.57, -0.785, 0.785)
+    RATIOS:  [[1,1,1],[1,2,1],[2,1,1],[1.5,1.5,1]]  #  [(1,1,1),(1,2,1),(2,1,1)]
+    USE_YAWS: [0,0]
     RPN_SCALES_FROM_TOP: [2,1] 
     RPN_3D_2D_SELECTOR: [0,1]
-    YAW_THRESHOLD: 2.7
+    YAW_THRESHOLD: 0.7
     FG_IOU_THRESHOLD: 0.55 #  0.7
-    BG_IOU_THRESHOLD: 0.2 # 0.3
+    BG_IOU_THRESHOLD: 0.15 # 0.3
   ROI_BOX_HEAD:
     POOLER_RESOLUTION: (5,8,4)
     POOLER_SCALES_FROM_TOP: (4,3)
@@ -37,8 +39,8 @@ SOLVER:
   IMS_PER_BATCH: 1
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
-  LR_STEP_EPOCHS: (20,)
-  CHECKPOINT_PERIOD_EPOCHS: 1
+  LR_STEP_EPOCHS: (60,)
+  CHECKPOINT_PERIOD_EPOCHS: 50
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
 OUTPUT_DIR: "res_Sw6c_fpn432_bs1_lr5"

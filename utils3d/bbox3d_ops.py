@@ -165,13 +165,30 @@ class Bbox3D():
 
     # This should be implemented in data prepration. For ceiling, floor, room,
     # temporaly performed here.
-    boxes = Bbox3D.define_walls_direction(boxes, 'Z', yx_zb=False, check_thickness=False)
+    #boxes = Bbox3D.define_walls_direction(boxes, 'Z', yx_zb=False, check_thickness=False)
 
     boxes = boxes[:,[0,1,2,4,3,5,6]]
     boxes[:,2] = boxes[:,2] - boxes[:,5]*0.5
     boxes[:,-1] -= np.pi*0.5
     boxes[:,_yaw] = OBJ_DEF.limit_yaw(boxes[:,_yaw], True)
     OBJ_DEF.check_bboxes(boxes, True)
+    return boxes
+
+  @staticmethod
+  def set_yaw_zero(boxes, is_yx_zb):
+    '''
+    For object like ceiling, floor, room, which are symmetry about both x_b and y_b.
+    Always use yaw==0, length = size along x_r, thickness = size along x_y
+    yaw is times of pi/2
+    '''
+    yaws = boxes[:,-1]
+    assert np.mod( yaws, np.pi/2 ).max() < 0.01
+    switch_lt = np.abs(yaws / (np.pi/2)).astype(np.int)
+    size_y = boxes[:,3] * (1-switch_lt) + boxes[:,4] * (switch_lt)
+    size_x = boxes[:,4] * (1-switch_lt) + boxes[:,3] * (switch_lt)
+    boxes[:,3] = size_y
+    boxes[:,4] = size_x
+    boxes[:,-1] = 0
     return boxes
 
   @staticmethod

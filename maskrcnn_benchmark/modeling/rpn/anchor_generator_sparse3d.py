@@ -48,6 +48,8 @@ class AnchorGenerator(nn.Module):
         voxel_scale=20,
         sizes_3d=[[0.2,1,3], [0.5,2,3], [1,3,3]],
         yaws=(0, -1.57),
+        ratios=[(1,1,1), (1,2,1)],
+        use_yaws=[1,1,1],
         anchor_strides=[[8,8,729], [16,16,729], [32,32,729]],
         scene_size=[8,8,5],
         straddle_thresh=0,
@@ -65,11 +67,11 @@ class AnchorGenerator(nn.Module):
         assert anchor_strides.shape[1] == 3
         assert sizes_3d.shape[0] == anchor_strides.shape[0]
         yaws = np.array(yaws, dtype=np.float32).reshape([-1,1])
+        ratios = np.array(ratios, dtype=np.float32)
 
-        cell_anchors = [ generate_anchors_3d(size, yaws).float()
-                        for size in sizes_3d]
+        cell_anchors = [ generate_anchors_3d(size, yaws, ratios, uy).float()
+                        for size,uy in zip(sizes_3d, use_yaws)]
         [OBJ_DEF.check_bboxes(ca, yx_zb=True) for ca in cell_anchors]
-        self.yaws = yaws
         self.anchor_num_per_loc = len(yaws) # only one size per loc
         self.voxel_scale = voxel_scale
         self.strides = torch.from_numpy(anchor_strides)
@@ -178,9 +180,12 @@ def examples_bidx_2_sizes(examples_bidx):
   examples_idxscope = torch.cat(examples_idxscope, 0)
   return examples_idxscope
 
+
 def make_anchor_generator(config):
     anchor_sizes_3d = config.MODEL.RPN.ANCHOR_SIZES_3D
     yaws = config.MODEL.RPN.YAWS
+    ratios = config.MODEL.RPN.RATIOS
+    use_yaws = config.MODEL.RPN.USE_YAWS
     anchor_stride = config.MODEL.RPN.ANCHOR_STRIDE
     straddle_thresh = config.MODEL.RPN.STRADDLE_THRESH
     voxel_scale = config.SPARSE3D.VOXEL_SCALE
@@ -194,12 +199,35 @@ def make_anchor_generator(config):
     else:
         assert len(anchor_stride) == 1, "Non-FPN should have a single ANCHOR_STRIDE"
     anchor_generator = AnchorGenerator(
-        voxel_scale, anchor_sizes_3d, yaws, anchor_stride, scene_size,  straddle_thresh
+        voxel_scale, anchor_sizes_3d, yaws, ratios, use_yaws, anchor_stride, scene_size,  straddle_thresh
     )
     return anchor_generator
 
 
-def generate_anchors_3d( size, yaws, centroids=np.array([[0,0,0]])):
+def generate_anchors_3d( size, yaws, ratios, use_yaw, centroids=np.array([[0,0,0]])):
+  if use_yaw:
+    return generate_anchors_3d_yaws(size, yaws, centroids)
+  else:
+    return generate_anchors_3d_ratio(size, ratios, centroids)
+
+
+def generate_anchors_3d_ratio( size, ratios, centroids=np.array([[0,0,0]])):
+    '''
+      yaw == 0
+      yx_zb: [xc, yc, z_bot, y_size, x_size, z_size, yaw]
+      note: centroids=[0,0,0] is already xy centeroid and z bottom
+    '''
+    anchors = []
+    yaw = np.array([0], dtype=np.float32)
+    for j in range(ratios.shape[0]):
+        size_j = size * ratios[j]
+        for k in range(centroids.shape[0]):
+          anchor = np.concatenate([centroids[k], size_j, yaw]).reshape([1,-1])
+          anchors.append(anchor)
+    anchors = np.concatenate(anchors, 0)
+    return torch.from_numpy( anchors )
+
+def generate_anchors_3d_yaws( size, yaws, centroids=np.array([[0,0,0]])):
     '''
       yx_zb: [xc, yc, z_bot, y_size, x_size, z_size, yaw]
       note: centroids=[0,0,0] is already xy centeroid and z bottom
