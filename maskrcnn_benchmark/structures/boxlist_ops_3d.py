@@ -59,7 +59,9 @@ def iou_one_dim(targets_z, anchors_z):
     '''
     For ceiling, and floor: z size of target is small, augment to 1
     '''
-    targets_z[:,1] = torch.max(targets_z[:,1], targets_z[:,1]/targets_z[:,1])
+    targets_z[:,1] = torch.clamp(targets_z[:,1], min=0.8)
+    anchors_z[:,1] = torch.clamp(anchors_z[:,1], min=0.8) # aug proposal for ROI input as well
+
     anchors_z[:,1] = anchors_z[:,0] + anchors_z[:,1]
     targets_z[:,1] = targets_z[:,0] + targets_z[:,1]
     targets_z = targets_z.unsqueeze(1)
@@ -91,8 +93,14 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, fl
   #print(f"anchors yaw : {anchors_2d[:,-1].min()} , {anchors_2d[:,-1].max()}")
 
   # aug thickness. When thickness==0, iou is wrong
-  targets_2d[:,2] += aug_thickness['target'] # 0.25
-  anchors_2d[:,2] += aug_thickness['anchor']
+  targets_2d[:,2] = np.clip(targets_2d[:,2], a_min=aug_thickness['target'], a_max=None)
+  anchors_2d[:,2] = np.clip(anchors_2d[:,2], a_min=aug_thickness['anchor'], a_max=None)
+
+  #aug_th_mask = (targets_2d[:,2] < 0.3).astype(np.float32)
+  #targets_2d[:,2] += aug_thickness['target'] * aug_th_mask  # 0.25
+  #aug_th_mask = (anchors_2d[:,2] < 0.3).astype(np.float32)
+  #anchors_2d[:,2] += aug_thickness['anchor'] * aug_th_mask
+
   # criterion=1: use targets_2d as ref
   iou2d = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=criterion, device_id=cuda_index)
   iou2d = torch.from_numpy(iou2d)

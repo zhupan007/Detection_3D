@@ -279,7 +279,7 @@ class FastRCNNLossComputation(object):
                 print(f"roi_class_pred_:\n{roi_class_pred_}")
 
                 if eval_type == 'FP':
-                  pro_.show_together(targets)
+                  pro_.show__together(targets)
                   pass
 
                 if eval_type == 'FN' or eval_type == 'TP':

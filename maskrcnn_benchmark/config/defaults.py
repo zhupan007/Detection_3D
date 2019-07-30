@@ -152,7 +152,7 @@ _C.MODEL.RPN.BATCH_SIZE_PER_IMAGE = 256
 _C.MODEL.RPN.POSITIVE_FRACTION = 0.5
 # NMS threshold used on RPN proposals
 _C.MODEL.RPN.NMS_THRESH = 0.5 # 0.7
-_C.MODEL.RPN.AUG_THICKNESS_TAR_ANC = [0.3,0]
+_C.MODEL.RPN.AUG_THICKNESS_TAR_ANC = [0.5,0]
 # Proposal height and width both need to be greater than RPN_MIN_SIZE
 # (a the scale used during training or inference)
 _C.MODEL.RPN.MIN_SIZE = 0
@@ -205,7 +205,7 @@ _C.MODEL.ROI_HEADS.NMS = 0.3 # 0.5
 # Maximum number of detections to return per image (100 is based on the limit
 # established for the COCO dataset)
 _C.MODEL.ROI_HEADS.DETECTIONS_PER_IMG = 200
-_C.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC = [0.2,0.2]
+_C.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC = [0.5,0.5]
 
 
 _C.MODEL.ROI_BOX_HEAD = CN()
@@ -311,11 +311,11 @@ _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 # see 2 images per batch
 _C.TEST.IMS_PER_BATCH = 8
 # min iou for positive prediction in evaluation
-_C.TEST.IOU_THRESHOLD = 0.1
+_C.TEST.IOU_THRESHOLD = 0.2
 
 # ---------------------------------------------------------------------------- #
 # Misc options
 # ---------------------------------------------------------------------------- #
-_C.OUTPUT_DIR = "."
+_C.OUTPUT_DIR = "./RES"
 
 _C.PATHS_CATALOG = os.path.join(os.path.dirname(__file__), "paths_catalog.py")
