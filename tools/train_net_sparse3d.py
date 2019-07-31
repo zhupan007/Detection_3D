@@ -244,7 +244,7 @@ def intact_anchor(cfg):
   nPlanesFront = cfg.SPARSE3D.nPlanesFront
   scales_selector_3d_2d = cfg.MODEL.RPN.RPN_3D_2D_SELECTOR
   anchor_size = cfg.MODEL.RPN.ANCHOR_SIZES_3D
-  assert len(anchor_size) == len(fpn_scalse) == len(cfg.MODEL.RPN.USE_YAWS)
+  assert len(anchor_size) == len(scales_selector_3d_2d) == len(cfg.MODEL.RPN.USE_YAWS)
   assert len(cfg.MODEL.RPN.YAWS) == len(cfg.MODEL.RPN.RATIOS)
 
   scale_num = len(nPlanesFront)
