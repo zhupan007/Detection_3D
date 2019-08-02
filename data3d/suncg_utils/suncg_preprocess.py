@@ -17,6 +17,7 @@ USER_DIR = os.path.dirname(os.path.dirname(ROOT_DIR))
 from wall_preprocessing import preprocess_walls
 from window_preprocessing import preprocess_windows
 from door_preprocessing import preprocess_doors
+from celing_floor_room_preprocessing import preprocess_cfr
 from utils3d.bbox3d_ops import Bbox3D
 from data3d.dataset_metas import DSET_METAS0
 from scene_samples import SceneSamples
@@ -403,10 +404,10 @@ class Suncg():
       self.house_fns = house_fns[4460:5000]
 
     if Debug and 0:
-      scene_id = '0fd6fd0c8a6b0e205354249f1058666f'
+      scene_id = '1d84d7ca97f9e05534bf408779406e30'
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
-      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper1_samples]
+      #self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper1_samples]
 
     self.house_fns = rm_bad_scenes(self.house_fns)
 
@@ -594,6 +595,7 @@ def gen_bbox(house_fn):
       bboxes['wall'] = preprocess_walls(bboxes['wall'])
       bboxes['window'] = preprocess_windows(bboxes['window'], bboxes['wall'])
       bboxes['door'] = preprocess_doors(bboxes['door'], bboxes['wall'])
+      #bboxes['ceiling'] = preprocess_cfr(bboxes['ceiling'])
 
     # save bbox in ply and txt
     object_bbox_dir = os.path.join(parsed_dir, 'object_bbox')

@@ -175,7 +175,7 @@ class Bbox3D():
     return boxes
 
   @staticmethod
-  def set_yaw_zero(boxes, is_yx_zb):
+  def set_yaw_zero(boxes):
     '''
     For object like ceiling, floor, room, which are symmetry about both x_b and y_b.
     Always use yaw==0, length = size along x_r, thickness = size along x_y

@@ -291,18 +291,17 @@ class FastRCNNLossComputation(object):
                   print(f"target reg: \n{tar_reg[0:3]}")
                   print(f"roi_reg: \n{roi_box_regression_[0:3]}")
 
-                  roi_box[:,0] += 10
+                  roi_box[:,0] += 15
                   roi_boxlist_ = pro_.copy()
                   roi_boxlist_.bbox3d = roi_box
 
                   targets_ = targets.copy()
-                  targets_.bbox3d[:,0] += 10
+                  targets_.bbox3d[:,0] += 15
 
                   bs_ = cat_boxlist_3d([pro_, roi_boxlist_], per_example = False)
                   tg_ = cat_boxlist_3d([targets, targets_], False)
-                  bs_.show_together(tg_)
+                  bs_.show__together(tg_, twolabels=True)
 
-                  import pdb; pdb.set_trace()  # XXX BREAKPOINT
                   pass
               pass
 

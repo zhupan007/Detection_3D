@@ -1,11 +1,12 @@
 DEBUG:
-  eval_in_train: 5
+  eval_in_train: -5
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'ceiling']
   #CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
   SCENES: [ '1d84d7ca97f9e05534bf408779406e30']
 MODEL:
+  RPN_ONLY: True
         #SEPERATE_CLASSES: ['wall']
   BACKBONE:
     OUT_CHANNELS: 128
@@ -42,7 +43,6 @@ SOLVER:
   CHECKPOINT_PERIOD_EPOCHS: 5
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "res_6c_fpn432_bs1_lr5"
+OUTPUT_DIR: "res_6c_fpn432_bs1_lr5_RPN"
 TEST:
   IMS_PER_BATCH: 2
-  IOU_THRESHOLD: 0.8

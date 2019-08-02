@@ -9,6 +9,7 @@ import pickle
 import torch
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
 from data3d.suncg_utils.scene_samples import SceneSamples
+from suncg_utils.celing_floor_room_preprocessing import preprocess_cfr_standard
 
 #BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 #ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -148,6 +149,9 @@ class IndoorData():
       boxes_i = {}
       for obj in bboxes_splited:
         boxes_i[obj] = bboxes_splited[obj][i].astype(np.float32)
+        if obj in ['ceiling', 'floor', 'room']:
+          boxes_i[obj] = Bbox3D.set_yaw_zero(boxes_i[obj])
+          boxes_i[obj] = preprocess_cfr_standard(boxes_i[obj])
       torch.save((pcl_i, boxes_i), fni)
 
       if gen_ply:
@@ -634,10 +638,10 @@ def creat_splited_pcl_box():
   splited_path = f'{SPLITED_DIR}/houses'
   #house_names = os.listdir(parsed_dir)
 
-  house_names = ['11535fb0648bb4634360fca94e95af23']
+  house_names = ['1d84d7ca97f9e05534bf408779406e30']
   #house_names = SceneSamples.paper_samples
 
-  house_names = get_house_names_1level()
+  #house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
@@ -692,7 +696,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  #creat_splited_pcl_box()
-  gen_train_list()
+  creat_splited_pcl_box()
+  #gen_train_list()
   pass
 

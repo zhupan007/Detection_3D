@@ -114,6 +114,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 
 
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             if SHOW_SMALL_IOU:
                 small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
                 small_ious = [p['iou'] for p in  small_iou_preds[i]]

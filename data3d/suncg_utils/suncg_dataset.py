@@ -99,7 +99,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
           if ('all' in objects_to_detect) or (obj in objects_to_detect):
             bboxes_dic_i[obj] = Bbox3D.convert_to_yx_zb_boxes(bboxes_dic_i_0[obj])
             if obj in ['ceiling', 'floor', 'room']:
-              bboxes_dic_i[obj] = Bbox3D.set_yaw_zero(bboxes_dic_i[obj], is_yx_zb=True)
+              bboxes_dic_i[obj] = Bbox3D.set_yaw_zero(bboxes_dic_i[obj])
         if SHOW_RAW_INPUT:
           show_pcl_boxdic(pcl_i, bboxes_dic_i)
 

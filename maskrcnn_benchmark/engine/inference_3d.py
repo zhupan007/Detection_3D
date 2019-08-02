@@ -64,6 +64,7 @@ def load_prediction(output_folder, data_loader):
     if not os.path.exists (fn):
       print('file not exist:\n'+fn)
       return None
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     predictions = torch.load(fn)
     #assert len(predictions) == len(data_loader)
     predictions = predictions[0:len(data_loader)]
