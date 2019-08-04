@@ -83,6 +83,18 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, fl
   assert 'target' in aug_thickness
   assert 'anchor' in aug_thickness
 
+  if flag == 'rpn_label_generation':
+    assert aug_thickness['anchor'] == 0
+    assert aug_thickness['target'] == 0.5
+  elif flag == 'roi_label_generation':
+    assert aug_thickness['anchor'] == 0.5
+    assert aug_thickness['target'] == 0.5
+  elif flag == 'eval':
+    assert aug_thickness['anchor'] == 0
+    assert aug_thickness['target'] == 0
+  else:
+    raise NotImplementedError
+
   iouz = iou_one_dim(targets.bbox3d[:,[2,5]].clone(), anchors.bbox3d[:,[2,5]].clone())
 
   cuda_index = targets.bbox3d.device.index

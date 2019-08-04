@@ -45,7 +45,7 @@ class FastRCNNLossComputation(object):
         self.need_seperate = seperate_classifier.need_seperate
 
     def match_targets_to_proposals(self, proposal, target):
-        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness=self.aug_thickness, criterion=-1)
+        match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness=self.aug_thickness, criterion=-1, flag='roi_label_generation')
         matched_idxs = self.proposal_matcher(match_quality_matrix, yaw_diff=None, flag='ROI')
         # Fast RCNN only need "labels" field for selecting the targets
         target = target.copy_with_fields("labels")
