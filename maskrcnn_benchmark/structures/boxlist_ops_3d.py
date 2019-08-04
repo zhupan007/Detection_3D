@@ -85,10 +85,10 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, fl
 
   if flag == 'rpn_label_generation':
     assert aug_thickness['anchor'] == 0
-    assert aug_thickness['target'] == 0.5
+    assert aug_thickness['target'] >= 0.3
   elif flag == 'roi_label_generation':
-    assert aug_thickness['anchor'] == 0.5
-    assert aug_thickness['target'] == 0.5
+    assert aug_thickness['anchor'] >= 0.3
+    assert aug_thickness['target'] >= 0.3
   elif flag == 'eval':
     assert aug_thickness['anchor'] == 0
     assert aug_thickness['target'] == 0
