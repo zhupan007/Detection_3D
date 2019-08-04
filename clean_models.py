@@ -1,11 +1,12 @@
 import  glob, os
 from shutil import copyfile
 
-pathes = ['./res_Sw4c_fpn432_bs1_lr1_T635']
-pathes = glob.glob('./res*')
+pathes = ['./RES/res_Sw4c_fpn432_bs1_lr1_T635']
+pathes = glob.glob('./RES/res*')
 
 for path in pathes:
-  copyfile(f'{path}/log.txt', f'{path}/_log.txt')
+  if os.path.exists(f'{path}/log.txt'):
+    copyfile(f'{path}/log.txt', f'{path}/_log.txt')
   f = open(f'{path}/last_checkpoint', 'r')
   checkpoint = './'+f.readlines()[0]
   fnames = glob.glob(f'{path}/model_*.pth')

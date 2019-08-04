@@ -2,26 +2,25 @@ DEBUG:
   eval_in_train: 5
   eval_in_train_per_iter: -1
 INPUT:
-  CLASSES: ['background', 'ceiling']
-  #CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
+  CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
   SCENES: [ '1d84d7ca97f9e05534bf408779406e30']
 MODEL:
-        #SEPERATE_CLASSES: ['wall']
+  SEPERATE_CLASSES: ['wall']
   BACKBONE:
     OUT_CHANNELS: 128
   RPN:
-    ANCHOR_SIZES_3D: [[1.5,1.5,1.0],[4,4,1.5],   ]
+    ANCHOR_SIZES_3D: [[0.4,1.5,1.5],[1.5,1.5,1.0],[4,4,1.5],    [0.2,0.5,3], [0.4,1.5,3], [0.6,2.5,3]]
     YAWS:  (0, -1.57, -0.785, 0.785)
     RATIOS:  [[1,1,1],[1,2,1],[2,1,1],[1.7,1.7,1]]  #  [(1,1,1),(1,2,1),(2,1,1)]
-    USE_YAWS: [0,0]
-    RPN_SCALES_FROM_TOP: [3,2] 
-    RPN_3D_2D_SELECTOR: [0,1]
+    USE_YAWS: [1,0,0,  1,1,1]
+    RPN_SCALES_FROM_TOP: [4,3,2,1] 
+    RPN_3D_2D_SELECTOR: [1,2,3,  4,5,6]
     YAW_THRESHOLD: 0.7
     FG_IOU_THRESHOLD: 0.55 #  0.7
     BG_IOU_THRESHOLD: 0.2 # 0.3
   ROI_BOX_HEAD:
-    POOLER_RESOLUTION: (5,8,4)
-    POOLER_SCALES_FROM_TOP: (3,)
+    POOLER_RESOLUTION: (6,8,4)
+    POOLER_SCALES_FROM_TOP: (4,3)
   LOSS:
     YAW_MODE: 'Diff'
 SPARSE3D:
@@ -36,13 +35,13 @@ SOLVER:
   EPOCHS: 200
   EPOCHS_BETWEEN_TEST: 200
   IMS_PER_BATCH: 1
-  BASE_LR: 0.01
+  BASE_LR: 0.005
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (80,)
   CHECKPOINT_PERIOD_EPOCHS: 5
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "res_6c_fpn432_bs1_lr5"
+OUTPUT_DIR: "res_sw6c_fpn4321_bs1_lr5"
 TEST:
   IMS_PER_BATCH: 2
-  IOU_THRESHOLD: 0.8
+  IOU_THRESHOLD: 0.2
