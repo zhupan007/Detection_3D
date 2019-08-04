@@ -22,7 +22,7 @@ SHOW_POS_ANCHOR_IOU_SAME_LOC = DEBUG and False
 CHECK_MATCHER = DEBUG and False
 
 SHOW_IGNORED_ANCHOR = DEBUG and False
-SHOW_POS_NEG_ANCHORS = DEBUG and False
+SHOW_POS_NEG_ANCHORS = DEBUG and True
 
 SHOW_PRED_POS_ANCHORS = DEBUG and  False
 CHECK_REGRESSION_TARGET_YAW = False
@@ -250,7 +250,7 @@ class RPNLossComputation(object):
         return objectness_loss, box_loss
 
     def show_pos_neg_anchors(self, anchors, sampled_pos_inds, sampled_neg_inds, targets):
-      show_pos_anchors_for_each_label = False
+      show_pos_anchors_for_each_label = True
       labels_all = list(self.dset_metas.label_2_class.keys())
       labels_all = [l for  l in labels_all if l!=0]
       assert anchors.batch_size()  == 1
@@ -291,6 +291,9 @@ class RPNLossComputation(object):
         else:
             print('no target missed')
         pos_anchors_bi.show__together(targets[bi])
+        low_pos_ids = np.argsort(matched_ious)[0:5]
+        print(f'low pos ious: {matched_ious[low_pos_ids]}')
+        pos_anchors_bi[low_pos_ids].show__together(targets[bi])
 
         biou_ids = np.argsort(neg_ious)[-5:]
         print(f'neg ious: {neg_ious[biou_ids]}')
