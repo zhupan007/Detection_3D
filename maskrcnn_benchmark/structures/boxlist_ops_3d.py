@@ -5,8 +5,7 @@ import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D, cat_boxlist_3d
 
 from maskrcnn_benchmark.layers import nms as _box_nms
-from second.pytorch.core.box_torch_ops import rotate_nms, \
-                              multiclass_nms
+from second.pytorch.core.box_torch_ops import rotate_nms, rotate_nms_3d, multiclass_nms
 
 from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu_eval
 
@@ -35,14 +34,22 @@ def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score", f
       raise NotImplementedError
     if max_proposals<0:
       max_proposals = 500
-    bbox2d = boxlist.bbox3d[:,[0,1,3,4,6]]
     objectness = boxlist.get_field(score_field)
-    keep = rotate_nms(
+
+    use_2d = 0
+    if use_2d:
+      bbox2d = boxlist.bbox3d[:,[0,1,3,4,6]]
+      rnms_f = rotate_nms
+    else:
+      bbox2d = boxlist.bbox3d
+      rnms_f = rotate_nms_3d
+    keep = rnms_f(
               bbox2d,
               objectness,
               pre_max_size=2000,
               post_max_size=max_proposals,
               iou_threshold=nms_thresh, # 0.1
+              flag=flag,
                )
     boxlist = boxlist[keep]
     return boxlist
@@ -133,44 +140,44 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, fl
       iou3d = iou2d * iouz
 
   if DEBUG and flag=='eval':
-    if iou3d.max() < 1:
-        return iou3d
+      if iou3d.max() < 1:
+          return iou3d
 
-    mask = iou3d == iou3d.max()
-    t_i, a_i = torch.nonzero(mask)[0]
-    t = targets[t_i]
-    a = anchors[a_i]
-    print(f"max iou: {iou3d.max()}")
-    a.show_together(t)
+      mask = iou3d == iou3d.max()
+      t_i, a_i = torch.nonzero(mask)[0]
+      t = targets[t_i]
+      a = anchors[a_i]
+      print(f"max iou: {iou3d.max()}")
+      a.show_together(t)
 
-    if iou3d.max() > 1:
-        torch.set_printoptions(precision=16)
-        print(a.bbox3d)
-        print(t.bbox3d)
+      if iou3d.max() > 1:
+          torch.set_printoptions(precision=16)
+          print(a.bbox3d)
+          print(t.bbox3d)
 
-        #np.set_printoptions(precision=10)
-        #print(a.bbox3d.cpu().data.numpy())
-        #print(t.bbox3d.cpu().data.numpy())
+          #np.set_printoptions(precision=10)
+          #print(a.bbox3d.cpu().data.numpy())
+          #print(t.bbox3d.cpu().data.numpy())
 
-        areas = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=3, device_id=cuda_index)
-        ious0 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=0, device_id=cuda_index)
-        ious1 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=1, device_id=cuda_index)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        areas_max = areas[t_i, a_i]
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          areas = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=3, device_id=cuda_index)
+          ious0 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=0, device_id=cuda_index)
+          ious1 = rotate_iou_gpu_eval(targets_2d, anchors_2d, criterion=1, device_id=cuda_index)
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          areas_max = areas[t_i, a_i]
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
 
-    iou_preds = iou3d.max(0)[0]
-    mask = iou3d == iou_preds.min()
-    t_i, a_i = torch.nonzero(mask)[0]
-    t = targets[t_i]
-    a = anchors[a_i]
-    print(f"min pred iou: {iou_preds.min()}")
-    a.show_together(t)
-    anchors.show_highlight([a_i])
-    targets.show_highlight([t_i])
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    pass
+      iou_preds = iou3d.max(0)[0]
+      mask = iou3d == iou_preds.min()
+      t_i, a_i = torch.nonzero(mask)[0]
+      t = targets[t_i]
+      a = anchors[a_i]
+      print(f"min pred iou: {iou_preds.min()}")
+      a.show_together(t)
+      anchors.show_highlight([a_i])
+      targets.show_highlight([t_i])
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
 
   return iou3d
 

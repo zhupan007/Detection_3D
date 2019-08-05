@@ -9,7 +9,7 @@ import torchplus
 from torchplus.tools import torch_to_np_dtype
 from second.core.non_max_suppression.nms_gpu import (nms_gpu_cc, rotate_iou_gpu,
                                                        rotate_nms_gpu)
-from second.core.non_max_suppression.nms_cpu import rotate_nms_cc
+from second.core.non_max_suppression.nms_cpu import rotate_nms_cc, rotate_nms_3d_cc
 
 
 def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=False):
@@ -464,7 +464,8 @@ def rotate_nms(rbboxes,
                scores,
                pre_max_size=None,
                post_max_size=None,
-               iou_threshold=0.5):
+               iou_threshold=0.5,
+               flag=''):
     if pre_max_size is not None:
         num_keeped_scores = scores.shape[0]
         pre_max_size = min(num_keeped_scores, pre_max_size)
@@ -484,3 +485,30 @@ def rotate_nms(rbboxes,
         return indices[keep]
     else:
         return torch.from_numpy(keep).long().to(rbboxes.device)
+
+def rotate_nms_3d(rbboxes,
+               scores,
+               pre_max_size=None,
+               post_max_size=None,
+               iou_threshold=0.5,
+               flag=''):
+    if pre_max_size is not None:
+        num_keeped_scores = scores.shape[0]
+        pre_max_size = min(num_keeped_scores, pre_max_size)
+        scores, indices = torch.topk(scores, k=pre_max_size)
+        rbboxes = rbboxes[indices]
+    dets = torch.cat([rbboxes, scores.unsqueeze(-1)], dim=1)
+    #dets_np = dets.data.cpu().numpy()
+    if len(dets) == 0:
+        keep = torch.tensor([], dtype=torch.int64)
+    else:
+        ret = np.array(rotate_nms_3d_cc(dets, iou_threshold, flag), dtype=np.int64)
+        ret = torch.from_numpy(ret)
+        keep = ret[:post_max_size]
+    if keep.shape[0] == 0:
+        return torch.zeros([0]).long().to(rbboxes.device)
+    if pre_max_size is not None:
+        keep = keep.to(rbboxes.device)
+        return indices[keep]
+    else:
+        return keep.long().to(rbboxes.device)

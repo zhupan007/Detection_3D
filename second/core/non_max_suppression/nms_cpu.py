@@ -5,7 +5,9 @@ import numpy as np
 from spconv.utils import (
     non_max_suppression_cpu, rotate_non_max_suppression_cpu)
 from second.core import box_np_ops
+
 from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu
+from utils3d.rotate_nms_3d_torch import boxes_iou_3d
 
 
 def nms_cc(dets, thresh):
@@ -15,7 +17,7 @@ def nms_cc(dets, thresh):
 
 
 def rotate_nms_cc(dets, thresh):
-    scores = dets[:, 5]
+    scores = dets[:, -1]
     order = scores.argsort()[::-1].astype(np.int32)  # highest->lowest
     dets_corners = box_np_ops.center_to_corner_box2d(dets[:, :2], dets[:, 2:4],
                                                      dets[:, 4])
@@ -24,8 +26,22 @@ def rotate_nms_cc(dets, thresh):
 
     standup_iou = box_np_ops.iou_jit(dets_standup, dets_standup, eps=0.0)
     # print(dets_corners.shape, order.shape, standup_iou.shape)
-    return rotate_non_max_suppression_cpu(dets_corners, order, standup_iou,
-                                          thresh)
+    indices = rotate_non_max_suppression_cpu(dets_corners, order, standup_iou, thresh)
+    return indices
+
+def rotate_nms_3d_cc(dets, thresh, flag):
+    assert dets.shape[1] == 8
+    scores = dets[:, -1]
+    ious_3d = boxes_iou_3d(dets[:,0:7], dets[:,0:7], aug_thickness={'target':0, 'anchor':0}, criterion=-1, flag=flag)
+    ious_3d = ious_3d.cpu().data.numpy()
+    order = scores.argsort().cpu().data.numpy().astype(np.int32)[::-1]  # highest->lowest
+    dets_np = dets.cpu().data.numpy()
+    dets_corners = box_np_ops.center_to_corner_box2d(dets_np[:, :2], dets_np[:, 3:5], dets_np[:, 6])
+    #dets_standup = box_np_ops.corner_to_standup_nd(dets_corners)
+    #standup_iou = box_np_ops.iou_jit(dets_standup, dets_standup, eps=0.0)
+    # print(dets_corners.shape, order.shape, standup_iou.shape)
+    indices = rotate_non_max_suppression_cpu(dets_corners, order, ious_3d, thresh)
+    return indices
 
 @numba.jit(nopython=True)
 def nms_jit(dets, thresh, eps=0.0):

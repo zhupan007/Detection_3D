@@ -2,6 +2,7 @@
 
 
 # on going process
+- update c++ version 3d nms 
 - Considering put ceiling, floor and room to a separated classifier. Because the anchor policy is different, shared head may not satisfy.
 - For ceiling, floor, when length == thickness/width, yaw is confusing
 - try fpn321, to accelerate training speed
