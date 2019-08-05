@@ -117,7 +117,7 @@ class PostProcessor(nn.Module):
               examples_idxscope=None, constants={'prediction':True})
             boxlist_for_class.add_field("scores", scores_j)
             boxlist_for_class = boxlist_nms_3d(
-                boxlist_for_class, self.nms, score_field="scores"
+                boxlist_for_class, self.nms, score_field="scores", flag='roi_post'
             )
             num_labels = len(boxlist_for_class)
             boxlist_for_class.add_field(

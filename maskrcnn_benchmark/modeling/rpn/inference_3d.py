@@ -142,6 +142,7 @@ class RPNPostProcessor(torch.nn.Module):
               self.nms_thresh,
               max_proposals=self.fpn_post_nms_top_n,
               score_field="objectness",
+              flag = 'rpn_post',
           )
           result.append(boxlist_new)
           if SHOW_PRO_NUMS:

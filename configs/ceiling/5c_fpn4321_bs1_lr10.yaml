@@ -1,11 +1,11 @@
 DEBUG:
-  eval_in_train: 1
+  eval_in_train: 5
   eval_in_train_per_iter: -1
 INPUT:
-  CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
-  #SCENES: [ '1d84d7ca97f9e05534bf408779406e30']
+  CLASSES: ['background', 'ceiling', 'floor', 'window', 'door']
+  SCENES: [ '1d84d7ca97f9e05534bf408779406e30']
 MODEL:
-  SEPERATE_CLASSES: ['wall']
+        #SEPERATE_CLASSES: ['wall']
   BACKBONE:
     OUT_CHANNELS: 128
   RPN:
@@ -32,16 +32,16 @@ SPARSE3D:
 DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
-  EPOCHS: 20
-  EPOCHS_BETWEEN_TEST: 5
+  EPOCHS: 200
+  EPOCHS_BETWEEN_TEST: 200
   IMS_PER_BATCH: 1
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
-  LR_STEP_EPOCHS: (3,)
-  CHECKPOINT_PERIOD_EPOCHS: 1
+  LR_STEP_EPOCHS: (80,)
+  CHECKPOINT_PERIOD_EPOCHS: 50
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "RES/res_sw6c_fpn4321_bs1_lr10"
+OUTPUT_DIR: "RES/res_5c_fpn4321_bs1_lr10"
 TEST:
   IMS_PER_BATCH: 2
   IOU_THRESHOLD: 0.2

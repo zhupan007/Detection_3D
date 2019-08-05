@@ -12,7 +12,7 @@ from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu_eval
 
 DEBUG = False
 
-def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score"):
+def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score", flag=''):
     """
     Performs non-maximum suppression on a boxlist, with scores specified
     in a boxlist field via score_field.
@@ -24,6 +24,15 @@ def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score"):
             after non-maxium suppression
         score_field (str)
     """
+    bn = len(boxlist)
+    if flag=='rpn_post':
+      #print(f'{flag}: {bn} -> {max_proposals}')
+      assert max_proposals > 100
+    elif flag=='roi_post':
+      #print(f'{flag}: {bn} -> {max_proposals}')
+      assert max_proposals == -1
+    else:
+      raise NotImplementedError
     if max_proposals<0:
       max_proposals = 500
     bbox2d = boxlist.bbox3d[:,[0,1,3,4,6]]
