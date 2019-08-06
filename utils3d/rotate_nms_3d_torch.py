@@ -24,6 +24,9 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_
   '''
   about criterion check:
     /home/z/Research/Detection_3D/second/core/non_max_suppression/nms_gpu.py devRotateIoUEval
+
+  # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
+  # with slight modifications
   '''
   assert isinstance(aug_thickness, dict)
   assert 'target' in aug_thickness
