@@ -8,8 +8,8 @@ def iou_one_dim(targets_z, anchors_z):
     '''
     For ceiling, and floor: z size of target is small, augment to 1
     '''
-    targets_z[:,1] = torch.clamp(targets_z[:,1], min=0.8)
-    anchors_z[:,1] = torch.clamp(anchors_z[:,1], min=0.8) # aug proposal for ROI input as well
+    #targets_z[:,1] = torch.clamp(targets_z[:,1], min=0.8)
+    #anchors_z[:,1] = torch.clamp(anchors_z[:,1], min=0.8) # aug proposal for ROI input as well
 
     anchors_z[:,1] = anchors_z[:,0] + anchors_z[:,1]
     targets_z[:,1] = targets_z[:,0] + targets_z[:,1]
@@ -32,6 +32,8 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_
   assert 'target' in aug_thickness
   assert 'anchor' in aug_thickness
 
+  aug_thickness['z'] = 0.8
+
   if flag == 'rpn_label_generation':
     assert aug_thickness['anchor'] == 0
     assert aug_thickness['target'] >= 0.3
@@ -41,6 +43,7 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_
   elif flag == 'eval':
     assert aug_thickness['anchor'] == 0
     assert aug_thickness['target'] == 0
+    aug_thickness['z'] = 0
   elif flag == 'rpn_post':
     assert aug_thickness['anchor'] == 0
     assert aug_thickness['target'] == 0
@@ -55,6 +58,11 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_
   targets_bbox3d = targets_bbox3d.clone().detach()
   anchors_bbox3d = anchors_bbox3d.clone().detach()
 
+  targets_bbox3d[:,3] = torch.clamp(targets_bbox3d[:,3], min=aug_thickness['target'])
+  anchors_bbox3d[:,3] = torch.clamp(anchors_bbox3d[:,3], min=aug_thickness['anchor'])
+  targets_bbox3d[:,5] = torch.clamp(targets_bbox3d[:,5], min=aug_thickness['z'])
+  anchors_bbox3d[:,5] = torch.clamp(anchors_bbox3d[:,5], min=aug_thickness['z'])
+
   iouz = iou_one_dim(targets_bbox3d[:,[2,5]], anchors_bbox3d[:,[2,5]])
 
   cuda_index = targets_bbox3d.device.index
@@ -65,8 +73,8 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_
   #print(f"anchors yaw : {anchors_2d[:,-1].min()} , {anchors_2d[:,-1].max()}")
 
   # aug thickness. When thickness==0, iou is wrong
-  targets_2d[:,2] = np.clip(targets_2d[:,2], a_min=aug_thickness['target'], a_max=None)
-  anchors_2d[:,2] = np.clip(anchors_2d[:,2], a_min=aug_thickness['anchor'], a_max=None)
+  #targets_2d[:,2] = np.clip(targets_2d[:,2], a_min=aug_thickness['target'], a_max=None)
+  #anchors_2d[:,2] = np.clip(anchors_2d[:,2], a_min=aug_thickness['anchor'], a_max=None)
 
   #aug_th_mask = (targets_2d[:,2] < 0.3).astype(np.float32)
   #targets_2d[:,2] += aug_thickness['target'] * aug_th_mask  # 0.25
