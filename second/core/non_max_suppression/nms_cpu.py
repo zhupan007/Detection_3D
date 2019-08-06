@@ -32,7 +32,7 @@ def rotate_nms_cc(dets, thresh):
 def rotate_nms_3d_cc(dets, thresh, flag):
     assert dets.shape[1] == 8
     scores = dets[:, -1]
-    ious_3d = boxes_iou_3d(dets[:,0:7], dets[:,0:7], aug_thickness={'target':0, 'anchor':0}, criterion=-1, flag=flag)
+    ious_3d = boxes_iou_3d(dets[:,0:7], dets[:,0:7], aug_thickness=None, criterion=-1, flag=flag)
     ious_3d = ious_3d.cpu().data.numpy()
     order = scores.argsort().cpu().data.numpy().astype(np.int32)[::-1]  # highest->lowest
     dets_np = dets.cpu().data.numpy()

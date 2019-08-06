@@ -326,8 +326,9 @@ def make_roi_box_loss_evaluator(cfg):
     )
     yaw_loss_mode = cfg.MODEL.LOSS.YAW_MODE
     add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
-    tmp = cfg.MODEL.ROI_HEADS.AUG_THICKNESS_TAR_ANC
-    aug_thickness = {'target':tmp[0], 'anchor':tmp[1]}
+    ay = cfg.MODEL.ROI_HEADS.AUG_THICKNESS_Y_TAR_ANC
+    az = cfg.MODEL.ROI_HEADS.AUG_THICKNESS_Z_TAR_ANC
+    aug_thickness = {'target_Y':ay[0], 'anchor_Y':ay[1], 'target_Z':az[0], 'anchor_Z':az[1]}
     in_classes = cfg.INPUT.CLASSES
     num_input_classes = len(in_classes)
 

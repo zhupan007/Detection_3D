@@ -592,7 +592,7 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_m
             iou = boxlist_iou_3d(
                 BoxList3D(gt_bbox_l, gt_boxlist.size3d, gt_boxlist.mode, None, gt_boxlist.constants),
                 BoxList3D(pred_bbox_l, pred_boxlist.size3d, pred_boxlist.mode, None, pred_boxlist.constants),
-                aug_thickness = { 'target':0, 'anchor':0},
+                aug_thickness = None,
                 criterion = -1,
                 flag='eval'
             ).numpy()

@@ -20,7 +20,7 @@ def iou_one_dim(targets_z, anchors_z):
     iou_z = overlap / common
     return iou_z
 
-def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_xy=False, flag=''):
+def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness=None, criterion=-1, only_xy=False, flag=''):
   '''
   about criterion check:
     /home/z/Research/Detection_3D/second/core/non_max_suppression/nms_gpu.py devRotateIoUEval
@@ -28,28 +28,34 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_
   # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
   # with slight modifications
   '''
+  if aug_thickness is None:
+    aug_thickness = {'target_Y':0, 'target_Z':0, 'anchor_Y':0, 'anchor_Z':0}
   assert isinstance(aug_thickness, dict)
-  assert 'target' in aug_thickness
-  assert 'anchor' in aug_thickness
+  assert 'target_Y' in aug_thickness
+  assert 'anchor_Y' in aug_thickness
 
-  aug_thickness['z'] = 0.8
+  aug_thickness['target_Z'] = 0.8
+  aug_thickness['anchor_Z'] = 0.8
 
   if flag == 'rpn_label_generation':
-    assert aug_thickness['anchor'] == 0
-    assert aug_thickness['target'] >= 0.3
+    assert aug_thickness['anchor_Y'] == 0
+    assert aug_thickness['target_Y'] >= 0.3
   elif flag == 'roi_label_generation':
-    assert aug_thickness['anchor'] >= 0.3
-    assert aug_thickness['target'] >= 0.3
+    assert aug_thickness['anchor_Y'] >= 0.3
+    assert aug_thickness['target_Y'] >= 0.3
   elif flag == 'eval':
-    assert aug_thickness['anchor'] == 0
-    assert aug_thickness['target'] == 0
-    aug_thickness['z'] = 0
+    assert aug_thickness['anchor_Y'] == 0
+    assert aug_thickness['target_Y'] == 0
+
+    aug_thickness['target_Z'] = 0.2
+    aug_thickness['anchor_Z'] = 0.2
+
   elif flag == 'rpn_post':
-    assert aug_thickness['anchor'] == 0
-    assert aug_thickness['target'] == 0
+    assert aug_thickness['anchor_Y'] == 0
+    assert aug_thickness['target_Y'] == 0
   elif flag == 'roi_post':
-    assert aug_thickness['anchor'] == 0
-    assert aug_thickness['target'] == 0
+    assert aug_thickness['anchor_Y'] == 0
+    assert aug_thickness['target_Y'] == 0
   else:
     print(flag)
     print(aug_thickness)
@@ -58,10 +64,10 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_
   targets_bbox3d = targets_bbox3d.clone().detach()
   anchors_bbox3d = anchors_bbox3d.clone().detach()
 
-  targets_bbox3d[:,3] = torch.clamp(targets_bbox3d[:,3], min=aug_thickness['target'])
-  anchors_bbox3d[:,3] = torch.clamp(anchors_bbox3d[:,3], min=aug_thickness['anchor'])
-  targets_bbox3d[:,5] = torch.clamp(targets_bbox3d[:,5], min=aug_thickness['z'])
-  anchors_bbox3d[:,5] = torch.clamp(anchors_bbox3d[:,5], min=aug_thickness['z'])
+  targets_bbox3d[:,3] = torch.clamp(targets_bbox3d[:,3], min=aug_thickness['target_Y'])
+  anchors_bbox3d[:,3] = torch.clamp(anchors_bbox3d[:,3], min=aug_thickness['anchor_Y'])
+  targets_bbox3d[:,5] = torch.clamp(targets_bbox3d[:,5], min=aug_thickness['target_Z'])
+  anchors_bbox3d[:,5] = torch.clamp(anchors_bbox3d[:,5], min=aug_thickness['anchor_Z'])
 
   iouz = iou_one_dim(targets_bbox3d[:,[2,5]], anchors_bbox3d[:,[2,5]])
 
