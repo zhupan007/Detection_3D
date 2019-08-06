@@ -28,14 +28,6 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness=None, criterion=-
   # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
   # with slight modifications
   '''
-  if aug_thickness is None:
-    aug_thickness = {'target_Y':0, 'target_Z':0, 'anchor_Y':0, 'anchor_Z':0}
-  assert isinstance(aug_thickness, dict)
-  assert 'target_Y' in aug_thickness
-  assert 'anchor_Y' in aug_thickness
-
-  aug_thickness['target_Z'] = 0.8
-  aug_thickness['anchor_Z'] = 0.8
 
   if flag == 'rpn_label_generation':
     assert aug_thickness['anchor_Y'] == 0
@@ -44,22 +36,21 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness=None, criterion=-
     assert aug_thickness['anchor_Y'] >= 0.3
     assert aug_thickness['target_Y'] >= 0.3
   elif flag == 'eval':
-    assert aug_thickness['anchor_Y'] == 0
-    assert aug_thickness['target_Y'] == 0
-
-    aug_thickness['target_Z'] = 0.2
-    aug_thickness['anchor_Z'] = 0.2
-
+    assert aug_thickness is None
   elif flag == 'rpn_post':
-    assert aug_thickness['anchor_Y'] == 0
-    assert aug_thickness['target_Y'] == 0
+    assert aug_thickness is None
   elif flag == 'roi_post':
-    assert aug_thickness['anchor_Y'] == 0
-    assert aug_thickness['target_Y'] == 0
+    assert aug_thickness is None
   else:
     print(flag)
     print(aug_thickness)
     raise NotImplementedError
+
+  if aug_thickness is None:
+    ma = 0.2
+    aug_thickness = {'target_Y':ma, 'target_Z':ma, 'anchor_Y':ma, 'anchor_Z':ma}
+
+  #print(f'{flag}\n{aug_thickness}\n')
 
   targets_bbox3d = targets_bbox3d.clone().detach()
   anchors_bbox3d = anchors_bbox3d.clone().detach()
