@@ -52,7 +52,10 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness, criterion, only_
     print(aug_thickness)
     raise NotImplementedError
 
-  iouz = iou_one_dim(targets_bbox3d[:,[2,5]].clone(), anchors_bbox3d[:,[2,5]].clone())
+  targets_bbox3d = targets_bbox3d.clone().detach()
+  anchors_bbox3d = anchors_bbox3d.clone().detach()
+
+  iouz = iou_one_dim(targets_bbox3d[:,[2,5]], anchors_bbox3d[:,[2,5]])
 
   cuda_index = targets_bbox3d.device.index
   anchors_2d = anchors_bbox3d[:,[0,1,3,4,6]].cpu().data.numpy()

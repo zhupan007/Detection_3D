@@ -78,7 +78,7 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, fl
   '''
   assert targets.mode == 'yx_zb'
   assert anchors.mode == 'yx_zb'
-  return boxes_iou_3d(targets.bbox3d.clone(), anchors.bbox3d.clone(), aug_thickness, criterion, only_xy, flag)
+  return boxes_iou_3d(targets.bbox3d, anchors.bbox3d, aug_thickness, criterion, only_xy, flag)
 
 
 
