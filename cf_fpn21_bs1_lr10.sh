@@ -5,7 +5,7 @@ export PYTHONPATH=$PWD
 #TEST='--skip-test'
 #TEST='--only-test' 
 
-CONFIG_FILE='ceiling/cf_fpn21_bs1_lr10.yaml'
+CONFIG_FILE='ceiling_floor/cf_fpn21_bs1_lr10.yaml'
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 
