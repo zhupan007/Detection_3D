@@ -47,7 +47,10 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness=None, criterion=-
     raise NotImplementedError
 
   if aug_thickness is None:
-    ma = 0.2
+    if flag=='eval':
+        ma = 0
+    else:
+        ma = 0.3
     aug_thickness = {'target_Y':ma, 'target_Z':ma, 'anchor_Y':ma, 'anchor_Z':ma}
 
   #print(f'{flag}\n{aug_thickness}\n')
