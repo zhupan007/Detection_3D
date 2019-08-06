@@ -152,8 +152,8 @@ _C.MODEL.RPN.BATCH_SIZE_PER_IMAGE = 256
 _C.MODEL.RPN.POSITIVE_FRACTION = 0.5
 # NMS threshold used on RPN proposals
 _C.MODEL.RPN.NMS_THRESH = 0.5 # 0.7
-_C.MODEL.RPN.AUG_THICKNESS_Y_TAR_ANC = [0.6,0]
-_C.MODEL.RPN.AUG_THICKNESS_Z_TAR_ANC = [1.0,0]
+_C.MODEL.RPN.AUG_THICKNESS_Y_TAR_ANC = [0.4,0] # 0.4 is better than 06.
+_C.MODEL.RPN.AUG_THICKNESS_Z_TAR_ANC = [0.8,0] # 0.8 is better than 1
 # Proposal height and width both need to be greater than RPN_MIN_SIZE
 # (a the scale used during training or inference)
 _C.MODEL.RPN.MIN_SIZE = 0
