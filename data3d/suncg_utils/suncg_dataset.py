@@ -83,8 +83,11 @@ class SUNCGDataset(torch.utils.data.Dataset):
         norm_noise = 0.01 * int(is_train) * 0
 
         fn = self.files[index]
-        if not self.is_train:
-          print(f'\ntest {index}-th {fn}\n')
+        hn = os.path.basename(os.path.dirname(fn))
+        if self.is_train:
+          print(f'\n(suncg_dataset.py) train {index}-th   {hn}\n')
+        else:
+          print(f'\n(suncg_dataset.py) test  {index}-th  {hn}\n')
         pcl_i, bboxes_dic_i_0 = torch.load(fn)
 
         a = pcl_i[:,0:3].copy()

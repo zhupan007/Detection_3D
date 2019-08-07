@@ -181,6 +181,8 @@ class Bbox3D():
     Always use yaw==0, length = size along x_r, thickness = size along x_y
     yaw is times of pi/2
     '''
+    if boxes.shape[0] == 0:
+      return boxes
     yaws = boxes[:,-1]
     assert np.mod( yaws, np.pi/2 ).max() < 0.01
     switch_lt = np.abs(yaws / (np.pi/2)).astype(np.int)
