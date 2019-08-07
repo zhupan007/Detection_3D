@@ -35,11 +35,7 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness=None, criterion=-
   elif flag == 'roi_label_generation':
     assert aug_thickness['anchor_Y'] >= 0.3
     assert aug_thickness['target_Y'] >= 0.3
-  elif flag == 'eval':
-    assert aug_thickness is None
-  elif flag == 'rpn_post':
-    assert aug_thickness is None
-  elif flag == 'roi_post':
+  elif flag == 'eval' or flag == 'rpn_post' or flag == 'roi_post':
     assert aug_thickness is None
   else:
     print(flag)
@@ -47,10 +43,7 @@ def boxes_iou_3d(targets_bbox3d, anchors_bbox3d, aug_thickness=None, criterion=-
     raise NotImplementedError
 
   if aug_thickness is None:
-    if flag=='eval':
-        ma = 0
-    else:
-        ma = 0.3
+    ma = 0
     aug_thickness = {'target_Y':ma, 'target_Z':ma, 'anchor_Y':ma, 'anchor_Z':ma}
 
   #print(f'{flag}\n{aug_thickness}\n')
