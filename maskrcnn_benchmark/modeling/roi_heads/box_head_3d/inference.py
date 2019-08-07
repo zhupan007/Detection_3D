@@ -19,7 +19,7 @@ class PostProcessor(nn.Module):
     """
 
     def __init__(
-        self, score_thresh=0.05, nms=0.5, detections_per_img=100, box_coder=None
+        self, score_thresh=0.05, nms=0.5, nms_aug_thickness=None, detections_per_img=100, box_coder=None
     ):
         """
         Arguments:
@@ -35,6 +35,7 @@ class PostProcessor(nn.Module):
         if box_coder is None:
             box_coder = BoxCoder3D(weights=(10., 10., 5., 5.))
         self.box_coder = box_coder
+        self.nms_aug_thickness = nms_aug_thickness
 
     def forward(self, x, boxes):
         """
@@ -117,7 +118,8 @@ class PostProcessor(nn.Module):
               examples_idxscope=None, constants={'prediction':True})
             boxlist_for_class.add_field("scores", scores_j)
             boxlist_for_class = boxlist_nms_3d(
-                boxlist_for_class, self.nms, score_field="scores", flag='roi_post'
+              boxlist_for_class, nms_thresh=self.nms,
+              nms_aug_thickness=self.nms_aug_thickness, score_field="scores", flag='roi_post'
             )
             num_labels = len(boxlist_for_class)
             boxlist_for_class.add_field(
@@ -155,9 +157,13 @@ def make_roi_box_post_processor(cfg):
 
     score_thresh = cfg.MODEL.ROI_HEADS.SCORE_THRESH
     nms_thresh = cfg.MODEL.ROI_HEADS.NMS
+    nms_aug_thickness = cfg.MODEL.ROI_HEADS.NMS_AUG_THICKNESS_Y_Z
     detections_per_img = cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG
 
     postprocessor = PostProcessor(
-        score_thresh, nms_thresh, detections_per_img, box_coder
+        score_thresh, nms_thresh,
+      nms_aug_thickness=nms_aug_thickness,
+      detections_per_img=detections_per_img,
+      box_coder=box_coder
     )
     return postprocessor

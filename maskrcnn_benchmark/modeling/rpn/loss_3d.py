@@ -344,8 +344,8 @@ def make_rpn_loss_evaluator(cfg, box_coder):
     fg_bg_sampler = BalancedPositiveNegativeSampler(
         cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE, cfg.MODEL.RPN.POSITIVE_FRACTION
     )
-    ay = cfg.MODEL.RPN.AUG_THICKNESS_Y_TAR_ANC
-    az = cfg.MODEL.RPN.AUG_THICKNESS_Z_TAR_ANC
+    ay = cfg.MODEL.RPN.LABEL_AUG_THICKNESS_Y_TAR_ANC
+    az = cfg.MODEL.RPN.LABEL_AUG_THICKNESS_Z_TAR_ANC
     aug_thickness = {'target_Y':ay[0], 'anchor_Y':ay[1],'target_Z':az[0], 'anchor_Z':az[1], }
     dset_metas = DSET_METAS(cfg.INPUT.CLASSES)
     loss_evaluator = RPNLossComputation(matcher, fg_bg_sampler, box_coder, cfg.MODEL.LOSS.YAW_MODE, aug_thickness, dset_metas=dset_metas)

@@ -26,6 +26,7 @@ class RPNPostProcessor(torch.nn.Module):
         fpn_pre_nms_top_n,
         fpn_post_nms_top_n,
         nms_thresh,
+        nms_aug_thickness,
         min_size,
         box_coder=None,
     ):
@@ -42,6 +43,7 @@ class RPNPostProcessor(torch.nn.Module):
         self.fpn_pre_nms_top_n = fpn_pre_nms_top_n
         self.fpn_post_nms_top_n = fpn_post_nms_top_n
         self.nms_thresh = nms_thresh
+        self.nms_aug_thickness = nms_aug_thickness
         self.min_size = min_size
 
         if box_coder is None:
@@ -140,6 +142,7 @@ class RPNPostProcessor(torch.nn.Module):
           boxlist_new = boxlist_nms_3d(
               boxlist,
               self.nms_thresh,
+              nms_aug_thickness=self.nms_aug_thickness,
               max_proposals=self.fpn_post_nms_top_n,
               score_field="objectness",
               flag = 'rpn_post',
@@ -191,12 +194,14 @@ def make_rpn_postprocessor(config, rpn_box_coder, is_train):
     if not is_train:
         fpn_pre_nms_top_n = config.MODEL.RPN.FPN_PRE_NMS_TOP_N_TEST
     nms_thresh = config.MODEL.RPN.NMS_THRESH
+    nms_aug_thickness = config.MODEL.RPN.NMS_AUG_THICKNESS_Y_Z
     min_size = config.MODEL.RPN.MIN_SIZE
     batch_size = config.SOLVER.IMS_PER_BATCH
     box_selector = RPNPostProcessor(
         batch_size = batch_size,
         fpn_pre_nms_top_n=fpn_pre_nms_top_n,
         fpn_post_nms_top_n=fpn_post_nms_top_n,
+        nms_aug_thickness = nms_aug_thickness,
         nms_thresh=nms_thresh,
         min_size=min_size,
         box_coder=rpn_box_coder,

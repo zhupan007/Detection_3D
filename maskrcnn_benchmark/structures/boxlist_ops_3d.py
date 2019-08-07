@@ -11,7 +11,7 @@ from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu_eval
 
 DEBUG = False
 
-def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score", flag=''):
+def boxlist_nms_3d(boxlist, nms_thresh, nms_aug_thickness=None, max_proposals=-1, score_field="score", flag=''):
     """
     Performs non-maximum suppression on a boxlist, with scores specified
     in a boxlist field via score_field.
@@ -23,6 +23,9 @@ def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score", f
             after non-maxium suppression
         score_field (str)
     """
+    if nms_aug_thickness is None:
+      nms_aug_thickness = [0,0]
+
     bn = len(boxlist)
     if flag=='rpn_post':
       #print(f'{flag}: {bn} -> {max_proposals}')
@@ -36,15 +39,19 @@ def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score", f
       max_proposals = 500
     objectness = boxlist.get_field(score_field)
 
+    bbox3d = boxlist.bbox3d.clone().detach()
+    bbox3d[:,3:5]=  torch.clamp(bbox3d[:,3:5], min=nms_aug_thickness[0])
+    bbox3d[:,5]=  torch.clamp(bbox3d[:,5], min=nms_aug_thickness[1])
+
     use_2d = 0
     if use_2d:
-      bbox2d = boxlist.bbox3d[:,[0,1,3,4,6]]
+      bbox = bbox3d[:,[0,1,3,4,6]]
       rnms_f = rotate_nms
     else:
-      bbox2d = boxlist.bbox3d
+      bbox = bbox3d
       rnms_f = rotate_nms_3d
     keep = rnms_f(
-              bbox2d,
+              bbox,
               objectness,
               pre_max_size=2000,
               post_max_size=max_proposals,
@@ -53,6 +60,7 @@ def boxlist_nms_3d(boxlist, nms_thresh, max_proposals=-1, score_field="score", f
                )
     boxlist = boxlist[keep]
     return boxlist
+
 
 def remove_small_boxes3d(boxlist, min_size):
     """
@@ -79,7 +87,6 @@ def boxlist_iou_3d(targets, anchors, aug_thickness, criterion, only_xy=False, fl
   assert targets.mode == 'yx_zb'
   assert anchors.mode == 'yx_zb'
   return boxes_iou_3d(targets.bbox3d, anchors.bbox3d, aug_thickness, criterion, only_xy, flag)
-
 
 
 def test_iou_3d(bbox3d0, bbox3d1, mode):
@@ -149,6 +156,7 @@ def main_test_iou_3d():
 
 
   test_iou_3d(bbox3d1, bbox3d1, 'yx_zb')
+
 
 def main1_test_iou_3d():
   device = torch.device('cuda:0')
