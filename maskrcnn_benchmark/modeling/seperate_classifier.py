@@ -20,30 +20,49 @@ class SeperateClassifier():
       if not self.need_seperate:
         return
 
+      [sp.sort() for sp in seperate_classes]
       self.num_input_classes = num_input_classes # include background
-      self.seperated_num_classes_total = num_input_classes + 1
-      seperate_classes.sort()
-      assert 0 not in seperate_classes
-      self.seperate_classes = seperate_classes = seperate_classes + [self.num_input_classes]
-      self.num_classes0 = len(seperate_classes)
-      self.remaining_classes = [i for i in range(num_input_classes) if i not in seperate_classes]
-      self.num_classes1 = len(self.remaining_classes)
-      assert 0 in self.remaining_classes
+      sepcls_flat = [c for cs in seperate_classes for c in cs]
+      assert 0 not in sepcls_flat
+      remaining_classes = [[c for c in range(num_input_classes) if c not in sepcls_flat]]
+      tmp = num_input_classes
+      seperate_classes_intact = []
+      for sep in seperate_classes:
+        seperate_classes_intact.append( sep + [tmp] )
+        tmp += 1
+      self.grouped_classes = remaining_classes + seperate_classes_intact
+      self.group_num = len(self.grouped_classes)
+      self.seperated_num_classes_total = num_input_classes + self.group_num-1
+      self.class_nums = [len(gc) for gc in self.grouped_classes]
 
-      self.org_labels_to_labels0 = torch.zeros([num_input_classes+1], dtype=torch.int32)
-      self.labels0_to_org_labels = torch.ones([self.num_classes0], dtype=torch.int32) * (-1)
-      for i, c in enumerate([0]+seperate_classes[:-1]):
-        self.org_labels_to_labels0[c] = i # 0 not in seperate_classes
-        self.labels0_to_org_labels[i] = c
-      self.labels0_to_org_labels[0] = num_input_classes
 
-      self.org_labels_to_labels1 = torch.zeros([num_input_classes+1], dtype=torch.int32)
-      self.labels1_to_org_labels = torch.ones([self.num_classes1], dtype=torch.int32) * (-1)
-      # the 0(background) of org_labels is the 0 for remaining classes
+      self.org_labels_to_sep_labels = torch.zeros([num_input_classes+self.group_num-1,2], dtype=torch.int32)-1
+      self.sep_labels_to_org_labels = [torch.ones([n], dtype=torch.int32) * (-1) for n in self.class_nums]
+      for g in range(self.group_num):
+        for i, c in enumerate(self.grouped_classes[g]):
+          self.org_labels_to_sep_labels[c] = torch.tensor([g,i]) # 0 not in seperate_classes
+          self.sep_labels_to_org_labels[g][i] = c
 
-      for i, c in enumerate(self.remaining_classes):
-        self.org_labels_to_labels1[c] = i
-        self.labels1_to_org_labels[i] = c
+
+      #self.seperate_classes = seperate_classes = seperate_classes + [self.num_input_classes]
+      #self.num_classes0 = len(seperate_classes)
+      #self.remaining_classes = [i for i in range(num_input_classes) if i not in seperate_classes]
+      #self.num_classes1 = len(self.remaining_classes)
+
+      #self.org_labels_to_labels0 = torch.zeros([num_input_classes+1], dtype=torch.int32)
+      #self.labels0_to_org_labels = torch.ones([self.num_classes0], dtype=torch.int32) * (-1)
+      #for i, c in enumerate([0]+seperate_classes[:-1]):
+      #  self.org_labels_to_labels0[c] = i # 0 not in seperate_classes
+      #  self.labels0_to_org_labels[i] = c
+      #self.labels0_to_org_labels[0] = num_input_classes
+
+      #self.org_labels_to_labels1 = torch.zeros([num_input_classes+1], dtype=torch.int32)
+      #self.labels1_to_org_labels = torch.ones([self.num_classes1], dtype=torch.int32) * (-1)
+      ## the 0(background) of org_labels is the 0 for remaining classes
+
+      #for i, c in enumerate(self.remaining_classes):
+      #  self.org_labels_to_labels1[c] = i
+      #  self.labels1_to_org_labels[i] = c
 
       if DEBUG:
         print(f'\n\nseperate_classes: {seperate_classes}')
@@ -65,10 +84,12 @@ class SeperateClassifier():
         self.targets0: labels 0~nc_0
         self.targets1: labels 0~nc_1
       '''
-      self.targets0, self.targets1 = self.seperate_targets_and_update_labels(targets)
-      boxes0 = box_selector_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], self.targets0, add_gt_proposals)
-      boxes1 = box_selector_fn(anchors, objectness[:,1], rpn_box_regression[:,7:14], self.targets1, add_gt_proposals)
-      boxes = [boxes0, boxes1]
+      self.targets_groups = self.seperate_targets_and_update_labels(targets)
+      boxes = []
+      for targets_g in self.targets_groups:
+        boxes_g = box_selector_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], targets_g, add_gt_proposals)
+        boxes.append(boxes_g)
+
 
       if DEBUG and False:
         show_box_fields(targets, 'A')
@@ -81,13 +102,12 @@ class SeperateClassifier():
 
     def seperate_rpn_loss_evaluator(self, loss_evaluator_fn, anchors, objectness, rpn_box_regression, targets, debugs={}):
       #targets0, targets1 = self.seperate_targets(targets)
-      loss_objectness0, loss_rpn_box_reg0 = loss_evaluator_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], self.targets0)
-      loss_objectness1, loss_rpn_box_reg1 = loss_evaluator_fn(anchors, objectness[:,1], rpn_box_regression[:,7:14], self.targets1)
-      #loss_objectness = loss_objectness0 + loss_objectness1
-      #loss_rpn_box_reg = loss_rpn_box_reg0 + loss_rpn_box_reg1
-
-      loss_objectness = [loss_objectness0, loss_objectness1]
-      loss_rpn_box_reg = [loss_rpn_box_reg0, loss_rpn_box_reg1]
+      loss_objectness = []
+      loss_rpn_box_reg = []
+      for targets_g in self.targets_groups:
+        loss_objectness_i, loss_rpn_box_reg_i = loss_evaluator_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], targets_g)
+        loss_objectness.append(loss_objectness_i)
+        loss_rpn_box_reg.append(loss_rpn_box_reg_i)
 
       if DEBUG and False:
         show_box_fields(self.targets0, 'B')
@@ -109,18 +129,20 @@ class SeperateClassifier():
     # For ROI
     #---------------------------------------------------------------------------
     def seperate_subsample(self, proposals, targets, subsample_fn):
-        proposals_0, proposals_1, _, _ = self.seperate_proposals(proposals)
-        self.targets_0, self.targets_1 = self.seperate_targets_and_update_labels(targets)
+        proposals_g, _ = self.seperate_proposals(proposals)
+        self.targets_g = self.seperate_targets_and_update_labels(targets)
 
-        proposals_0_ = subsample_fn(proposals_0, self.targets_0)
-        proposals_1_ = subsample_fn(proposals_1, self.targets_1)
+        for gi in range(self.group_num):
+          proposals_g[gi] = subsample_fn(proposals_g[gi], self.targets_g[gi])
+          assert self.targets_g[gi][0].get_field('labels').max() < self.class_nums[gi]
+
         bs = len(proposals)
         proposals_out = []
         for i in range(bs):
-          proposals_out.append( cat_boxlist_3d([proposals_0_[i], proposals_1_[i]], per_example=False) )
+          psi = [proposals_g[j][i] for j in range(self.group_num)]
+          proposals_out.append( cat_boxlist_3d(psi, per_example=False) )
 
-        assert self.targets_0[0].get_field('labels').max() <= self.num_classes0 - 1
-        assert self.targets_1[0].get_field('labels').max() <= self.num_classes1 - 1
+        #assert self.targets_1[0].get_field('labels').max() <= self.num_classes1 - 1
 
 
         if DEBUG and False:
@@ -144,8 +166,10 @@ class SeperateClassifier():
       In the (num_classes+1) dims of class_logits, the first (num_classes0+1) dims are for self.seperate_classes,
       the following (num_classes1+1) are for the remianing.
       '''
-      self.sep_ids0_all_roi, self.sep_ids1_all_roi = self.get_sep_ids_from_proposals(proposals)
-      class_logits0, class_logits1 = self.seperate_pred_logits(class_logits, self.sep_ids0_all_roi, self.sep_ids1_all_roi)
+      #self.sep_ids0_all_roi, self.sep_ids1_all_roi = self.get_sep_ids_from_proposals(proposals)
+      proposals_g, sep_ids_g  = self.seperate_proposals(proposals)
+      class_logits_g = self.seperate_pred_logits(class_logits, self.sep_ids_g)
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       self.labels0_roi = labels[self.sep_ids0_all_roi]
       self.labels1_roi = labels[self.sep_ids1_all_roi]
 
@@ -183,15 +207,12 @@ class SeperateClassifier():
     def cat_boxlist_3d_seperated(self, bboxes_ls):
         batch_size = bboxes_ls[0].batch_size()
         m = len(bboxes_ls)
-        assert m==2
-
-        bboxes_ls[0].add_field('sep_id', torch.zeros([len(bboxes_ls[0])], dtype=torch.int32))
-        bboxes_ls[1].add_field('sep_id', torch.ones([len(bboxes_ls[1])], dtype=torch.int32))
-
+        assert m==self.group_num
 
         bboxes_ = [None]*m
-        for i in range(m):
-          bboxes_[i] = bboxes_ls[i].seperate_examples()
+        for gi in range(m):
+          bboxes_ls[gi].add_field('sep_id', torch.ones([len(bboxes_ls[gi])], dtype=torch.int32)*gi )
+          bboxes_[gi] = bboxes_ls[gi].seperate_examples()
 
         bboxes_ls_new = []
         for j in range(batch_size):
@@ -201,27 +222,23 @@ class SeperateClassifier():
 
     def seperate_proposals(self, proposals):
       bs = len(proposals)
-      proposals_0 = []
-      proposals_1 = []
-      sep_ids0_all = []
-      sep_ids1_all = []
+      proposals_g = [[None for i in range(bs)] for j in range(self.group_num)]
+      sep_ids_g = [[None for i in range(bs)] for j in range(self.group_num)]
       ids_cum_sum = 0
 
       for i in range(bs):
         sep_id = proposals[i].get_field('sep_id')
-        sep_ids0 = torch.nonzero(1-sep_id).view([-1])
-        sep_ids1 = torch.nonzero(sep_id).view(-1)
 
-        sep_ids0_all.append(sep_ids0 + ids_cum_sum)
-        sep_ids1_all.append(sep_ids1 + ids_cum_sum)
+        for gi in range(self.group_num):
+          sep_ids_gi = torch.nonzero(sep_id==gi).view([-1])
+          sep_ids_g[gi][i] =  sep_ids_gi + ids_cum_sum
+          proposals_g[gi][i] =  proposals[i][sep_ids_gi]
+
         ids_cum_sum += len(proposals[i])
 
-        proposals_0.append( proposals[i][sep_ids0] )
-        proposals_1.append( proposals[i][sep_ids1] )
-
-      sep_ids0_all = torch.cat(sep_ids0_all, 0)
-      sep_ids1_all = torch.cat(sep_ids1_all, 0)
-      return proposals_0, proposals_1, sep_ids0_all, sep_ids1_all
+      for gi in range(self.group_num):
+        sep_ids_g[gi] = torch.cat(sep_ids_g[gi], 0)
+      return proposals_g, sep_ids_g
 
     def get_sep_ids_from_proposals(self, proposals):
       bs = len(proposals)
@@ -245,28 +262,41 @@ class SeperateClassifier():
               class_logits, box_regression, proposals, targets):
 
         proposals_0, proposals_1, sep_ids0_all, sep_ids1_all  = self.seperate_proposals(proposals)
-        class_logits0, class_logits1 = self.seperate_pred_logits(class_logits, sep_ids0_all, sep_ids1_all)
-        box_regression0, box_regression1 = self.seperate_pred_box(box_regression, sep_ids0_all, sep_ids1_all)
+        class_logits_g = self.seperate_pred_logits(class_logits, sep_ids0_all, sep_ids1_all)
+        box_regression_g = self.seperate_pred_box(box_regression, sep_ids0_all, sep_ids1_all)
 
-        class_logits__0, box_regression__0, proposals__0 =  rm_gt_from_proposals_fn(class_logits0, box_regression0, proposals_0, self.targets_0)
+
+        for gi in range(self.group_num):
+          class_logits__0, box_regression__0, proposals__0 =  rm_gt_from_proposals_fn(class_logits_g[gi], box_regression_g[gi], proposals_0, self.targets_0)
         class_logits__1, box_regression__1, proposals__1 =  rm_gt_from_proposals_fn(class_logits1, box_regression1, proposals_1, self.targets_1)
         import pdb; pdb.set_trace()  # XXX BREAKPOINT
         pass
 
-    def seperate_pred_logits(self, class_logits, sep_ids0_all, sep_ids1_all):
+    def seperate_pred_logits_(self, class_logits, sep_ids0_all, sep_ids1_all):
       assert class_logits.shape[1] == self.seperated_num_classes_total
       assert class_logits.shape[0] == sep_ids0_all.shape[0] + sep_ids1_all.shape[0]
       class_logits0 = class_logits[sep_ids0_all,:] [:,self.seperate_classes]
       class_logits1 = class_logits[sep_ids1_all,:] [:,self.remaining_classes]
       return class_logits0, class_logits1
 
-    def seperate_pred_box(self, box_regression, sep_ids0_all, sep_ids1_all):
+    def seperate_pred_logits(self, class_logits, sep_ids_g):
+      assert class_logits.shape[1] == self.seperated_num_classes_total
+      assert class_logits.shape[0] == sum([sep.shape[0] for sep in sep_ids_g])
+      class_logits_g = []
+      for i in range(self.group_num):
+        class_logits_i = class_logits[sep_ids_g[i],:] [:,self.grouped_classes[i]]
+        class_logits_g.append(class_logits_i)
+      return class_logits_g
+
+    def seperate_pred_box(self, box_regression, sep_ids_g):
       assert box_regression.shape[1] == self.seperated_num_classes_total*7
-      assert box_regression.shape[0] == sep_ids0_all.shape[0] + sep_ids1_all.shape[0]
+      assert box_regression.shape[0] == sum([s.shape[0] for s in sep_ids_g])
       n = box_regression.shape[0]
-      box_regression0 = box_regression.view([n,-1,7])[:, self.seperate_classes, :].view([n,-1])[sep_ids0_all]
-      box_regression1 = box_regression.view([n,-1,7])[:, self.remaining_classes, :].view([n,-1])[sep_ids1_all]
-      return box_regression0, box_regression1
+      box_regression_g = []
+      for i in range(self.group_num):
+        box_regression_i = box_regression.view([n,-1,7])[:, self.grouped_classes[i], :].view([n,-1])[sep_ids_g[i]]
+        box_regression_g.append(box_regression_i)
+      return box_regression_g
 
     def seperate_boxes(self, boxes_ls):
       boxes_ls0 = []
@@ -287,55 +317,49 @@ class SeperateClassifier():
 
     def _seperating_ids(self, labels):
       assert isinstance(labels, torch.Tensor)
-      ids_0s = []
-      for c in self.seperate_classes:
-        ids_c = torch.nonzero(labels==c).view([-1])
-        ids_0s.append(ids_c)
-      ids_0 = torch.cat(ids_0s, 0)
-      n = labels.shape[0]
-      tmp = torch.ones([n])
-      tmp[ids_0] = 0
-      ids_1 = torch.nonzero(tmp).view([-1])
-      return ids_0, ids_1
+      ids_groups = []
+      for gc in self.grouped_classes:
+          ids_g = []
+          for c in gc:
+              ids_c = torch.nonzero(labels==c).view([-1])
+              ids_g.append(ids_c)
+          ids_g = torch.cat(ids_g, 0)
+          ids_groups.append(ids_g)
+      return ids_groups
 
     def seperate_targets_and_update_labels(self, targets):
-      targets0, targets1 = self.seperate_targets(targets)
+      targets_g = self.seperate_targets(targets)
       bs = len(targets)
-      for i in range(bs):
-        org_labels0 = targets0[i].get_field('labels')
-        labels0 = self.update_labels_to_seperated_id([org_labels0], 0)
-        targets0[i].extra_fields['labels'] = labels0[0]
-        org_labels1 = targets1[i].get_field('labels')
-        labels1 = self.update_labels_to_seperated_id([org_labels1], 1)
-        targets1[i].extra_fields['labels'] = labels1[0]
-      return targets0, targets1
+      for bi in range(bs):
+        for gi in range(len(targets_g)):
+          org_labels_gi = targets_g[gi][bi].get_field('labels')
+          sep_labels_gi = self.update_labels_to_seperated_id([org_labels_gi])
+          targets_g[gi][bi].extra_fields['labels'] = sep_labels_gi[0]
+
+      return targets_g
 
     def seperate_targets(self, targets):
         assert isinstance(targets, list)
-        targets_0 = []
-        targets_1 = []
-        for tar in targets:
-          labels = tar.get_field('labels')
-          ids_0, ids_1 = self._seperating_ids(labels)
-          tar0 = tar[ids_0]
-          tar1 = tar[ids_1]
-          targets_0.append( tar0 )
-          targets_1.append( tar1 )
-        return targets_0, targets_1
+        batch_size = len(targets)
+        targets_groups = [[None]*batch_size for i in range(self.group_num)]
+        for bi in range(batch_size):
+          labels = targets[bi].get_field('labels')
+          ids_groups = self._seperating_ids(labels)
+          for gi in range(self.group_num):
+            targets_groups[gi][bi] = targets[bi][ids_groups[gi]]
+        return targets_groups
 
-    def update_labels_to_seperated_id(self, labels_seperated_org, id):
+    def update_labels_to_seperated_id(self, labels_seperated_org):
       '''
       labels_seperated_org: the value is originally value of not seperated, but only part.
       '''
       assert isinstance(labels_seperated_org, list)
       labels_new = []
       device = labels_seperated_org[0].device
-      if id==0:
-        org_to_new = self.org_labels_to_labels0
-      elif id==1:
-        org_to_new = self.org_labels_to_labels1
+      org_to_new = self.org_labels_to_sep_labels
       for ls in labels_seperated_org:
-        labels_new.append( org_to_new[ls.long()].to(device).long() )
+        gid_lid = org_to_new[ls.long()].to(device).long()
+        labels_new.append( gid_lid[:,1] )
         if labels_new[-1].shape[0] > 0:
           try:
             assert labels_new[-1].min() >= 0
@@ -355,19 +379,24 @@ class SeperateClassifier():
       return result
 
     def post_processor(self, class_logits, box_regression, proposals, post_processor_fn):
-      proposals_0, proposals_1, sep_ids0_all, sep_ids1_all  = self.seperate_proposals(proposals)
-      class_logits0, class_logits1 = self.seperate_pred_logits(class_logits, sep_ids0_all, sep_ids1_all)
-      box_regression0, box_regression1 = self.seperate_pred_box(box_regression, sep_ids0_all, sep_ids1_all)
+      proposals_g, sep_ids_g  = self.seperate_proposals(proposals)
+      #for gi in range(self.group_num):
+      class_logits_g = self.seperate_pred_logits(class_logits, sep_ids_g)
+      box_regression_g = self.seperate_pred_box(box_regression, sep_ids_g)
 
-      result0 = post_processor_fn( (class_logits0, box_regression0), proposals_0 )
-      result1 = post_processor_fn( (class_logits1, box_regression1), proposals_1 )
+      results_g = []
+      for gi in range(self.group_num):
+        result_gi = post_processor_fn( (class_logits_g[gi], box_regression_g[gi]), proposals_g[gi] )
+        results_g.append(result_gi)
 
       batch_size = len(proposals)
       result = []
       for b in range(batch_size):
-        result0[b].extra_fields['labels'] = self.labels0_to_org_labels[result0[b].extra_fields['labels']]
-        result1[b].extra_fields['labels'] = self.labels1_to_org_labels[result1[b].extra_fields['labels']]
-        result_b = cat_boxlist_3d([result0[b], result1[b]], per_example=False)
+        for gi in range(self.group_num):
+          sep_l = results_g[gi][b].extra_fields['labels']
+          results_g[gi][b].extra_fields['labels'] = self.sep_labels_to_org_labels[gi][ sep_l ]
+        result_b = [ results_g[gi][b] for gi in range(self.group_num) ]
+        result_b = cat_boxlist_3d(result_b, per_example=False)
         result.append(result_b)
 
       #print(result[0].fields())

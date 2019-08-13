@@ -10,12 +10,13 @@ import os, glob
 
 DEBUG = True
 
-ENABLE_POINTS_MISSED = DEBUG and True
+DOWN_SAMPLE_DEBUGING = DEBUG and True
 
 SHOW_RAW_INPUT = DEBUG and False
 SHOW_AUG_INPUT = DEBUG and False
-
 ADD_PAPER_SCENES = False
+
+ENABLE_POINTS_MISSED = DEBUG and True
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
@@ -89,6 +90,9 @@ class SUNCGDataset(torch.utils.data.Dataset):
         else:
           print(f'\n(suncg_dataset.py) test  {index}-th  {hn}\n')
         pcl_i, bboxes_dic_i_0 = torch.load(fn)
+
+        if DOWN_SAMPLE_DEBUGING:
+          pcl_i = pcl_i[0:1000,:]
 
         a = pcl_i[:,0:3].copy()
         b = pcl_i

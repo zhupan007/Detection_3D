@@ -332,7 +332,7 @@ def make_roi_box_loss_evaluator(cfg):
     in_classes = cfg.INPUT.CLASSES
     num_input_classes = len(in_classes)
 
-    seperate_classes = cfg.MODEL.SEPERATE_CLASSES_ID
+    seperate_classes = cfg.MODEL.SEPARATE_CLASSES_ID
     seperate_classifier = SeperateClassifier( seperate_classes, num_input_classes )
 
     loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder,

@@ -29,7 +29,7 @@ def boxlist_nms_3d(boxlist, nms_thresh, nms_aug_thickness=None, max_proposals=-1
     bn = len(boxlist)
     if flag=='rpn_post':
       #print(f'{flag}: {bn} -> {max_proposals}')
-      assert max_proposals > 100
+      assert max_proposals > 100, max_proposals
     elif flag=='roi_post':
       #print(f'{flag}: {bn} -> {max_proposals}')
       assert max_proposals == -1

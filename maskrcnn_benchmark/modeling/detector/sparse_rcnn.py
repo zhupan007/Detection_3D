@@ -32,7 +32,7 @@ class SparseRCNN(nn.Module):
         self.rpn = build_rpn(cfg)
         self.roi_heads = build_roi_heads(cfg)
         self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
-        self.seperate_classifier = SeperateClassifier(cfg.MODEL.SEPERATE_CLASSES_ID, len(cfg.INPUT.CLASSES))
+        self.seperate_classifier = SeperateClassifier(cfg.MODEL.SEPARATE_CLASSES_ID, len(cfg.INPUT.CLASSES))
 
     def forward(self, points, targets=None):
         """

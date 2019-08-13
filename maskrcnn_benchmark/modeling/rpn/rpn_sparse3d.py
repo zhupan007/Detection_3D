@@ -92,7 +92,7 @@ class RPNHead(nn.Module):
         """
         super(RPNHead, self).__init__()
         self.num_anchors_per_location = num_anchors_per_location
-        seperate_rpn = int(len(cfg.MODEL.SEPERATE_CLASSES)>0 and cfg.MODEL.SEPERATE_RPN) + 1
+        seperate_rpn = int(len(cfg.MODEL.SEPARATE_CLASSES)>0 and cfg.MODEL.SEPARATE_RPN) + 1
         self.seperate_rpn = seperate_rpn
         self.conv = nn.Conv2d(
                 in_channels, in_channels, kernel_size=1, stride=1, padding=0  )
@@ -155,7 +155,7 @@ class RPNModule(torch.nn.Module):
         box_selector_train = make_rpn_postprocessor(cfg, rpn_box_coder, is_train=True)
         box_selector_test = make_rpn_postprocessor(cfg, rpn_box_coder, is_train=False)
         loss_evaluator = make_rpn_loss_evaluator(cfg, rpn_box_coder)
-        self.seperate_classifier = SeperateClassifier(cfg.MODEL.SEPERATE_CLASSES_ID, len(cfg.INPUT.CLASSES))
+        self.seperate_classifier = SeperateClassifier(cfg.MODEL.SEPARATE_CLASSES_ID, len(cfg.INPUT.CLASSES))
 
         self.box_coder = rpn_box_coder
         self.anchor_generator = anchor_generator

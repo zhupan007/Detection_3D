@@ -35,9 +35,9 @@ _C.MODEL.META_ARCHITECTURE = "SparseRCNN"
 # path
 _C.MODEL.WEIGHT = ""
 
-_C.MODEL.SEPERATE_CLASSES = []
+_C.MODEL.SEPARATE_CLASSES = []
 # If false, only seperate ROI
-_C.MODEL.SEPERATE_RPN = True
+_C.MODEL.SEPARATE_RPN = True
 # -----------------------------------------------------------------------------
 # Sparse 3D
 # -----------------------------------------------------------------------------
