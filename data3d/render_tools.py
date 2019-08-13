@@ -290,6 +290,7 @@ def summarize():
 
   num_points = []
   xyareas = []
+  scene_sizes = []
   i = 0
   for hn in house_names_1level:
     i += 1
@@ -299,9 +300,10 @@ def summarize():
     parsed_dir = f'{PARSED_DIR}/{hn}'
     summary = read_summary(parsed_dir)
 
-    if 'xyarea' in summary:
+    if 'xyarea' in summary and 'scene_size' in summary:
       pn = summary['points_num']
       xyarea = summary['xyarea']
+      scene_size = summary['scene_size']
     else:
       pcl_fn = f'{parsed_dir}/pcl_camref.ply'
       pcd = open3d.read_point_cloud(pcl_fn)
@@ -316,10 +318,12 @@ def summarize():
       pn = pcl.shape[0]
       #if 'pcl_size' not in summary:
       #  write_summary(parsed_dir, 'pcl_size', scene_size, 'a')
-      if 'xyarea' not in summary:
+      if 'xyarea' not in summary or 'scene_size' not in summary:
         write_summary(parsed_dir, 'xyarea', xyarea, 'a')
+        write_summary(parsed_dir, 'scene_size', scene_size, 'a')
 
 
+    scene_sizes.append(scene_size.reshape([1,-1]))
     xyareas.append(xyarea)
     num_points.append(pn)
 
@@ -327,6 +331,8 @@ def summarize():
 
   num_points = np.array(num_points).astype(np.double)
   xyareas = np.array(xyareas).astype(np.double)
+  scene_sizes = np.concatenate(scene_sizes, 0)
+  mean_scene_size = scene_sizes.mean(axis=0)
 
   ave_np = np.mean(num_points).astype(np.int)
   sum_np = np.sum(num_points) / 1e6
@@ -341,6 +347,7 @@ def summarize():
   print(f'\n\nTotall {scene_n} scenes')
   print(f'ave num: {ave_np:.3f}\nsum n: {sum_np:.5f} M')
   print(f'ave xyarea: {ave_xyarea:.5f}\n sum xyarea: {sum_xyarea:.5f} K')
+  print(f'mean_scene_size: {mean_scene_size}')
   print(f'big area ratio: {big_xyarea_ratio}')
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
   pass
@@ -349,8 +356,8 @@ def summarize():
 
 if __name__ == '__main__':
     #render_fn()
-    main()
-    #summarize()
+    #main()
+    summarize()
 
 
 

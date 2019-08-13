@@ -476,8 +476,12 @@ def parse_house_onef( house_fn, find_fail_scene=False ):
 
 def write_summary(base_dir, name, value, style='w'):
   summary_fn = os.path.join(base_dir, 'summary.txt')
+  value = np.array(value).reshape([-1])
   with open(summary_fn, style) as f:
-    f.write(f"{name}: {value}\n\n")
+    f.write(f"{name}: ")
+    for v in value:
+      f.write(f"{v}  ")
+    f.write("\n\n")
   print(f'write summary: {summary_fn}')
 
 def read_summary(base_dir):
@@ -492,14 +496,22 @@ def read_summary(base_dir):
       if len(items)==0:
           continue
       style = items[0][:-1]
+      if style == 'pcl_size':
+        continue
       #print(style)
       #print(items[1])
+      value = []
+      for v in items[1:]:
+        value.append(float(v))
+      value = np.array(value)
       if style in ['xyarea', 'area']:
-        summary[style] = float(items[1])
-      elif style in ['pcl_size']:
+        pass
+      elif style in ['scene_size']:
         pass
       else:
+        value = value.astype(np.int)
         summary[style] = int(items[1])
+      summary[style] = value
   return summary
 
 def check_house_intact(base_dir):
@@ -1171,8 +1183,8 @@ def parse_house():
   suncg.parse_houses(False)
 
 if __name__ == '__main__':
-  parse_house()
-  #gen_house_names_1level()
+  #parse_house()
+  gen_house_names_1level()
 
   #check_house_status()
 
