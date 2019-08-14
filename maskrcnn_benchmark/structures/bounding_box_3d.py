@@ -640,6 +640,19 @@ class BoxList3D(object):
       metric_evals = {'TP':TP.sum(), 'TN':TN.sum(), 'FP':FP.sum(), 'FN':FN.sum()}
       return  metric_inds, metric_evals
 
+    def show_by_labels(self, labels_show):
+      '''
+      labels_show: [1,2]
+      '''
+      labels = self.get_field('labels')
+      ids = []
+      for l in labels_show:
+        ids.append( torch.nonzero(labels == l).view([-1]) )
+      ids = torch.cat(ids, 0)
+      if len(ids)==0:
+        return
+      res = self[ids]
+      res.show()
 
 if __name__ == "__main__":
     bbox = BoxList([[0, 0, 10, 10], [0, 0, 5, 5]], (10, 10))

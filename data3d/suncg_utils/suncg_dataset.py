@@ -291,4 +291,7 @@ def show_pcl_boxdic(pcl, bboxes_dic):
     boxes.append(bboxes_dic[obj])
   boxes = np.concatenate(boxes, 0)
   Bbox3D.draw_points_bboxes(pcl[:,0:6], boxes, 'Z', is_yx_zb=True)
+  Bbox3D.draw_points_bboxes(pcl[:,0:6], bboxes_dic['wall'], 'Z', is_yx_zb=True)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  pass
 

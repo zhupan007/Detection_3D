@@ -5,7 +5,7 @@ INPUT:
   CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
   #SCENES: [ '1d84d7ca97f9e05534bf408779406e30']
 MODEL:
-  SEPARATE_CLASSES: [['wall']]
+  SEPARATE_CLASSES: [['wall'], ['ceiling','floor']]
   BACKBONE:
     OUT_CHANNELS: 128
   RPN:
@@ -41,7 +41,7 @@ SOLVER:
   CHECKPOINT_PERIOD_EPOCHS: 2
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "RES/res_sw6c_fpn4321_bs1_lr10"
+OUTPUT_DIR: "RES/res_3g6c_fpn4321_bs1_lr10"
 TEST:
   IMS_PER_BATCH: 2
   IOU_THRESHOLD: 0.2

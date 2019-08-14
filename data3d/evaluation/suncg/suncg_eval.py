@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
-SHOW_PRED = DEBUG and  False
+SHOW_PRED = DEBUG and  0
 DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -51,6 +51,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
         gt_boxlist = dataset.get_groundtruth(image_id)
         gt_boxlists.append(gt_boxlist)
 
+    #gt_boxlists[0].show_by_labels([1])
     if SHOW_FILE_NAMES:
         print(f'\n{fns}')
     gt_nums = [len(g) for g in gt_boxlists]
@@ -113,7 +114,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.7, points_sample_rate=0.3)
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 
-
+            gt_boxlists_[i].show_by_labels([1])
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             if SHOW_SMALL_IOU:
                 small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
