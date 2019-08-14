@@ -28,7 +28,7 @@ class SeperateClassifier():
       tmp = num_input_classes
       seperate_classes_intact = []
       for sep in seperate_classes:
-        seperate_classes_intact.append( sep + [tmp] )
+        seperate_classes_intact.append( [tmp]+sep ) # background is the first
         tmp += 1
       self.grouped_classes = remaining_classes + seperate_classes_intact
       self.group_num = len(self.grouped_classes)
@@ -42,27 +42,6 @@ class SeperateClassifier():
         for i, c in enumerate(self.grouped_classes[g]):
           self.org_labels_to_sep_labels[c] = torch.tensor([g,i]) # 0 not in seperate_classes
           self.sep_labels_to_org_labels[g][i] = c
-
-
-      #self.seperate_classes = seperate_classes = seperate_classes + [self.num_input_classes]
-      #self.num_classes0 = len(seperate_classes)
-      #self.remaining_classes = [i for i in range(num_input_classes) if i not in seperate_classes]
-      #self.num_classes1 = len(self.remaining_classes)
-
-      #self.org_labels_to_labels0 = torch.zeros([num_input_classes+1], dtype=torch.int32)
-      #self.labels0_to_org_labels = torch.ones([self.num_classes0], dtype=torch.int32) * (-1)
-      #for i, c in enumerate([0]+seperate_classes[:-1]):
-      #  self.org_labels_to_labels0[c] = i # 0 not in seperate_classes
-      #  self.labels0_to_org_labels[i] = c
-      #self.labels0_to_org_labels[0] = num_input_classes
-
-      #self.org_labels_to_labels1 = torch.zeros([num_input_classes+1], dtype=torch.int32)
-      #self.labels1_to_org_labels = torch.ones([self.num_classes1], dtype=torch.int32) * (-1)
-      ## the 0(background) of org_labels is the 0 for remaining classes
-
-      #for i, c in enumerate(self.remaining_classes):
-      #  self.org_labels_to_labels1[c] = i
-      #  self.labels1_to_org_labels[i] = c
 
       if DEBUG:
         print(f'\n\nseperate_classes: {seperate_classes}')
@@ -84,11 +63,12 @@ class SeperateClassifier():
         self.targets0: labels 0~nc_0
         self.targets1: labels 0~nc_1
       '''
-      self.targets_groups = self.seperate_targets_and_update_labels(targets)
-      boxes = []
-      for targets_g in self.targets_groups:
-        boxes_g = box_selector_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], targets_g, add_gt_proposals)
-        boxes.append(boxes_g)
+      assert objectness.shape[1] == self.group_num
+      self.targets_groups_rpn = self.seperate_targets_and_update_labels(targets)
+      boxes_g = []
+      for gi in range(self.group_num):
+        boxes_i = box_selector_fn(anchors, objectness[:,gi], rpn_box_regression[:,gi*7:gi*7+7], self.targets_groups_rpn[gi], add_gt_proposals)
+        boxes_g.append(boxes_i)
 
 
       if DEBUG and False:
@@ -98,14 +78,14 @@ class SeperateClassifier():
         show_box_fields(boxes0, 'D')
         show_box_fields(boxes1, 'E')
         show_box_fields(anchors, 'F')
-      return boxes
+      return boxes_g
 
     def seperate_rpn_loss_evaluator(self, loss_evaluator_fn, anchors, objectness, rpn_box_regression, targets, debugs={}):
       #targets0, targets1 = self.seperate_targets(targets)
       loss_objectness = []
       loss_rpn_box_reg = []
-      for targets_g in self.targets_groups:
-        loss_objectness_i, loss_rpn_box_reg_i = loss_evaluator_fn(anchors, objectness[:,0], rpn_box_regression[:,0:7], targets_g)
+      for gi in range(self.group_num):
+        loss_objectness_i, loss_rpn_box_reg_i = loss_evaluator_fn(anchors, objectness[:,gi], rpn_box_regression[:,gi*7:gi*7+7], self.targets_groups_rpn[gi])
         loss_objectness.append(loss_objectness_i)
         loss_rpn_box_reg.append(loss_rpn_box_reg_i)
 
@@ -157,7 +137,7 @@ class SeperateClassifier():
           show_box_fields(self.targets_1, 'T1')
         return proposals_out
 
-    def cross_entropy_seperated(self, class_logits, labels, proposals):
+    def roi_cross_entropy_seperated(self, class_logits, labels, proposals):
       '''
       class_logits: [n, num_classes+1]
       labels: [n]
@@ -166,40 +146,34 @@ class SeperateClassifier():
       In the (num_classes+1) dims of class_logits, the first (num_classes0+1) dims are for self.seperate_classes,
       the following (num_classes1+1) are for the remianing.
       '''
-      #self.sep_ids0_all_roi, self.sep_ids1_all_roi = self.get_sep_ids_from_proposals(proposals)
-      proposals_g, sep_ids_g  = self.seperate_proposals(proposals)
-      class_logits_g = self.seperate_pred_logits(class_logits, self.sep_ids_g)
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      self.labels0_roi = labels[self.sep_ids0_all_roi]
-      self.labels1_roi = labels[self.sep_ids1_all_roi]
+      proposals_g, self.sep_ids_g_roi  = self.seperate_proposals(proposals)
+      class_logits_g = self.seperate_pred_logits(class_logits, self.sep_ids_g_roi)
+      self.labels_g_roi = []
+      losses_g = []
+      for gi in  range(self.group_num):
+        self.labels_g_roi.append( labels[self.sep_ids_g_roi[gi]] )
+        assert self.labels_g_roi[-1].max() <= self.class_nums[gi] - 1
+        loss_i = F.cross_entropy(class_logits_g[gi], self.labels_g_roi[gi])
+        losses_g.append(loss_i)
 
-      assert self.labels0_roi.max() <= self.num_classes0 - 1
-      assert self.labels1_roi.max() <= self.num_classes1 - 1
+      return losses_g
 
-      loss0 = F.cross_entropy(class_logits0, self.labels0_roi)
-      loss1 = F.cross_entropy(class_logits1, self.labels1_roi)
-
-      return [loss0, loss1]
-
-    def box_loss_seperated(self, box_loss_fn, labels, box_regression, regression_targets, pro_bbox3ds):
+    def roi_box_loss_seperated(self, box_loss_fn, labels, box_regression, regression_targets, pro_bbox3ds):
         '''
         labels: [n,2]
         box_regression: [b,7*seperated_num_classes_total]
         regression_targets:[n,7,2]
         pro_bbox3ds:[n,7]
         '''
-        box_regression0, box_regression1 = self.seperate_pred_box(box_regression,
-                                    self.sep_ids0_all_roi, self.sep_ids1_all_roi)
-        regression_targets_0 = regression_targets[self.sep_ids0_all_roi]
-        regression_targets_1 = regression_targets[self.sep_ids1_all_roi]
-        pro_bbox3ds_0 = pro_bbox3ds[self.sep_ids0_all_roi]
-        pro_bbox3ds_1 = pro_bbox3ds[self.sep_ids1_all_roi]
-        box_loss0 = box_loss_fn(self.labels0_roi, box_regression0, regression_targets_0, pro_bbox3ds_0)
-        box_loss1 = box_loss_fn(self.labels1_roi, box_regression1, regression_targets_1, pro_bbox3ds_1)
-        return [box_loss0, box_loss1]
-        box_loss = box_loss0 + box_loss1
-        return box_loss
-
+        box_regression_g = self.seperate_pred_box(box_regression, self.sep_ids_g_roi)
+        regression_targets_g = []
+        pro_bbox3ds_g = []
+        box_losses_g = []
+        for gi in  range(self.group_num):
+            regression_targets_g.append(regression_targets[self.sep_ids_g_roi[gi]])
+            pro_bbox3ds_g.append( pro_bbox3ds[self.sep_ids_g_roi[gi]] )
+            box_losses_g.append( box_loss_fn(self.labels_g_roi[gi], box_regression_g[gi], regression_targets_g[gi], pro_bbox3ds_g[gi]) )
+        return box_losses_g
 
     #---------------------------------------------------------------------------
     # Functions Utils
@@ -240,45 +214,6 @@ class SeperateClassifier():
         sep_ids_g[gi] = torch.cat(sep_ids_g[gi], 0)
       return proposals_g, sep_ids_g
 
-    def get_sep_ids_from_proposals(self, proposals):
-      bs = len(proposals)
-      sep_ids0_all = []
-      sep_ids1_all = []
-      ids_cum_sum = 0
-      for i in range(bs):
-        sep_id = proposals[i].get_field('sep_id')
-        sep_ids0 = torch.nonzero(1-sep_id).view([-1])
-        sep_ids1 = torch.nonzero(sep_id).view(-1)
-
-        sep_ids0_all.append(sep_ids0 + ids_cum_sum)
-        sep_ids1_all.append(sep_ids1 + ids_cum_sum)
-        ids_cum_sum += len(proposals[i])
-
-      sep_ids0_all = torch.cat(sep_ids0_all, 0)
-      sep_ids1_all = torch.cat(sep_ids1_all, 0)
-      return sep_ids0_all, sep_ids1_all
-
-    def rm_gt_from_proposals_seperated(self, rm_gt_from_proposals_fn,
-              class_logits, box_regression, proposals, targets):
-
-        proposals_0, proposals_1, sep_ids0_all, sep_ids1_all  = self.seperate_proposals(proposals)
-        class_logits_g = self.seperate_pred_logits(class_logits, sep_ids0_all, sep_ids1_all)
-        box_regression_g = self.seperate_pred_box(box_regression, sep_ids0_all, sep_ids1_all)
-
-
-        for gi in range(self.group_num):
-          class_logits__0, box_regression__0, proposals__0 =  rm_gt_from_proposals_fn(class_logits_g[gi], box_regression_g[gi], proposals_0, self.targets_0)
-        class_logits__1, box_regression__1, proposals__1 =  rm_gt_from_proposals_fn(class_logits1, box_regression1, proposals_1, self.targets_1)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        pass
-
-    def seperate_pred_logits_(self, class_logits, sep_ids0_all, sep_ids1_all):
-      assert class_logits.shape[1] == self.seperated_num_classes_total
-      assert class_logits.shape[0] == sep_ids0_all.shape[0] + sep_ids1_all.shape[0]
-      class_logits0 = class_logits[sep_ids0_all,:] [:,self.seperate_classes]
-      class_logits1 = class_logits[sep_ids1_all,:] [:,self.remaining_classes]
-      return class_logits0, class_logits1
-
     def seperate_pred_logits(self, class_logits, sep_ids_g):
       assert class_logits.shape[1] == self.seperated_num_classes_total
       assert class_logits.shape[0] == sum([sep.shape[0] for sep in sep_ids_g])
@@ -297,23 +232,6 @@ class SeperateClassifier():
         box_regression_i = box_regression.view([n,-1,7])[:, self.grouped_classes[i], :].view([n,-1])[sep_ids_g[i]]
         box_regression_g.append(box_regression_i)
       return box_regression_g
-
-    def seperate_boxes(self, boxes_ls):
-      boxes_ls0 = []
-      boxes_ls1 = []
-      for boxes in boxes_ls:
-          boxes0 = boxes.copy()
-          assert set(boxes0.fields()) == set(['objectness', 'labels', 'regression_targets'])
-          boxes0.extra_fields['labels'] = boxes0.extra_fields['labels'][:,0]
-          boxes0.extra_fields['regression_targets'] = boxes0.extra_fields['regression_targets'][:,:,0]
-
-          boxes1 = boxes.copy()
-          boxes1.extra_fields['labels'] = boxes1.extra_fields['labels'][:,1]
-          boxes1.extra_fields['regression_targets'] = boxes1.extra_fields['regression_targets'][:,:,1]
-
-          boxes_ls0.append(boxes0)
-          boxes_ls1.append(boxes1)
-      return boxes_ls0, boxes_ls1
 
     def _seperating_ids(self, labels):
       assert isinstance(labels, torch.Tensor)

@@ -10,7 +10,7 @@ import os, glob
 
 DEBUG = True
 
-DOWN_SAMPLE_DEBUGING = DEBUG and True
+DOWN_SAMPLE_DEBUGING = DEBUG and False
 
 SHOW_RAW_INPUT = DEBUG and False
 SHOW_AUG_INPUT = DEBUG and False
@@ -85,10 +85,10 @@ class SUNCGDataset(torch.utils.data.Dataset):
 
         fn = self.files[index]
         hn = os.path.basename(os.path.dirname(fn))
-        if self.is_train:
-          print(f'\n(suncg_dataset.py) train {index}-th   {hn}\n')
-        else:
-          print(f'\n(suncg_dataset.py) test  {index}-th  {hn}\n')
+        #if self.is_train:
+        #  print(f'\n(suncg_dataset.py) train {index}-th   {hn}\n')
+        #else:
+        #  print(f'\n(suncg_dataset.py) test  {index}-th  {hn}\n')
         pcl_i, bboxes_dic_i_0 = torch.load(fn)
 
         if DOWN_SAMPLE_DEBUGING:

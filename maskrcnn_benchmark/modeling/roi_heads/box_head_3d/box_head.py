@@ -56,16 +56,16 @@ class ROIBoxHead3D(torch.nn.Module):
           proposals = self.seperate_classifier.post_processor(class_logits, box_regression, proposals, self.post_processor_)
         return proposals
 
-    def rm_gt_from_proposals(self,
-                      class_logits, box_regression, proposals, targets):
-        if not self.need_seperate:
-            #class_logits_, box_regression_, proposals_ =
-            return rm_gt_from_proposals_(
-                    class_logits, box_regression, proposals, targets)
-        else:
-            #class_logits_, box_regression_, proposals_ =
-            return self.seperate_classifier.rm_gt_from_proposals_seperated( rm_gt_from_proposals_,
-                    class_logits, box_regression, proposals, targets)
+    #def rm_gt_from_proposals(self,
+    #                  class_logits, box_regression, proposals, targets):
+    #    if not self.need_seperate:
+    #        #class_logits_, box_regression_, proposals_ =
+    #        return rm_gt_from_proposals_(
+    #                class_logits, box_regression, proposals, targets)
+    #    else:
+    #        #class_logits_, box_regression_, proposals_ =
+    #        return self.seperate_classifier.rm_gt_from_proposals_seperated( rm_gt_from_proposals_,
+    #                class_logits, box_regression, proposals, targets)
 
     def forward(self, features, proposals, targets=None):
         """
@@ -137,8 +137,11 @@ class ROIBoxHead3D(torch.nn.Module):
         if not self.need_seperate:
           roi_loss = {"loss_classifier_roi":loss_classifier, "loss_box_reg_roi":loss_box_reg}
         else:
-          roi_loss = {"loss_classifier_roi_0":loss_classifier[0], "loss_classifier_roi_1": loss_classifier[1],
-                      "loss_box_reg_roi_0":loss_box_reg[0], "loss_box_reg_roi_1":loss_box_reg[1] }
+          roi_loss = {}
+          gn = len(loss_classifier)
+          for gi in range(gn):
+            roi_loss[f"loss_classifier_roi_{gi}"] = loss_classifier[gi]
+            roi_loss[f"loss_box_reg_roi_{gi}"] = loss_box_reg[gi]
         return (
             x,
             proposals,

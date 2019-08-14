@@ -92,7 +92,7 @@ class RPNHead(nn.Module):
         """
         super(RPNHead, self).__init__()
         self.num_anchors_per_location = num_anchors_per_location
-        seperate_rpn = int(len(cfg.MODEL.SEPARATE_CLASSES)>0 and cfg.MODEL.SEPARATE_RPN) + 1
+        seperate_rpn = int(len(cfg.MODEL.SEPARATE_CLASSES) * cfg.MODEL.SEPARATE_RPN) + 1
         self.seperate_rpn = seperate_rpn
         self.conv = nn.Conv2d(
                 in_channels, in_channels, kernel_size=1, stride=1, padding=0  )
@@ -269,15 +269,12 @@ class RPNModule(torch.nn.Module):
         else:
           loss_objectness, loss_rpn_box_reg = self.seperate_classifier.seperate_rpn_loss_evaluator(
                   self.loss_evaluator, anchors, objectness, rpn_box_regression, targets, debugs=debugs)
-          boxes[0].set_as_prediction()
-          boxes[1].set_as_prediction()
-
-          losses = {
-            "loss_objectness_0": loss_objectness[0],
-            "loss_objectness_1": loss_objectness[1],
-            "loss_rpn_box_reg_0": loss_rpn_box_reg[0],
-            "loss_rpn_box_reg_1": loss_rpn_box_reg[1],
-          }
+          gn = len(boxes)
+          losses = {}
+          for gi in range(gn):
+            boxes[gi].set_as_prediction()
+            losses[f"loss_objectness_{gi}"] = loss_objectness[gi]
+            losses[f"loss_rpn_box_reg_{gi}"] = loss_rpn_box_reg[gi]
 
         return boxes, losses
 
@@ -309,6 +306,7 @@ def build_rpn(cfg):
     This gives the gist of it. Not super important because it doesn't change as much
     """
     return RPNModule(cfg)
+
 
 def examples_bidx_2_sizes(examples_bidx):
   batch_size = examples_bidx[-1]+1

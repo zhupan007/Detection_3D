@@ -327,7 +327,7 @@ class RPNLossComputation(object):
 
         for bi,predb in enumerate(pred_boxes.seperate_examples()):
           print('the top predicted objectness')
-          predb.show_by_objectness(0.85, targets[bi], rpn_box_regression, anchors, regression_targets)
+          predb.show_by_objectness(0.9, targets[bi], rpn_box_regression, anchors, regression_targets)
           print('all the predictions of positive anchors')
           predb.show_by_pos_anchor(sampled_pos_inds[bi], sampled_neg_inds[bi], targets[bi])
           import pdb; pdb.set_trace()  # XXX BREAKPOINT

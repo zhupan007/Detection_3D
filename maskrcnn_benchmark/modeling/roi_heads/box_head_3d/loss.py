@@ -197,8 +197,8 @@ class FastRCNNLossComputation(object):
           classification_loss = F.cross_entropy(class_logits, labels)
           box_loss = self.box_loss(labels, box_regression, regression_targets, pro_bbox3ds)
         else:
-          classification_loss = self.seperate_classifier.cross_entropy_seperated(class_logits, labels, proposals)
-          box_loss = self.seperate_classifier.box_loss_seperated(self.box_loss,
+          classification_loss = self.seperate_classifier.roi_cross_entropy_seperated(class_logits, labels, proposals)
+          box_loss = self.seperate_classifier.roi_box_loss_seperated(self.box_loss,
                               labels, box_regression, regression_targets, pro_bbox3ds)
 
         if SHOW_ROI_CLASSFICATION:
