@@ -1,5 +1,5 @@
 DEBUG:
-  eval_in_train: 1
+  eval_in_train: 5
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
@@ -39,7 +39,7 @@ SOLVER:
   BASE_LR: 0.01
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (100,)
-  CHECKPOINT_PERIOD_EPOCHS: 10
+  CHECKPOINT_PERIOD_EPOCHS: 20
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
 OUTPUT_DIR: "RES/res_sw6c_fpn4321_pool4_bs1_lr10"
