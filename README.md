@@ -2,6 +2,8 @@
 
 
 # on going process
+- Focal loss
+- upgrade anchor policy, IOU is not good, centroid distance should be considered
 - update c++ version 3d nms 
 - Considering put ceiling, floor and room to a separated classifier. Because the anchor policy is different, shared head may not satisfy.
 - For ceiling, floor, when length == thickness/width, yaw is confusing
