@@ -10,14 +10,15 @@ sys.path.append(BASE_DIR)
 sys.path.append(ROOT_DIR)
 from open3d_util import  draw_cus, gen_animation
 
-from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF
+from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF, angle_with_x
 
 DEBUG = True
 
-FRAME_SHOW = -1
+FRAME_SHOW = 0
 POINTS_KEEP_RATE = 0.7
 POINTS_SAMPLE_RATE = 1.0
 BOX_XSURFACE_COLOR_DIF = False
+CYLINDER_RADIUS = 0.02
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
@@ -305,7 +306,7 @@ class Bbox3D():
           color = [1,0,0]
         if labels is not None:
             color = COLOR_LIST[labels[i]]
-        bbox_meshes.append( Bbox3D.draw_bbox_open3d(box, up_axis, color=color) )
+        bbox_meshes.append( Bbox3D.get_one_bbox(box, up_axis, color=color) )
 
     if bn > 0:
       bboxes_lineset = bbox_meshes[0]
@@ -387,7 +388,36 @@ class Bbox3D():
     return line_set
 
   @staticmethod
-  def draw_bbox_open3d(bbox, up_axis, plyfn=None, color=[1,0,0]):
+  def get_one_bbox(bbox, up_axis, plyfn=None, color=[1,0,0]):
+    return Bbox3D.get_1bbox_mesh(bbox, up_axis, plyfn, color)
+    #return Bbox3D.get_1bbox_lineset(bbox, up_axis, plyfn, color)
+
+  @staticmethod
+  def get_1bbox_mesh(bbox, up_axis, plyfn=None, color=[1,0,0], radius=CYLINDER_RADIUS):
+    assert bbox.shape == (7,)
+    corners = Bbox3D.bbox_corners(bbox, up_axis)
+    lines = np.take(corners, Bbox3D._lines_vids, axis=0)
+    centroids = lines.mean(1)
+    #angles = angle_with_x(directions[:,:2])
+    directions = lines[:,1,:]-lines[:,0,:]
+    heights = np.linalg.norm(directions,axis=1)
+    directions = directions/heights.reshape([-1,1])
+    mesh = []
+    for i in range(12):
+        cylinder_i = open3d.geometry.create_mesh_cylinder(radius=radius, height=heights[i])
+        cylinder_i.paint_uniform_color(color)
+        transformation = np.identity(4)
+        transformation[:3,3] = centroids[i]
+        transformation[:3,2] = directions[i]
+        cylinder_i.transform(transformation)
+        mesh.append(cylinder_i)
+
+    cm = mesh[0]
+    for i in range(1,12):
+      cm += mesh[i]
+    return cm
+
+  def get_1bbox_lineset(bbox, up_axis, plyfn=None, color=[1,0,0]):
     '''
     only one box
     '''
