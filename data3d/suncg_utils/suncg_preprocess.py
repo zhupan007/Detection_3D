@@ -464,8 +464,6 @@ def parse_house_onef( house_fn, find_fail_scene=False ):
 
     if is_gen_bbox:
       gen_bbox(house_fn)
-    if Debug:
-      return
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -550,7 +548,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug and 1
+    always_gen_bbox = Debug and 0
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)

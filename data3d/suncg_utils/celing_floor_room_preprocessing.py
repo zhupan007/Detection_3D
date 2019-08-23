@@ -16,6 +16,7 @@ def preprocess_cfr(ceilings_org, walls_org, obj):
       In three points of the wall cenline: two corners and centroid
       at least two are on an edge of ceiling
   '''
+  assert ceilings_org.ndim == walls_org.ndim == 2
   dis_threshold = 0.07
   if ceilings_org.shape[0] == 0:
     return ceilings_org

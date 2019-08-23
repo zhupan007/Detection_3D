@@ -641,7 +641,7 @@ def creat_splited_pcl_box():
   house_names = ['1d84d7ca97f9e05534bf408779406e30']
   #house_names = SceneSamples.paper_samples
 
-  #house_names = get_house_names_1level()
+  house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
@@ -696,7 +696,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  #creat_splited_pcl_box()
+  creat_splited_pcl_box()
   #gen_train_list()
   pass
 
