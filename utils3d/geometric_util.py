@@ -285,6 +285,51 @@ def line_intersection_2d(line0, line1, must_on0=False, must_on1=False,
     except np.linalg.LinAlgError:
       return np.array([np.nan]*2)
 
+def points_in_lines(points, lines, threshold_dis=0.03):
+  '''
+  points:[n,3]
+  lines:[m,2,3]
+  dis: [n,m]
+  out: [n,m]
+
+  (1)vertial dis=0
+  (2) angle>90 OR corner dis=0
+  '''
+  num_p = points.shape[0]
+  num_l = lines.shape[0]
+
+  pc_distances0 = points.reshape([num_p,1,1,3]) - lines.reshape([1,num_l,2,3])
+  pc_distances = np.linalg.norm(pc_distances0, axis=-1).min(2)
+
+  pl_distances = vertical_dis_points_lines(points, lines)
+
+  tmp_l = np.tile( lines.reshape([1,num_l,2,3]), (num_p,1,1,1) )
+  tmp_p = np.tile( points.reshape([num_p,1,1,3]), (1,num_l,1,1) )
+  dirs0 = tmp_l - tmp_p
+  dirs1 = dirs0.reshape([num_l*num_p, 2,3])
+  angles0 = angle_of_2lines(dirs1[:,0,:], dirs1[:,1,:])
+  angles = angles0.reshape([num_p, num_l])
+
+  mask_pc = pc_distances < threshold_dis
+  mask_pl = pl_distances < threshold_dis
+  mask_a = angles > np.pi/2
+  in_line_mask = (mask_a + mask_pc) * mask_pl
+  return in_line_mask
+
+def is_extend_lines(lines0, lines1, threshold_dis=0.03):
+  '''
+  [n,2,3]
+  [m,2,3]
+  [n,m]
+  '''
+  n0 = lines0.shape[0]
+  n1 = lines1.shape[0]
+  dis0 = vertical_dis_points_lines(lines0.reshape([-1,3]), lines1)
+  dis1 = dis0.reshape([n0,2,n1])
+  mask0 = dis1 < threshold_dis
+  mask1 = mask0.all(1)
+  return  mask1
+
 class OBJ_DEF():
   @staticmethod
   def limit_yaw(yaws, yx_zb):

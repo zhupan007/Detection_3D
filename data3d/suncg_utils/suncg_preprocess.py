@@ -397,17 +397,19 @@ class Suncg():
     scene_ids = os.listdir(root_path+'/house')
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
     house_fns.sort()
-    if SAGE:
-      #self.house_fns = house_fns[5000: 7000]
-      self.house_fns = house_fns[7000: 9000]
-    else:
-      self.house_fns = house_fns[4460:5000]
+    self.house_fns = house_fns[0:3]
+    #if SAGE:
+    #  #self.house_fns = house_fns[5000: 7000]
+    #  self.house_fns = house_fns[7000: 9000]
+    #else:
+    #  self.house_fns = house_fns[4460:5000]
 
     if Debug and 0:
       scene_id = '1d84d7ca97f9e05534bf408779406e30'
+      scene_id = '00e030e0e9198a0f9dd5389f2d2e9271'
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
-      #self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper1_samples]
+      #self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.ceiling_bad_sampels]
 
     self.house_fns = rm_bad_scenes(self.house_fns)
 
@@ -462,6 +464,8 @@ def parse_house_onef( house_fn, find_fail_scene=False ):
 
     if is_gen_bbox:
       gen_bbox(house_fn)
+    if Debug:
+      return
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -546,7 +550,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug and False
+    always_gen_bbox = Debug and 1
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -607,7 +611,10 @@ def gen_bbox(house_fn):
       bboxes['wall'] = preprocess_walls(bboxes['wall'])
       bboxes['window'] = preprocess_windows(bboxes['window'], bboxes['wall'])
       bboxes['door'] = preprocess_doors(bboxes['door'], bboxes['wall'])
-      #bboxes['ceiling'] = preprocess_cfr(bboxes['ceiling'])
+      bboxes['ceiling_raw']  = bboxes['ceiling'].copy()
+      bboxes['floor_raw'] = bboxes['floor'].copy()
+      bboxes['ceiling'] = preprocess_cfr(bboxes['ceiling'], bboxes['wall'], 'ceiling')
+      bboxes['floor'] = preprocess_cfr(bboxes['floor'], bboxes['wall'], 'floor')
 
     # save bbox in ply and txt
     object_bbox_dir = os.path.join(parsed_dir, 'object_bbox')
@@ -1183,8 +1190,8 @@ def parse_house():
   suncg.parse_houses(False)
 
 if __name__ == '__main__':
-  #parse_house()
-  gen_house_names_1level()
+  parse_house()
+  #gen_house_names_1level()
 
   #check_house_status()
 

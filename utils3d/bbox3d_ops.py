@@ -540,6 +540,7 @@ class Bbox3D():
     centroid_lines = np.concatenate([negc, posc], 1)
     return centroid_lines
 
+
   @staticmethod
   def point_in_box(points, bboxes, up_axis='Z'):
     cen_lines_x = Bbox3D.bboxes_centroid_lines(bboxes, 'X', up_axis)
@@ -689,7 +690,8 @@ class Bbox3D():
   def points_in_bbox(points, bboxes):
     '''
     Input:
-      bbox standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
+      points:[m,3]
+      bbox standard: [n,7] [xc, yc, zc, x_size, y_size, z_size, yaw]
 
     '''
     from second.core.box_np_ops import center_to_corner_box3d, corner_to_surfaces_3d
@@ -706,7 +708,8 @@ class Bbox3D():
 
     show = False
     if show and DEBUG:
-      DataRender.show_points_in_box(points, bboxes, bbox_corners, surfaces, point_masks, is_yx_zb=True)
+      print(point_masks)
+      Bbox3D.draw_points_bboxes(points, bboxes, 'Z', is_yx_zb=True)
 
     return point_masks
 

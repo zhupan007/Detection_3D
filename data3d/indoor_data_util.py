@@ -9,7 +9,7 @@ import pickle
 import torch
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
 from data3d.suncg_utils.scene_samples import SceneSamples
-from suncg_utils.celing_floor_room_preprocessing import preprocess_cfr_standard
+#from suncg_utils.celing_floor_room_preprocessing import preprocess_cfr_standard
 
 #BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 #ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -151,7 +151,7 @@ class IndoorData():
         boxes_i[obj] = bboxes_splited[obj][i].astype(np.float32)
         if obj in ['ceiling', 'floor', 'room']:
           boxes_i[obj] = Bbox3D.set_yaw_zero(boxes_i[obj])
-          boxes_i[obj] = preprocess_cfr_standard(boxes_i[obj])
+          #boxes_i[obj] = preprocess_cfr_standard(boxes_i[obj])
       torch.save((pcl_i, boxes_i), fni)
 
       if gen_ply:
