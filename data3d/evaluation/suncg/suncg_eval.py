@@ -14,7 +14,7 @@ SHOW_PRED = DEBUG and  1
 DRAW_RECALL_PRECISION = DEBUG and True
 SHOW_FILE_NAMES = DEBUG and False
 
-DRAW_REGRESSION_IOU = DEBUG and True
+DRAW_REGRESSION_IOU = DEBUG and False
 
 ONLY_SAVE_NO_SHOW = True
 
@@ -31,7 +31,6 @@ def get_obj_nums(gt_boxlists, dset_metas):
 def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger, epoch=None, is_train=None):
     # TODO need to make the use_07_metric format available
     # for the user to choose
-
     logger.info(f'\n\nis_train: {is_train}\n')
     logger.info(f'iou_thresh: {iou_thresh_eval}\n')
     if sum([len(p) for p in predictions]) == 0:
@@ -81,6 +80,8 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     result_str = performance_str(result, dataset, regression_res)
     logger.info(result_str)
 
+    result['label_2_class'] = dset_metas.label_2_class
+
     if output_folder:
         dn = len(predictions)
         if epoch is not None:
@@ -92,14 +93,25 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             print('write ok:\n' + res_fn + '\n')
 
     if SHOW_PRED:
-        SHOW_SMALL_IOU = False
-        print('SHOW_PRED')
         ap = result['ap'][1:]
         if np.isnan(ap).all():
             return result
         gt_boxlists_ = modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums, dset_metas)
         pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas)
-        for i in range(len(pred_boxlists)):
+        show_pred(gt_boxlists_, pred_boxlists_, dataset, image_ids)
+
+    if DRAW_RECALL_PRECISION:
+        draw_recall_precision_score_10steps(result, output_folder)
+    save_res(result, output_folder)
+    return result
+
+def save_res(result, output_folder):
+  pass
+
+def show_pred(gt_boxlists_, pred_boxlists_, dataset, image_ids):
+        SHOW_SMALL_IOU = False
+        print('SHOW_PRED')
+        for i in range(len(pred_boxlists_)):
             pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
             preds = pred_boxlists_[i].remove_low('scores', 0.5)
             #preds = pred_boxlists_[i] # already post processed in:
@@ -111,7 +123,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             print(f'xyz_size:{xyz_size}')
 
             #preds.show__together(gt_boxlists_[i], points=None, offset_x=xyz_size[0]+0.3, twolabels=False)
-            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.7, points_sample_rate=0.3)
+            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.8, points_sample_rate=0.5)
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 
             gt_boxlists_[i].show_by_labels([1])
@@ -124,11 +136,6 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
                     preds.show_highlight(small_iou_pred_ids, points=pcl_i)
 
             #pred_boxlists[i].show_by_objectness(0.5, gt_boxlists[i])
-    if DRAW_RECALL_PRECISION:
-        #draw_recall_precision_score_10steps(result['recall_precision_score_10steps'], dset_metas, '10steps')
-        draw_recall_precision_score_10steps(result['rec_prec_score_org'], dset_metas, '', output_folder)
-    return result
-
 
 def performance_str(result, dataset, regression_res):
     result_str = "\nmAP: {:.4f}\n".format(result["map"])
@@ -477,10 +484,16 @@ def regression_res_str(regression_res):
         reg_str += f'{key}:\n{value}\n'
     return reg_str
 
-def draw_recall_precision_score_10steps(recall_precision_list, dset_metas, flag, output_folder):
+def draw_recall_precision_score_10steps(result, output_folder, flag=''):
+    if flag != '10steps':
+      recall_precision_list = result['rec_prec_score_org']
+    else:
+      recall_precision_list = result['recall_precision_score_10steps']
+    label_2_class = result['label_2_class']
+
     num_classes = len(recall_precision_list)
     for i in range(num_classes):
-        obj = dset_metas.label_2_class[i]
+        obj = label_2_class[i]
         if i==0:
             if flag == '10steps':
                 continue
