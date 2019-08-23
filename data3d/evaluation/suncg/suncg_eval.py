@@ -10,11 +10,11 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
-SHOW_PRED = DEBUG and  0
-DRAW_RECALL_PRECISION = DEBUG and False
+SHOW_PRED = DEBUG and  1
+DRAW_RECALL_PRECISION = DEBUG and True
 SHOW_FILE_NAMES = DEBUG and False
 
-DRAW_REGRESSION_IOU = DEBUG and False
+DRAW_REGRESSION_IOU = DEBUG and True
 
 ONLY_SAVE_NO_SHOW = True
 

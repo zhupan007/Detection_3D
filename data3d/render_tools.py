@@ -22,7 +22,7 @@ CLASSES += ['floor']
 CLASSES = ['ceiling']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.97
+POINTS_KEEP_RATE = 0.6
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
 
@@ -160,7 +160,6 @@ def render_pth_file(pth_fn, show_by_class=False):
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
 
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   if show_by_class:
     for clas in bboxes.keys():
       if clas not in ['wall', 'window', 'door', 'room']:
@@ -242,11 +241,11 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   house_names.sort()
 
-  house_names = house_names[700:]
+  #house_names = house_names[700:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  #house_names = SceneSamples.paper1_samples
-  house_names = ['25442bece22dbdd510c8e72909a1f40f']
+  house_names = SceneSamples.paper0_samples
+  #house_names = ['25442bece22dbdd510c8e72909a1f40f']
 
   print(f'totally {len(house_names)} houses')
 

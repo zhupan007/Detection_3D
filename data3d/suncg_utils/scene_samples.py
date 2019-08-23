@@ -38,9 +38,9 @@ class SceneSamples():
 
 
     #---------------------------------------------------------------------------
-
     # good samples
-    good_samples_complex = [ '0058113bdc8bee5f387bb5ad316d7b28', '005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4','00922f91aa09dbdda3a74489ea0e21eb']
+    good_samples_complex = [ '0058113bdc8bee5f387bb5ad316d7b28','00922f91aa09dbdda3a74489ea0e21eb', '005f0859081006be329802f967623015', '007802a5b054a16a481a72bb3baca6a4']
+    paper0_samples = good_samples_complex[0:2]
     #                                                           80a21c need cro pto view
     good_samples_angle = ['00602d3d932a8d5305234360a9d1e0ad', '0067620211b8e6459ff24ebe0780a21c', '02164f84a9e7321f3071b2214df8c738']
 

@@ -1413,6 +1413,6 @@ def test_draw():
 
 if __name__ ==  '__main__':
   #test_merge_walls()
-  show_bboxes()
+  #show_bboxes()
   #review_bbox_format()
-  #test_draw()
+  test_draw()
