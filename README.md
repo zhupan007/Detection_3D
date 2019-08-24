@@ -2,6 +2,7 @@
 
 
 # on going process
+- Test effect of RPN number: speed and precision trade-off
 - Focal loss
 - upgrade anchor policy, IOU is not good, centroid distance should be considered
 - update c++ version 3d nms 

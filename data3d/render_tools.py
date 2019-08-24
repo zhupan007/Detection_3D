@@ -15,14 +15,14 @@ SPLITED_DIR = '/DS/SUNCG/suncg_v1_torch_splited'
 
 #CLASSES = ['wall', 'ceiling']
 CLASSES = ['wall', 'window', 'door']
-#CLASSES = ['ceiling', 'floor']
-CLASSES += ['floor']
+CLASSES += ['ceiling', 'floor']
+#CLASSES += ['floor']
 #CLASSES += ['room']
 
-CLASSES = ['ceiling']
+CLASSES = ['wall','floor']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.6
+POINTS_KEEP_RATE = 0.5
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
 
@@ -155,8 +155,8 @@ def render_pth_file(pth_fn, show_by_class=False):
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
-  Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
-  #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
+  #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
+  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -246,7 +246,9 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   #house_names = SceneSamples.very_hard_wall_window_close
   #house_names = SceneSamples.paper0_samples
-  #house_names = ['25442bece22dbdd510c8e72909a1f40f']
+  #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
+  #house_names = ['2f3ae02201ad551e99870189e184af4f']
+  #house_names = ['2b9e5ffdd2bbec47905d56508e4daf9c']
 
   print(f'totally {len(house_names)} houses')
 
@@ -279,8 +281,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 def summarize():

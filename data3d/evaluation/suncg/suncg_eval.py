@@ -12,12 +12,12 @@ plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
 SHOW_PRED = DEBUG and  0
-DRAW_RECALL_PRECISION = DEBUG and True
+DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
 DRAW_REGRESSION_IOU = DEBUG and False
 
-ONLY_SAVE_NO_SHOW = True
+ONLY_SAVE_NO_SHOW = False
 
 def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
@@ -112,6 +112,7 @@ def save_preds(gt_boxlists_, pred_boxlists_, files, output_folder):
   if len(gt_boxlists_) > 10:
     return
   pred_fn = os.path.join(output_folder, 'preds.pth')
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   torch.save([  gt_boxlists_, pred_boxlists_, files ], pred_fn)
 
 def save_perform_res(result, output_folder):

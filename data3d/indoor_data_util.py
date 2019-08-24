@@ -18,12 +18,12 @@ from suncg_utils.wall_preprocessing import show_walls_1by1, show_walls_offsetz
 
 DEBUG = 1
 
-BLOCK_SIZE0 = np.array([30, 30, -1])
+BLOCK_SIZE0 = np.array([50, 50, -1])
 ENABLE_LARGE_SIZE_BY_AREA = True
 if ENABLE_LARGE_SIZE_BY_AREA:
   MAX_SIZE_FOR_VOXEL_FULL_SCALE = 40.9 # When area is small, size can > 30. But still should < 40.9, to fit VOXEL_FULL_SCALE: [2048, 2048, 512]
 
-NUM_POINTS = 300 * 1000
+NUM_POINTS = 500 * 1000
 
 DSET_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{DSET_DIR}/parsed'
@@ -33,6 +33,8 @@ DATASET = 'SUNCG'
 CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
 #CLASSES_USED = ['wall', 'window', 'door']
 MIN_BOXES_NUM = 10
+
+NO_SPLIT = 1
 
 ALWAYS_UPDATE = 0
 ONLY_MODIFY_BOX = 0
@@ -382,18 +384,21 @@ class IndoorData():
       normals = np.asarray(pcd.normals)
       points = np.concatenate([points,  normals], -1)
     #open3d.draw_geometries([pcd])
-    points_splited = IndoorData.points_splited(points)
+    points_splited = IndoorData.points_spliting(points)
     return points_splited, is_special_scene
 
   @staticmethod
-  def points_splited(points):
-    splited_vidx, block_size = IndoorData.split_xyz(points[:,0:3],
-            IndoorData._block_size0.copy(), IndoorData._block_stride_rate,
-            IndoorData._min_pn_inblock)
-    if splited_vidx[0] is None:
+  def points_spliting(points):
+    if NO_SPLIT:
       points_splited = [points]
     else:
-      points_splited = [np.take(points, vidx, axis=0) for vidx in splited_vidx]
+      splited_vidx, block_size = IndoorData.split_xyz(points[:,0:3],
+              IndoorData._block_size0.copy(), IndoorData._block_stride_rate,
+              IndoorData._min_pn_inblock)
+      if splited_vidx[0] is None:
+        points_splited = [points]
+      else:
+        points_splited = [np.take(points, vidx, axis=0) for vidx in splited_vidx]
 
     pnums0 = [p.shape[0] for p in points_splited]
     #print(pnums0)
@@ -670,11 +675,11 @@ def creat_splited_pcl_box():
   splited_path = f'{SPLITED_DIR}/houses'
   #house_names = os.listdir(parsed_dir)
 
-  #house_names = SceneSamples.paper0_samples[0:1]
+  #house_names = SceneSamples.big_size
 
-  house_names = get_house_names_1level()
+  house_names = get_house_names_1level()[4000:]
   print(f'total {len(house_names)} houses')
-  #house_names = ['00a2a04afad84b16ff330f9038a3d126']
+  #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
