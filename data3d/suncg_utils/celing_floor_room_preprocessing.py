@@ -26,7 +26,7 @@ def preprocess_cfr(ceilings_org, walls_org, obj):
   #Bbox3D.draw_bboxes(walls_org, 'Z', False)
   #Bbox3D.draw_bboxes(ceilings_org, 'Z', False)
   ceilings = ceilings_org.copy()
-  ceilings = clean_repeat(ceilings)
+  ceilings, keep_ids0 = clean_repeat(ceilings)
   walls = walls_org.copy()
   cn = ceilings.shape[0]
 
@@ -75,7 +75,7 @@ def preprocess_cfr(ceilings_org, walls_org, obj):
       good_ceiling_ids0.append(c)
 
   #good_ceiling_ids1 = [i for i in good_ceiling_ids0 if i not in bad_small_ids]
-  good_ceiling_ids1 = good_ceiling_ids0
+  good_ceiling_ids1 = keep_ids0[ good_ceiling_ids0 ]
   good_ceiling_ids1 = np.array(good_ceiling_ids1).astype(np.int)
   rm_num = cn - good_ceiling_ids1.shape[0]
 
@@ -306,16 +306,24 @@ def clean_edge_wall_same_side(cenlines):
 def clean_repeat(ceilings):
   #Bbox3D.draw_ceilings(ceilings, 'Z', False)
   n = ceilings.shape[0]
-  mdifs = [100]
+  keep_ids = [0]
   for i in range(1,n):
-    difs = []
+    keep_i = True
     for j in range(i):
-      difs.append( np.sum(np.abs( ceilings[i] - ceilings[j] )) )
-    mdifs.append( min(difs) )
-  mdifs = np.array(mdifs)
-  keep_mask = mdifs > 0.1
-  keep_ids = np.where(keep_mask)[0]
+      dif = ceilings[i] - ceilings[j]
+      cen_dis = np.linalg.norm(dif[0:3])
+      ref = max(ceilings[i,3:6].max(),ceilings[j,3:6].max())
+      size_dif = np.abs(dif[3:6]).max() / ref
+      angle_dif = np.abs(dif[-1])
+      is_same_ij = cen_dis < 0.1 and size_dif < 0.1 and angle_dif < 0.1
+      if  is_same_ij:
+        keep_i = False
+        break
+    if keep_i:
+      keep_ids.append(i)
+
+  keep_ids = np.array(keep_ids, dtype=np.int)
   ceilings = ceilings[keep_ids]
-  return ceilings
+  return ceilings, keep_ids
 
 

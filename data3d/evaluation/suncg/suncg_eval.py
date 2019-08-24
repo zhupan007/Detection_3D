@@ -7,10 +7,11 @@ import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 import matplotlib.pyplot as plt
+import torch
 plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
-SHOW_PRED = DEBUG and  1
+SHOW_PRED = DEBUG and  0
 DRAW_RECALL_PRECISION = DEBUG and True
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -92,34 +93,45 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
             fid.write(result_str)
             print('write ok:\n' + res_fn + '\n')
 
+    ap = result['ap'][1:]
+    if np.isnan(ap).all():
+        return result
+    gt_boxlists_ = modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums, dset_metas)
+    pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas)
+    files = [dataset.files[i] for i in image_ids]
+    save_preds(gt_boxlists_, pred_boxlists_, files, output_folder)
     if SHOW_PRED:
-        ap = result['ap'][1:]
-        if np.isnan(ap).all():
-            return result
-        gt_boxlists_ = modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums, dset_metas)
-        pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas)
-        show_pred(gt_boxlists_, pred_boxlists_, dataset, image_ids)
+        show_pred(gt_boxlists_, pred_boxlists_, files)
 
     if DRAW_RECALL_PRECISION:
-        draw_recall_precision_score_10steps(result, output_folder)
-    save_res(result, output_folder)
+        draw_recall_precision_score(result, output_folder)
+    save_perform_res(result, output_folder)
     return result
 
-def save_res(result, output_folder):
-  pass
+def save_preds(gt_boxlists_, pred_boxlists_, files, output_folder):
+  if len(gt_boxlists_) > 10:
+    return
+  pred_fn = os.path.join(output_folder, 'preds.pth')
+  torch.save([  gt_boxlists_, pred_boxlists_, files ], pred_fn)
 
-def show_pred(gt_boxlists_, pred_boxlists_, dataset, image_ids):
+def save_perform_res(result, output_folder):
+  res_fn = os.path.join(output_folder, 'performance_res.pth')
+  torch.save(result, res_fn)
+
+def show_pred(gt_boxlists_, pred_boxlists_, files):
         SHOW_SMALL_IOU = False
         print('SHOW_PRED')
         for i in range(len(pred_boxlists_)):
-            pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
+            #pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
+            pcl_i = torch.load(files[i])[0][:,0:6]
             preds = pred_boxlists_[i].remove_low('scores', 0.5)
             #preds = pred_boxlists_[i] # already post processed in:
             # ~/Research/Detection_3D/maskrcnn_benchmark/modeling/roi_heads/box_head_3d/inference.py
             # cfg.MODEL.ROI_HEADS.SCORE_THRESH
-            xyz_max = pcl_i[:,0:3].max(0).values.data.numpy()
-            xyz_min = pcl_i[:,0:3].min(0).values.data.numpy()
+            xyz_max = pcl_i[:,0:3].max(0)
+            xyz_min = pcl_i[:,0:3].min(0)
             xyz_size = xyz_max - xyz_min
+            pcl_i[:,0:3] -= xyz_min.reshape([1,3])
             print(f'xyz_size:{xyz_size}')
 
             #preds.show__together(gt_boxlists_[i], points=None, offset_x=xyz_size[0]+0.3, twolabels=False)
@@ -127,7 +139,6 @@ def show_pred(gt_boxlists_, pred_boxlists_, dataset, image_ids):
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 
             gt_boxlists_[i].show_by_labels([1])
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             if SHOW_SMALL_IOU:
                 small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
                 small_ious = [p['iou'] for p in  small_iou_preds[i]]
@@ -484,7 +495,7 @@ def regression_res_str(regression_res):
         reg_str += f'{key}:\n{value}\n'
     return reg_str
 
-def draw_recall_precision_score_10steps(result, output_folder, flag=''):
+def draw_recall_precision_score(result, output_folder, flag=''):
     if flag != '10steps':
       recall_precision_list = result['rec_prec_score_org']
     else:

@@ -35,7 +35,7 @@ CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
 MIN_BOXES_NUM = 10
 
 
-ALWAYS_UPDATE_MULTI_SPLITS = 1
+ALWAYS_UPDATE_MULTI_SPLITS = 0
 
 def points2pcd_open3d(points):
   assert points.shape[-1] == 3

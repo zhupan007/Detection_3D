@@ -159,6 +159,7 @@ def render_pth_file(pth_fn, show_by_class=False):
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
   if show_by_class:
     for clas in bboxes.keys():
@@ -244,7 +245,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = house_names[700:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  house_names = SceneSamples.paper0_samples
+  #house_names = SceneSamples.paper0_samples
   #house_names = ['25442bece22dbdd510c8e72909a1f40f']
 
   print(f'totally {len(house_names)} houses')
@@ -278,8 +279,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 0,
-            r_splited = 1
+            r_whole = 1,
+            r_splited = 0
     )
 
 def summarize():

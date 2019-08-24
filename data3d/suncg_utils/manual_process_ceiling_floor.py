@@ -35,6 +35,7 @@ def rename_file():
 
 def process_ceiling_floor():
   file_names = os.listdir(PARSED_DIR)
+  #file_names = ['0004d52d1aeeb8ae6de39d6bd993e992']
   file_names.sort()
   num = len(file_names)
   for i in range(0,num):
