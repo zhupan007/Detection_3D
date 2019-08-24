@@ -16,9 +16,7 @@ from data3d.suncg_utils.scene_samples import SceneSamples
 #sys.path.append(ROOT_DIR)
 from suncg_utils.wall_preprocessing import show_walls_1by1, show_walls_offsetz
 
-DEBUG = False
-if DEBUG:
-  from second.data.data_render import DataRender
+DEBUG = 1
 
 BLOCK_SIZE0 = np.array([30, 30, -1])
 ENABLE_LARGE_SIZE_BY_AREA = True
@@ -35,6 +33,9 @@ DATASET = 'SUNCG'
 CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
 #CLASSES_USED = ['wall', 'window', 'door']
 MIN_BOXES_NUM = 10
+
+
+ALWAYS_UPDATE_MULTI_SPLITS = 1
 
 def points2pcd_open3d(points):
   assert points.shape[-1] == 3
@@ -96,12 +97,16 @@ class IndoorData():
   @staticmethod
   def split_scene(scene_dir, splited_path):
     from suncg_utils.suncg_preprocess import check_house_intact, read_summary, write_summary
+
     scene_name = os.path.basename(scene_dir)
     splited_path = os.path.join(splited_path, scene_name)
     summary_0 = read_summary(splited_path)
     if 'split_num' in summary_0:
-      print(f'skip {splited_path}')
-      return
+      sn = summary_0['split_num'].squeeze()
+      still_split = ALWAYS_UPDATE_MULTI_SPLITS and sn  >1
+      if not still_split:
+        print(f'skip {splited_path}')
+        return
     print(f'spliting {scene_dir}')
     gen_ply = False
 
@@ -189,9 +194,10 @@ class IndoorData():
       up_axis == 'Z'
       always: x_size > y_size
     '''
+    obj = os.path.basename(bbox_fn).split('.')[0]
     min_point_num_per1sm = 10
     # thickness_aug for cropping x
-    thickness_aug = 0.1
+    thickness_aug = 0.3
     assert IndoorData._block_size0[-1] == -1 # do  not crop box along z
 
     bboxes = np.loadtxt(bbox_fn).reshape([-1,7])
@@ -202,7 +208,8 @@ class IndoorData():
     areas = bboxes[:,3] * bboxes[:,5]
     min_point_num = np.minimum( min_point_num_per1sm * areas, 200 )
     bboxes_aug = bboxes.copy()
-    bboxes_aug[:,4] += thickness_aug
+    #bboxes_aug[:,4] += thickness_aug
+    bboxes_aug[:,3:6] = np.clip(bboxes_aug[:,3:6],a_min= thickness_aug, a_max=None )
     bn = bboxes.shape[0]
 
     sn = len(points_splited)
@@ -221,6 +228,14 @@ class IndoorData():
       # (1) The bboxes with no points with thickness_aug will be removed firstly
       keep_box_aug_i = pn_in_box_aug_i > min_point_num
       bboxes_i = bboxes[keep_box_aug_i]
+
+      if DEBUG and obj=='ceiling' and 0:
+        rm_box_aug_i = pn_in_box_aug_i <= min_point_num
+        print(rm_box_aug_i)
+        bboxes_no_points_i = bboxes[rm_box_aug_i].copy()
+        bboxes_no_points_i[:,0] += 30
+        bboxes_show = np.concatenate([bboxes_i, bboxes_no_points_i],0)
+        Bbox3D.draw_points_bboxes(points_splited[i], bboxes_show, up_axis='Z', is_yx_zb=False)
 
       points_aug_i = [points_splited[i][point_masks_aug_i[:,j]] for j in range(bn)]
       points_aug_i = [points_aug_i[j] for j in range(bn) if keep_box_aug_i[j]]
@@ -276,16 +291,17 @@ class IndoorData():
       bboxes_splited.append(croped_bboxes_i)
 
       show = False
-      if show and DEBUG and len(points_i) > 0:
+      if show and DEBUG and len(points_i) > 0 and obj=='ceiling':
         print(croped_bboxes_i[:,3])
         points = np.concatenate(points_i,0)
         points = points_splited[i]
         points1 = points.copy()
-        points1[:,0] += 12
+        points1[:,0] += 30
         points = np.concatenate([points, points1], 0)
-        bboxes_i[:,0] += 12
+        bboxes_i[:,0] += 30
         bboxes_i = np.concatenate([bboxes_i, croped_bboxes_i], 0)
-        Bbox3D.draw_points_bboxes(points, bboxes_i, up_axis='Z', is_yx_zb=False)
+        #Bbox3D.draw_points_bboxes(points, bboxes_i, up_axis='Z', is_yx_zb=False)
+        Bbox3D.draw_points_bboxes_mesh(points, bboxes_i, up_axis='Z', is_yx_zb=False)
         import pdb; pdb.set_trace()  # XXX BREAKPOINT
         pass
     return bboxes_splited
@@ -638,8 +654,8 @@ def creat_splited_pcl_box():
   splited_path = f'{SPLITED_DIR}/houses'
   #house_names = os.listdir(parsed_dir)
 
-  house_names = ['1d84d7ca97f9e05534bf408779406e30']
-  #house_names = SceneSamples.paper_samples
+  #house_names = ['1d84d7ca97f9e05534bf408779406e30']
+  #house_names = SceneSamples.paper0_samples[0:1]
 
   house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
@@ -671,7 +687,7 @@ def gen_train_list():
 
 
   num = len(house_names)
-  if DEBUG:
+  if DEBUG and 0:
       house_names.sort()
       train_num = num
       train_num = int(num*0.7)
