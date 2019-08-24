@@ -34,7 +34,8 @@ CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
 #CLASSES_USED = ['wall', 'window', 'door']
 MIN_BOXES_NUM = 10
 
-
+ALWAYS_UPDATE = 0
+ONLY_MODIFY_BOX = 0
 ALWAYS_UPDATE_MULTI_SPLITS = 0
 
 def points2pcd_open3d(points):
@@ -101,7 +102,7 @@ class IndoorData():
     scene_name = os.path.basename(scene_dir)
     splited_path = os.path.join(splited_path, scene_name)
     summary_0 = read_summary(splited_path)
-    if 'split_num' in summary_0:
+    if (not ALWAYS_UPDATE) and 'split_num' in summary_0:
       sn = summary_0['split_num'].squeeze()
       still_split = ALWAYS_UPDATE_MULTI_SPLITS and sn  >1
       if not still_split:
@@ -121,7 +122,18 @@ class IndoorData():
     if not os.path.exists(pcl_fn):
       print(f'pcl.ply not exist, skip {scene_dir}')
       return
-    points_splited, is_special_scene = IndoorData.split_pcl_plyf(pcl_fn)
+
+    fns = glob.glob(os.path.join(splited_path, '*.pth'))
+    if ONLY_MODIFY_BOX and len(fns)>0:
+      print('Load points from pth directly')
+      scene_name = os.path.basename(os.path.dirname(fns[0]))
+      is_special_scene = IndoorData.is_a_special_scene(scene_name)
+      points_splited = []
+      for fni in fns:
+        pcl_i, boxes_i = torch.load(fni)
+        points_splited.append(pcl_i)
+    else:
+        points_splited, is_special_scene = IndoorData.split_pcl_plyf(pcl_fn)
     n_block = len(points_splited)
 
     bboxes_splited = {}
@@ -307,6 +319,10 @@ class IndoorData():
     return bboxes_splited
 
   @staticmethod
+  def is_a_special_scene(scene_name):
+      return  scene_name in ['0058113bdc8bee5f387bb5ad316d7b28']
+
+  @staticmethod
   def crop_special_scenes(scene_name, pcd):
       '''
       some special scenes are two large, but contain a lot empty in the middle.
@@ -314,7 +330,7 @@ class IndoorData():
       '''
       points = np.asarray(pcd.points)
       colors = np.asarray(pcd.colors)
-      if scene_name not in ['0058113bdc8bee5f387bb5ad316d7b28']:
+      if not IndoorData.is_a_special_scene( scene_name ):
           return points, colors, False
       print(f'This is a special scene: \n\t{scene_name}')
       debuging = False
@@ -654,15 +670,17 @@ def creat_splited_pcl_box():
   splited_path = f'{SPLITED_DIR}/houses'
   #house_names = os.listdir(parsed_dir)
 
-  #house_names = ['1d84d7ca97f9e05534bf408779406e30']
   #house_names = SceneSamples.paper0_samples[0:1]
 
   house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
+  #house_names = ['00a2a04afad84b16ff330f9038a3d126']
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
-  for scene_dir in scene_dirs:
+  sn = len(scene_dirs)
+  for i,scene_dir in enumerate( scene_dirs ):
+    print(f'\n{i} / {sn}')
     IndoorData.split_scene(scene_dir, splited_path)
     print(f'split ok: {scene_dir}')
 
