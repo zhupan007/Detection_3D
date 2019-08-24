@@ -346,20 +346,24 @@ def summarize():
   big_xyarea_n = np.sum(big_xyarea)
   big_xyarea_ratio = 1.0 * big_xyarea_n / scene_n
 
+  big_size_xy_num = (scene_sizes[:,:2].max(1) > 4096/50.0).sum()
+  big_size_z_num = (scene_sizes[:,2:3].max(1) > 512/50.0).sum()
+
   print(f'\n\nTotall {scene_n} scenes')
   print(f'ave num: {ave_np:.3f}\nsum n: {sum_np:.5f} M')
   print(f'ave xyarea: {ave_xyarea:.5f}\n sum xyarea: {sum_xyarea:.5f} K')
   print(f'mean_scene_size: {mean_scene_size}')
-  print(f'big area ratio: {big_xyarea_ratio}')
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  print(f'big area >900 ratio: {big_xyarea_ratio}')
+  print(f'size x/y >  81.92 m: {big_size_xy_num}')
+  print(f'size z > 10.24 m: {big_size_z_num}')
   pass
 
 
 
 if __name__ == '__main__':
     #render_fn()
-    main()
-    #summarize()
+    #main()
+    summarize()
 
 
 

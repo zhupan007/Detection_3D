@@ -677,7 +677,7 @@ def creat_splited_pcl_box():
 
   #house_names = SceneSamples.big_size
 
-  house_names = get_house_names_1level()[4000:]
+  house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
   #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
 
@@ -690,6 +690,11 @@ def creat_splited_pcl_box():
     print(f'split ok: {scene_dir}')
 
 def rm_some_files(house_names0):
+  '''
+  generate based on this file
+  '''
+  print('\n\nComform genrating based on this file?\n\n')
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   train_fn0 = '/DS/SUNCG/suncg_v1_torch_splited/train_test_splited/train_4069.txt'
   val_fn0 = '/DS/SUNCG/suncg_v1_torch_splited/train_test_splited/val_4069.txt'
   with open(train_fn0, 'r') as f:
@@ -706,8 +711,7 @@ def rm_some_files(house_names0):
 def gen_train_list():
   house_names = os.listdir(os.path.join(SPLITED_DIR, 'houses'))
 
-  house_names = rm_some_files(house_names)
-
+  #house_names = rm_some_files(house_names)
 
   num = len(house_names)
   if DEBUG and 0:
@@ -735,7 +739,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  creat_splited_pcl_box()
-  #gen_train_list()
+  #creat_splited_pcl_box()
+  gen_train_list()
   pass
 

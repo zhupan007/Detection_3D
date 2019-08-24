@@ -99,7 +99,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     gt_boxlists_ = modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums, dset_metas)
     pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas)
     files = [dataset.files[i] for i in image_ids]
-    save_preds(gt_boxlists_, pred_boxlists_, files, output_folder)
+    #save_preds(gt_boxlists_, pred_boxlists_, files, output_folder)
     if SHOW_PRED:
         show_pred(gt_boxlists_, pred_boxlists_, files)
 

@@ -1,8 +1,10 @@
 
-Totall 6554 scenes
-ave num: 2147005.000
-sum n: 14071.47156 M
-ave xyarea: 471.93596
- sum xyarea: 3093.06828 K
-mean_scene_size: [19.070707   16.32966367  3.58465778]
-big area ratio: 0.1095514189807751
+Totall 6550 scenes
+ave num: 2145551.000
+sum n: 14053.36301 M
+ave xyarea: 471.18936
+ sum xyarea: 3086.29034 K
+mean_scene_size: [19.05858599 16.3191165   3.58339671]
+big area >900 ratio: 0.10916030534351145
+size x/y >  81.92 m: 38
+size z > 10.24 m: 57

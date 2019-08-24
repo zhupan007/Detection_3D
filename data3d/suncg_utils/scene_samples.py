@@ -72,7 +72,8 @@ class SceneSamples():
     scene_id0 = '31a69e882e51c7c5dfdc0da464c3c02d' # 68 walls
     scene_id1 = '8c033357d15373f4079b1cecef0e065a' # one level, with yaw!=0, one wall left and right has angle (31 final walls)
 
-    big_size = ['2f3ae02201ad551e99870189e184af4f','015d0e1cebc9475b8edb17b00b523f83','2b9e5ffdd2bbec47905d56508e4daf9c']
+    big_size = ['2f3ae02201ad551e99870189e184af4f','015d0e1cebc9475b8edb17b00b523f83','2b9e5ffdd2bbec47905d56508e4daf9c','2659febc41e0436750d035ad38610c4c']
+    super_big = ['2659febc41e0436750d035ad38610c4c']
 
     #---------------------------------------------------------------------------
 

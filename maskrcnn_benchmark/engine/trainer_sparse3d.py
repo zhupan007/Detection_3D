@@ -174,7 +174,7 @@ def do_train(
 def down_sample_for_eval_training(predictions):
   import numpy as np
   n = len(predictions)
-  max_eval = 1000
+  max_eval = 500
   if n < max_eval:
     return predictions
   indices = np.sort(np.random.choice(n, max_eval, replace=False)).tolist()
