@@ -244,10 +244,10 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 
   house_names.sort()
 
-  #house_names = house_names[700:]
+  #house_names = house_names[-100:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  house_names = SceneSamples.paper0_samples
+  #house_names = SceneSamples.paper0_samples
   #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
   #house_names = ['2b9e5ffdd2bbec47905d56508e4daf9c']
@@ -283,8 +283,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 def summarize():

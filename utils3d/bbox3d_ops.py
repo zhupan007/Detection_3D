@@ -321,10 +321,10 @@ class Bbox3D():
 
     if bn > 0:
       out = [bboxes_lineset]
-      if FRAME_SHOW == 0:
+      if FRAME_SHOW == 1:
         mesh_frame = open3d.create_mesh_coordinate_frame(size = 0.6, origin = [0,0,0])
         out = out + [mesh_frame]
-      elif FRAME_SHOW == 1:
+      elif FRAME_SHOW == 2:
         mesh_frame = open3d.create_mesh_coordinate_frame(size = 0.6, origin = gt_boxes1[0,0:3])
         out = out + [mesh_frame]
       return out

@@ -33,12 +33,15 @@ DATASET = 'SUNCG'
 CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
 #CLASSES_USED = ['wall', 'window', 'door']
 MIN_BOXES_NUM = 10
+MAX_SCENE_SIZE = [81.92, 81.92, 10.24]
 
 NO_SPLIT = 1
 
-ALWAYS_UPDATE = 1
-ONLY_MODIFY_BOX = 1
+ALWAYS_UPDATE = 0
+ALWAYS_BIG_SIZE = 1
+ONLY_MODIFY_BOX = 0
 ALWAYS_UPDATE_MULTI_SPLITS = 0
+assert ALWAYS_BIG_SIZE * ONLY_MODIFY_BOX == 0
 
 def points2pcd_open3d(points):
   assert points.shape[-1] == 3
@@ -104,7 +107,18 @@ class IndoorData():
     scene_name = os.path.basename(scene_dir)
     splited_path = os.path.join(splited_path, scene_name)
     summary_0 = read_summary(splited_path)
-    if (not ALWAYS_UPDATE) and 'split_num' in summary_0:
+
+
+    always_update = ALWAYS_UPDATE
+
+    #house_intact, intacts = check_house_intact(scene_dir)
+    #if not house_intact:
+    #  return
+    summary_raw = read_summary(scene_dir)
+    is_big_size = (summary_raw['scene_size'] > MAX_SCENE_SIZE).any()
+    always_update = always_update or ( ALWAYS_BIG_SIZE and is_big_size )
+
+    if (not always_update) and 'split_num' in summary_0:
       sn = summary_0['split_num'].squeeze()
       still_split = ALWAYS_UPDATE_MULTI_SPLITS and sn  >1
       if not still_split:
@@ -113,11 +127,7 @@ class IndoorData():
     print(f'spliting {scene_dir}')
     gen_ply = False
 
-    #house_intact, intacts = check_house_intact(scene_dir)
-    #if not house_intact:
-    #  return
-    summary = read_summary(scene_dir)
-    if 'level_num' in summary and  summary['level_num'] != 1:
+    if 'level_num' in summary_raw and  summary_raw['level_num'] != 1:
       return
 
     pcl_fn = os.path.join(scene_dir, 'pcl_camref.ply')
@@ -171,6 +181,7 @@ class IndoorData():
         if obj in ['ceiling', 'floor', 'room']:
           boxes_i[obj] = Bbox3D.set_yaw_zero(boxes_i[obj])
           #boxes_i[obj] = preprocess_cfr_standard(boxes_i[obj])
+
       torch.save((pcl_i, boxes_i), fni)
 
       if gen_ply:
@@ -384,12 +395,17 @@ class IndoorData():
       normals = np.asarray(pcd.normals)
       points = np.concatenate([points,  normals], -1)
     #open3d.draw_geometries([pcd])
-    points_splited = IndoorData.points_spliting(points)
+
+    points_splited = IndoorData.points_spliting(points, pcl_fn)
     return points_splited, is_special_scene
 
   @staticmethod
-  def points_spliting(points):
+  def points_spliting(points, pcl_fn):
     if NO_SPLIT:
+      wall_fn = pcl_fn.replace('pcl_camref.ply','object_bbox/wall.txt')
+      walls = np.loadtxt(wall_fn).reshape([-1,7])
+
+      points = forcely_crop_scene(points, walls)
       points_splited = [points]
     else:
       splited_vidx, block_size = IndoorData.split_xyz(points[:,0:3],
@@ -519,6 +535,46 @@ class IndoorData():
     return splited_vidx, block_size
 
 
+def forcely_crop_scene(pcl0, walls):
+  scene_min = pcl0[:,:3].min(0)
+  scene_max = pcl0[:,:3].max(0)
+  scene_size = scene_max - scene_min
+  abandon = scene_size - MAX_SCENE_SIZE
+
+  masks = []
+  if abandon[2] > 0:
+    masks.append( pcl0[:,2] < scene_min[2] + MAX_SCENE_SIZE[2] )
+
+
+  wall_min = walls[:,:2].min(0)
+  wall_max = walls[:,:2].max(0)
+
+  for i in range(2):
+    if abandon[i] > 0:
+      wmin = wall_min[i] - scene_min[i]
+      wmax =  scene_max[i] - wall_max[i]
+      rate_min = wmin / (wmin+wmax)
+      new_mini = scene_min[i] + abandon[i] * rate_min
+      new_maxi = scene_max[i] - abandon[i] * (1-rate_min)
+      masks.append( (pcl0[:,i] > new_mini) * (pcl0[:,i] < new_maxi) )
+
+  if len(masks) > 0:
+    mask = masks[0]
+    for m in masks:
+      mask = mask * m
+    pcl1 = pcl0[mask]
+
+  else:
+    pcl1 = pcl0
+
+  show = False
+  if show:
+    pcl00 = pcl0.copy()
+    pcl00[:,2] -= 15
+    pcl_show = np.concatenate([pcl00, pcl1], 0)
+    Bbox3D.draw_points_bboxes(pcl_show, walls, 'Z', False, points_keep_rate=1)
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  return pcl1
 def read_house_names(fn):
   with open(fn) as f:
     lines = f.readlines()
@@ -675,14 +731,17 @@ def creat_splited_pcl_box():
   splited_path = f'{SPLITED_DIR}/houses'
   #house_names = os.listdir(parsed_dir)
 
-  house_names = SceneSamples.paper0_samples
+  #house_names = SceneSamples.paper0_samples
 
-  #house_names = get_house_names_1level()
+  house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
   #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
+
+  scene_dirs = scene_dirs
+
   sn = len(scene_dirs)
   for i,scene_dir in enumerate( scene_dirs ):
     print(f'\n{i} / {sn}')
