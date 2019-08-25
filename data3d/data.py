@@ -53,5 +53,7 @@ def check_data(cfg):
   n = len(data_loader_train)
   for i, data in enumerate(data_loader_train):
     print(f'train {i} / {n}')
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  pass
 
 

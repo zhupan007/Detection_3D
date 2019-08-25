@@ -83,6 +83,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
         norm_noise = 0.01 * int(is_train) * 0
 
         fn = self.files[index]
+        print(f'Loading {fn}')
         hn = os.path.basename(os.path.dirname(fn))
         #if self.is_train:
         #  print(f'\n(suncg_dataset.py) train {index}-th   {hn}\n')
@@ -200,6 +201,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
   def map_class_id_to_class_name(self, class_id):
     class_name = self.dset_metas.label_2_class[class_id]
     return class_name
+
 
 def add_paper_samples(scene_names):
   for s in SceneSamples.paper_samples:

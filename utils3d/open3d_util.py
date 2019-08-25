@@ -83,6 +83,9 @@ def gen_animation(pcds, ani_fn, ani_size):
 
 
 def draw_cus(models):
+    open3d.visualization.RenderOption.line_width=2
+    open3d.visualization.RenderOption.mesh_show_back_face=True
+    open3d.visualization.RenderOption.show_coordinate_frame=True
     open3d.draw_geometries(models)
 
     return

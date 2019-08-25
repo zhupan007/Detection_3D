@@ -3,7 +3,8 @@ DEBUG:
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
-  SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
+  #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
+  SCENES: ['0733585ebcfff52a9bcd03765af26ee3']
 MODEL:
   SEPARATE_CLASSES: [['wall'], ['ceiling','floor']]
   BACKBONE:

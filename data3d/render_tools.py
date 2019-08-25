@@ -19,7 +19,7 @@ CLASSES += ['ceiling', 'floor']
 #CLASSES += ['floor']
 #CLASSES += ['room']
 
-CLASSES = ['ceiling','floor']
+#CLASSES = ['ceiling','floor']
 #CLASSES = ['floor']
 #CLASSES = ['ceiling']
 
@@ -125,7 +125,7 @@ def pcl_size(pcl):
     xyz_size = xyz_max - xyz_min
     return xyz_size
 
-def render_pth_file(pth_fn, show_by_class=False):
+def render_pth_file(pth_fn, show_by_class=1):
   pcl, bboxes0 = torch.load(pth_fn)
   #points = pcl[:,0:3]
   #colors = pcl[:,3:6]
@@ -161,11 +161,10 @@ def render_pth_file(pth_fn, show_by_class=False):
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
   if show_by_class:
     for clas in bboxes.keys():
-      if clas not in ['wall', 'window', 'door', 'room']:
+      if clas not in ['wall', 'window', 'door','ceiling', 'floor', 'room']:
         continue
       print(clas)
       #if clas not in CLASSES:
@@ -174,6 +173,8 @@ def render_pth_file(pth_fn, show_by_class=False):
       #Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
       Bbox3D.draw_points_bboxes_mesh(pcl, boxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
       show_walls_offsetz(boxes)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  pass
 
 def render_suncg_raw_house_walls(house_fn):
     from suncg import split_room_parts, Suncg
@@ -247,7 +248,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = house_names[-100:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  #house_names = SceneSamples.paper0_samples
+  house_names = SceneSamples.paper0_samples
   #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
   #house_names = ['2b9e5ffdd2bbec47905d56508e4daf9c']

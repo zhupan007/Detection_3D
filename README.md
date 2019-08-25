@@ -4,6 +4,7 @@
 # on going process
 - Test effect of RPN number: speed and precision trade-off
 - Focal loss
+- - RPN ROI loss weights
 - upgrade anchor policy, IOU is not good, centroid distance should be considered
 - update c++ version 3d nms 
 - Considering put ceiling, floor and room to a separated classifier. Because the anchor policy is different, shared head may not satisfy.
