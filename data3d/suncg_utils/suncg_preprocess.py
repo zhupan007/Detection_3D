@@ -409,7 +409,7 @@ class Suncg():
       scene_id = '00e030e0e9198a0f9dd5389f2d2e9271'
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
-      #self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.ceiling_bad_sampels]
+      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper0_samples]
 
     self.house_fns = rm_bad_scenes(self.house_fns)
 
@@ -1188,8 +1188,8 @@ def parse_house():
   suncg.parse_houses(False)
 
 if __name__ == '__main__':
-  #parse_house()
-  gen_house_names_1level()
+  parse_house()
+  #gen_house_names_1level()
 
   #check_house_status()
 

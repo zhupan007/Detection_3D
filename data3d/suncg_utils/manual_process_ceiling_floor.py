@@ -35,7 +35,7 @@ def rename_file():
 
 def process_ceiling_floor():
   file_names = os.listdir(PARSED_DIR)
-  #file_names = ['0004d52d1aeeb8ae6de39d6bd993e992']
+  #file_names = ['0058113bdc8bee5f387bb5ad316d7b28']
   file_names.sort()
   num = len(file_names)
   for i in range(0,num):
@@ -58,7 +58,7 @@ def process_ceiling_floor():
       wall = np.loadtxt(wall_fn).reshape([-1,7])
 
       ceiling_new = preprocess_cfr(ceiling_raw, wall, 'ceiling')
-      floor_new = preprocess_cfr(ceiling_raw, wall, 'floor')
+      floor_new = preprocess_cfr(floor_raw, wall, 'floor')
 
       ceiling_fn =os.path.join(box_path, 'ceiling.txt')
       floor_fn =os.path.join(box_path, 'floor.txt')

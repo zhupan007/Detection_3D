@@ -19,9 +19,11 @@ CLASSES += ['ceiling', 'floor']
 #CLASSES += ['floor']
 #CLASSES += ['room']
 
-CLASSES = ['wall','floor']
+CLASSES = ['ceiling','floor']
+#CLASSES = ['floor']
+#CLASSES = ['ceiling']
 
-SHOW_PCL = 1
+SHOW_PCL = 0
 POINTS_KEEP_RATE = 0.5
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
@@ -77,7 +79,7 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
 
     #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
     #if not show_pcl:
-    #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+    Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
     #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
     #show_walls_offsetz(bboxes)
 
@@ -153,10 +155,10 @@ def render_pth_file(pth_fn, show_by_class=False):
   #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
   #show_walls_offsetz(all_bboxes)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
-  #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
+  Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
-  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
+  #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -245,7 +247,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = house_names[700:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  #house_names = SceneSamples.paper0_samples
+  house_names = SceneSamples.paper0_samples
   #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
   #house_names = ['2b9e5ffdd2bbec47905d56508e4daf9c']
@@ -281,8 +283,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 0,
-            r_splited = 1
+            r_whole = 1,
+            r_splited = 0
     )
 
 def summarize():
@@ -362,8 +364,8 @@ def summarize():
 
 if __name__ == '__main__':
     #render_fn()
-    #main()
-    summarize()
+    main()
+    #summarize()
 
 
 

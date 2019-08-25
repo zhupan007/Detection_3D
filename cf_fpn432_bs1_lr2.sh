@@ -3,7 +3,7 @@ export PYTHONPATH=$PWD
 #export CUDA_VISIBLE_DEVICES=1
 
 #TEST='--skip-test'
-#TEST='--only-test' 
+TEST='--only-test' 
 
 CONFIG_FILE='CF/Cf_Fpn21_bs1_lr5_SD.yaml'
 #CONFIG_FILE='CF/Cf_Fpn21_bs1_lr2.yaml'

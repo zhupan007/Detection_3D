@@ -36,8 +36,8 @@ MIN_BOXES_NUM = 10
 
 NO_SPLIT = 1
 
-ALWAYS_UPDATE = 0
-ONLY_MODIFY_BOX = 0
+ALWAYS_UPDATE = 1
+ONLY_MODIFY_BOX = 1
 ALWAYS_UPDATE_MULTI_SPLITS = 0
 
 def points2pcd_open3d(points):
@@ -675,9 +675,9 @@ def creat_splited_pcl_box():
   splited_path = f'{SPLITED_DIR}/houses'
   #house_names = os.listdir(parsed_dir)
 
-  #house_names = SceneSamples.big_size
+  house_names = SceneSamples.paper0_samples
 
-  house_names = get_house_names_1level()
+  #house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
   #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
 
@@ -739,7 +739,7 @@ def gen_train_list():
 
 
 if __name__ == '__main__':
-  #creat_splited_pcl_box()
-  gen_train_list()
+  creat_splited_pcl_box()
+  #gen_train_list()
   pass
 
