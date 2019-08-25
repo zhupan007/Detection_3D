@@ -546,14 +546,20 @@ def forcely_crop_scene(pcl0, walls):
     masks.append( pcl0[:,2] < scene_min[2] + MAX_SCENE_SIZE[2] )
 
 
-  wall_min = walls[:,:2].min(0)
-  wall_max = walls[:,:2].max(0)
+  if walls.shape[0] == 0:
+    wall_min = wall_max  = None
+  else:
+    wall_min = walls[:,:2].min(0)
+    wall_max = walls[:,:2].max(0)
 
   for i in range(2):
     if abandon[i] > 0:
-      wmin = wall_min[i] - scene_min[i]
-      wmax =  scene_max[i] - wall_max[i]
-      rate_min = wmin / (wmin+wmax)
+      if wall_min is None:
+        rate_min = 0.5
+      else:
+        wmin = wall_min[i] - scene_min[i]
+        wmax =  scene_max[i] - wall_max[i]
+        rate_min = wmin / (wmin+wmax)
       new_mini = scene_min[i] + abandon[i] * rate_min
       new_maxi = scene_max[i] - abandon[i] * (1-rate_min)
       masks.append( (pcl0[:,i] > new_mini) * (pcl0[:,i] < new_maxi) )
@@ -740,7 +746,7 @@ def creat_splited_pcl_box():
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
 
-  scene_dirs = scene_dirs
+  scene_dirs = scene_dirs[4050:]
 
   sn = len(scene_dirs)
   for i,scene_dir in enumerate( scene_dirs ):
