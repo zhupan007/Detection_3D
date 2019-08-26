@@ -1,11 +1,11 @@
 DEBUG:
-  eval_in_train: 10
+  eval_in_train: 5
   eval_in_train_per_iter: -1
 INPUT:
-  CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
+  CLASSES: ['background', 'ceiling', 'floor']
   SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
 MODEL:
-  SEPARATE_CLASSES: [['wall'], ['ceiling','floor']]
+        #SEPERATE_CLASSES: ['wall']
   BACKBONE:
     OUT_CHANNELS: 128
   RPN:
@@ -27,21 +27,21 @@ SPARSE3D:
   nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256, 256]
   KERNEL: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
   STRIDE: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
-  VOXEL_FULL_SCALE: [4096, 4096, 512]
+  VOXEL_FULL_SCALE: [4096, 4096, 512] 
   VOXEL_SCALE: 50
 DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
   EPOCHS: 200
-  EPOCHS_BETWEEN_TEST: 20
+  EPOCHS_BETWEEN_TEST: 10
   IMS_PER_BATCH: 1
   BASE_LR: 0.005
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (100,)
   CHECKPOINT_PERIOD_EPOCHS: 20
-  WARMUP_EPOCHS: 0.1
+  WARMUP_EPOCHS: 1.0
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "RES/res_3G6c_Fpn4321_bs1_lr5"
+OUTPUT_DIR: "RES/res_Cifl_Fpn4321_bs1_lr5"
 TEST:
-  IMS_PER_BATCH: 1
+  IMS_PER_BATCH: 2
   IOU_THRESHOLD: 0.2

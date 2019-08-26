@@ -139,6 +139,9 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.8, points_sample_rate=0.5)
             #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
 
+            p_labels_org = preds.get_field('labels_org')
+            g_labels_org = gt_boxlists_[i].get_field('labels_org')
+
             gt_boxlists_[i].show_by_labels([1])
             if SHOW_SMALL_IOU:
                 small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
@@ -267,7 +270,8 @@ def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
     new_pred_boxlists = []
     for bi in range(batch_size):
         #labels_i = pred_boxlists[bi].get_field('labels') + 1
-        labels_i = np.zeros([pred_nums[bi]], dtype=np.int32)
+        labels_i_org = np.zeros([pred_nums[bi]], dtype=np.int32)
+        labels_i = labels_i_org.clone().detach()
         for obj in good_pred_ids:
             l = dset_metas.class_2_label[obj]
             if good_pred_ids[obj][bi].shape[0] > 0:
@@ -276,6 +280,7 @@ def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
 
         pred = pred_boxlists[bi].copy()
         pred.add_field('labels', labels_i)
+        pred.add_field('labels_org', labels_i_org)
         new_pred_boxlists.append(pred)
     return new_pred_boxlists
 
@@ -287,7 +292,8 @@ def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, ob
     new_gt_boxlists = []
     for bi in range(batch_size):
         #labels_i = np.zeros([gt_nums[bi]], dtype=np.int32)
-        labels_i = gt_boxlists[bi].get_field('labels')
+        labels_i_org = gt_boxlists[bi].get_field('labels')
+        labels_i = labels_i_org.clone().detach()
         #labels_i = np.random.choice(gt_nums[bi], gt_nums[bi], replace=False)+2
         start = 0 # the gt_ids is only of one class (TAG: GT_MASK)
         for obj in missed_gt_ids:
@@ -299,6 +305,7 @@ def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, ob
 
         boxlist = gt_boxlists[bi].copy()
         boxlist.add_field('labels', labels_i)
+        boxlist.add_field('labels_org', labels_i_org)
         new_gt_boxlists.append(boxlist)
 
     return new_gt_boxlists

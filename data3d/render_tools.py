@@ -15,15 +15,15 @@ SPLITED_DIR = '/DS/SUNCG/suncg_v1_torch_splited'
 
 #CLASSES = ['wall', 'ceiling']
 CLASSES = ['wall', 'window', 'door']
-CLASSES += ['ceiling', 'floor']
-#CLASSES += ['floor']
+#CLASSES += ['ceiling']
+CLASSES += ['floor']
 #CLASSES += ['room']
 
 #CLASSES = ['ceiling','floor']
 #CLASSES = ['floor']
 #CLASSES = ['ceiling']
 
-SHOW_PCL = 0
+SHOW_PCL = 1
 POINTS_KEEP_RATE = 0.5
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
@@ -125,7 +125,7 @@ def pcl_size(pcl):
     xyz_size = xyz_max - xyz_min
     return xyz_size
 
-def render_pth_file(pth_fn, show_by_class=1):
+def render_pth_file(pth_fn, show_by_class=0):
   pcl, bboxes0 = torch.load(pth_fn)
   #points = pcl[:,0:3]
   #colors = pcl[:,3:6]
@@ -164,7 +164,7 @@ def render_pth_file(pth_fn, show_by_class=1):
 
   if show_by_class:
     for clas in bboxes.keys():
-      if clas not in ['wall', 'window', 'door','ceiling', 'floor', 'room']:
+      if clas not in ['wall', 'window', 'door','ceiling', 'floor']:
         continue
       print(clas)
       #if clas not in CLASSES:
@@ -251,7 +251,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = SceneSamples.paper0_samples
   #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
-  #house_names = ['2b9e5ffdd2bbec47905d56508e4daf9c']
+  house_names = ['2659febc41e0436750d035ad38610c4c']
 
   print(f'totally {len(house_names)} houses')
 
@@ -284,8 +284,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 0,
-            r_splited = 1
+            r_whole = 1,
+            r_splited = 0
     )
 
 def summarize():
@@ -361,12 +361,21 @@ def summarize():
   print(f'size z > 10.24 m: {big_size_z_num}')
   pass
 
-
+def check_data():
+    files = glob.glob( f'{SPLITED_DIR}/houses/*/*.pth')
+    for i,fn in enumerate( files ):
+      print(f'{i}\t {fn}')
+      size_i = os.path.getsize(fn)
+      if size_i < 5e6:
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        pass
+      #torch.load(fn)
 
 if __name__ == '__main__':
     #render_fn()
     main()
     #summarize()
+    #check_data()
 
 
 

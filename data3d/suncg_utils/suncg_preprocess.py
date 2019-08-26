@@ -404,12 +404,12 @@ class Suncg():
     #else:
     #  self.house_fns = house_fns[4460:5000]
 
-    if Debug and 0:
+    if Debug and 1:
       scene_id = '1d84d7ca97f9e05534bf408779406e30'
       scene_id = '00e030e0e9198a0f9dd5389f2d2e9271'
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
-      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.paper0_samples]
+      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.pcl_err]
 
     self.house_fns = rm_bad_scenes(self.house_fns)
 

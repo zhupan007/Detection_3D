@@ -15,7 +15,8 @@ class SceneSamples():
     paper_samples_4 = ['01b05d5581c18177f6e8444097d89db4', '01ef4e9bebeb6252257b2d48d3819630']
     paper_samples_5 = ['11535fb0648bb4634360fca94e95af23']
 
-    err_scenes = ['015d0e1cebc9475b8edb17b00b523f83'] # ceiling crop error
+    pcl_err = ['2f03c07fe2390f4a38a47ae5686dd631', '292fbc4470c66fd5fa028b66316eac97', '2794790a70e33e080a8be74bef23fff8','16a5bfe1972802178762f5a052bbf450','2659febc41e0436750d035ad38610c4c'] # ceiling crop error
+    err_scenes = ['015d0e1cebc9475b8edb17b00b523f83']
     #---------------------------------------------------------------------------
     # samples between [4K, 5K]
     occlusion = ['1e5b5abaf37672f31a68c64c86721e69']
