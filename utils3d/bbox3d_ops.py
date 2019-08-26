@@ -18,7 +18,7 @@ FRAME_SHOW = 0
 POINTS_KEEP_RATE = 0.7
 POINTS_SAMPLE_RATE = 1.0
 BOX_XSURFACE_COLOR_DIF = False
-CYLINDER_RADIUS = 0.05
+CYLINDER_RADIUS = 0.03
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree

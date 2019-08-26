@@ -455,7 +455,7 @@ class BoxList3D(object):
       else:
         if isinstance(points, torch.Tensor):
           points = points.cpu().data.numpy()
-          if offset_x is not None:
+        if offset_x is not None:
               tp = points.copy()
               tp[:,0] += offset_x
               points = np.concatenate([points, tp], 0)

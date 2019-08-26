@@ -2,6 +2,7 @@ import os, torch
 from data3d.evaluation.suncg.suncg_eval import show_pred, draw_recall_precision_score
 
 RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6711/inference_3d/suncg_test_2_iou_2'
+RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_2'
 
 def show_prediction():
   pred_fn = os.path.join(RES_PATH, 'preds.pth')
@@ -16,6 +17,6 @@ def show_performance():
 
 
 if __name__ == '__main__':
-  show_prediction()
-  #show_performance()
+  #show_prediction()
+  show_performance()
 

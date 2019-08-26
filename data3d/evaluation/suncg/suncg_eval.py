@@ -11,7 +11,7 @@ import torch
 plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
-SHOW_PRED = DEBUG and  0
+SHOW_PRED = DEBUG and  1
 DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -147,8 +147,8 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
               cf_mask_p  = torch.nonzero( p_labels_org > 3).squeeze()
               cf_mask_g  = torch.nonzero( g_labels_org > 3).squeeze()
 
-              preds[wwd_mask_p].show__together(gt_boxlists_[i][wwd_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.8, points_sample_rate=0.5)
-              preds[cf_mask_p].show__together(gt_boxlists_[i][cf_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.8, points_sample_rate=0.5)
+              preds[wwd_mask_p].show__together(gt_boxlists_[i][wwd_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
+              preds[cf_mask_p].show__together(gt_boxlists_[i][cf_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
 
 
 
