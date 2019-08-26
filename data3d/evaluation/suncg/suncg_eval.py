@@ -11,7 +11,7 @@ import torch
 plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
-SHOW_PRED = DEBUG and  0
+SHOW_PRED = DEBUG and  1
 DRAW_RECALL_PRECISION = DEBUG and False
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -271,7 +271,7 @@ def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
     for bi in range(batch_size):
         #labels_i = pred_boxlists[bi].get_field('labels') + 1
         labels_i_org = np.zeros([pred_nums[bi]], dtype=np.int32)
-        labels_i = labels_i_org.clone().detach()
+        labels_i = labels_i_org.copy()
         for obj in good_pred_ids:
             l = dset_metas.class_2_label[obj]
             if good_pred_ids[obj][bi].shape[0] > 0:
