@@ -3,10 +3,9 @@ export PYTHONPATH=$PWD
 export CUDA_VISIBLE_DEVICES=1
 
 #TEST='--skip-test'
-#TEST='--only-test' 
+TEST='--only-test' 
 
-#CONFIG_FILE='SeW4c/SeW4c_Fpn432_bs1_lr2.yaml'
-#CONFIG_FILE='SeW4c/SeW4c_Fpn432_bs1_lr5_SD.yaml'
+CONFIG_FILE='sw4c/sw4c_fpn432_bs1_lr5.yaml'
 
 
 
