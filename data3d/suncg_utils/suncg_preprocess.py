@@ -1185,7 +1185,7 @@ def parse_house():
   '''
   suncg = Suncg(SUNCG_V1_DIR)
   #suncg.parse_houses_pool()
-  suncg.parse_houses(False)
+  #suncg.parse_houses(False)
 
 if __name__ == '__main__':
   parse_house()

@@ -141,8 +141,18 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
 
             p_labels_org = preds.get_field('labels_org')
             g_labels_org = gt_boxlists_[i].get_field('labels_org')
+            if g_labels_org.max() == 5:
+              wwd_mask_p = torch.nonzero( p_labels_org <= 3).squeeze()
+              wwd_mask_g = torch.nonzero( g_labels_org <= 3).squeeze()
+              cf_mask_p  = torch.nonzero( p_labels_org > 3).squeeze()
+              cf_mask_g  = torch.nonzero( g_labels_org > 3).squeeze()
 
-            gt_boxlists_[i].show_by_labels([1])
+              preds[wwd_mask_p].show__together(gt_boxlists_[i][wwd_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.8, points_sample_rate=0.5)
+              preds[cf_mask_p].show__together(gt_boxlists_[i][cf_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.8, points_sample_rate=0.5)
+
+
+
+            #gt_boxlists_[i].show_by_labels([1])
             if SHOW_SMALL_IOU:
                 small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
                 small_ious = [p['iou'] for p in  small_iou_preds[i]]
@@ -269,9 +279,8 @@ def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
     pred_labels = []
     new_pred_boxlists = []
     for bi in range(batch_size):
-        #labels_i = pred_boxlists[bi].get_field('labels') + 1
-        labels_i_org = np.zeros([pred_nums[bi]], dtype=np.int32)
-        labels_i = labels_i_org.copy()
+        labels_i_org = pred_boxlists[bi].get_field('labels')
+        labels_i = np.zeros([pred_nums[bi]], dtype=np.int32)
         for obj in good_pred_ids:
             l = dset_metas.class_2_label[obj]
             if good_pred_ids[obj][bi].shape[0] > 0:

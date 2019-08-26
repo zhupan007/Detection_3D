@@ -248,10 +248,10 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = house_names[-100:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  house_names = SceneSamples.paper0_samples
+  house_names = SceneSamples.pcl_err
   #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
-  house_names = ['2659febc41e0436750d035ad38610c4c']
+  #house_names = ['2659febc41e0436750d035ad38610c4c']
 
   print(f'totally {len(house_names)} houses')
 
