@@ -769,7 +769,7 @@ def gen_pcl(house_fn):
 
     write_summary(parsed_dir, 'points_num', new_num, 'a')
     pcl_size, xyarea = get_pcl_size(pcls_all[:,0:3])
-    write_summary(parsed_dir, 'pcl_size', pcl_size, 'a')
+    write_summary(parsed_dir, 'scene_size', pcl_size, 'a')
     write_summary(parsed_dir, 'xyarea', xyarea, 'a')
     #open3d.draw_geometries([pcd])
     return True
@@ -1188,7 +1188,7 @@ def parse_house():
   #suncg.parse_houses(False)
 
 if __name__ == '__main__':
-  parse_house()
+  #parse_house()
   #gen_house_names_1level()
 
   #check_house_status()

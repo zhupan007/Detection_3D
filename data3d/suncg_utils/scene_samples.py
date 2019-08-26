@@ -15,8 +15,9 @@ class SceneSamples():
     paper_samples_4 = ['01b05d5581c18177f6e8444097d89db4', '01ef4e9bebeb6252257b2d48d3819630']
     paper_samples_5 = ['11535fb0648bb4634360fca94e95af23']
 
-    pcl_err = ['2f03c07fe2390f4a38a47ae5686dd631', '292fbc4470c66fd5fa028b66316eac97', '2794790a70e33e080a8be74bef23fff8','16a5bfe1972802178762f5a052bbf450','2659febc41e0436750d035ad38610c4c'] # ceiling crop error
-    err_scenes = ['015d0e1cebc9475b8edb17b00b523f83']
+    #pcl_err = ['0d05b1c41404736ad97e7f7a4f4e7a0a', '02630c38db188f991a9db06bfece2bbd', '07dcb6099122622b5a5f49be798b6fb1', '0ef76f780f9514f9f2ce4f9ae2c3441c']
+    pcl_err = ['29637ba3891da782b6461ac17f8b3706', '2a19b4d97c69232763f2406dab744757', '2aaf7d08e975b88ce3fa1277f43b912b']
+    err_scenes = ['015d0e1cebc9475b8edb17b00b523f83'] + pcl_err
     #---------------------------------------------------------------------------
     # samples between [4K, 5K]
     occlusion = ['1e5b5abaf37672f31a68c64c86721e69']
@@ -75,15 +76,17 @@ class SceneSamples():
 
     big_size = ['2f3ae02201ad551e99870189e184af4f','015d0e1cebc9475b8edb17b00b523f83','2b9e5ffdd2bbec47905d56508e4daf9c','2659febc41e0436750d035ad38610c4c']
     super_big = ['2659febc41e0436750d035ad38610c4c']
+    too_big = ['0cec4f261a11cb6d5e7518d695261b64', '0ff9275fa36108d69bbc53b941ef2497', '173c36eec78e89ca2459f2b7831cef45','2052749b9eea638fa90e31e86ba14821','23790b17761f655c7fdc38f7bdadaf95','247d0dc34e1d0cd54add57212cc938a0']+\
+      ['256b04497f1fded640fd0ea0aaa6ebe2', '27b806ecfd19e1a2ff54ac951a1bc4f0', '2ea8d5543a9f32ef27f70c15b5006436','2f28208dbd74f65a535b917ea99661bf']
 
     #---------------------------------------------------------------------------
 
     bad_scenes_curved_walls = ['020179798688014a482f483e1a5debe5', '019853e4742f679151c34f2732c33c16', '1de4b3e04dc05c81ec9bf6a5ffe52252']+\
-      ['27143c875575d97aa54cd686da3009f5']
+      ['27143c875575d97aa54cd686da3009f5', '109f1089527f1aa0ef7d8c1f79f863ed']
 
     # bad samples: not used in the training (1) BIM definition ambiguous
     bad_scenes_BIM_ambiguous = ['004e36a61e574321adc8da7b48c331f2', '00466151039216eb333369aa60ea3efe', '008969b6e13d18db3abc9d954cebe6a5', '0165e8534588c269219c9aafa9d888da']
-    bad_scenes_raw_bad = ['0320272d1b3c30e2d9f897ff917cef15']
+    bad_scenes_raw_bad = ['0320272d1b3c30e2d9f897ff917cef15', '28986f682cec4d51f6e3f760d4780929']
     # 0705e25aa6919af45268133bd2d98b65: no wall for window
     bad_scenes_cannot_parse_no_wall_for_window = ['13304f20f6327c21aa285069efb03ca1', '0705e25aa6919af45268133bd2d98b65', '142686fa469dda10dae66065be7961ef']
     bad_scenes_cannot_parse = bad_scenes_cannot_parse_no_wall_for_window +\
@@ -95,8 +98,9 @@ class SceneSamples():
       ['0c7a36399d3056631c2af4b131a37666', '0c88a0932fd1b91b72831de1550df84f', '0cd0e40be55719d4b223d69760fe95a6', '0d7c15290197e7ca90af9e206878bae2', '0e6e48390bf83d07b99b3a6b71797375', '0f0d7ba2b322cd7635a18c7f02f6168a'] + \
       ['161f617b86bc8388ca9f1bd2c805e0e9', '16322b525ce73f3d628eadec8800d58c', '17652ca3197dde089a16bb9fc1759114', '180c78c5f67d602cf9aa9936aace1ce9', '18468c7dc6cdd86a179bf13883e07dd8', '1948ad0c9782febf4ca10dd4c9fe4f63'] + \
       ['2593aef145a1f6c9b01e8511c961cad2', '28ae0e90b88bb2e909398654dc159ad9', '28bd5530205f031f5db74d5e7f5637df', '29b8d84fb0caad2ebcee0ec60eb09797', '2a80c6fa44d902d77054210b5330a58c', '2a8f2816180fd6a2a6f1811b6ed02c88', '2cd9ecd5c7a31c9583a398f7d581c0b2', '2e21cd462afdb055be9d4cd8408c33bb', '2e3827af5bebf864583c96224ef970c1', '2e5cf189c5348060c28f93305c02519e'] +\
-      ['17fb6d544ef525adfa07af2e0b2455ef', '194a5a7b92a1c79cbe0492f2f73893ff', '00bd0753b017769050de40d757b8d603', '00d92cc9072fe4173a1e7778bbca118c','00e030e0e9198a0f9dd5389f2d2e9271', '0138ea33414267375b879ff7ccc1436c']
+      ['17fb6d544ef525adfa07af2e0b2455ef', '194a5a7b92a1c79cbe0492f2f73893ff', '00bd0753b017769050de40d757b8d603', '00d92cc9072fe4173a1e7778bbca118c','00e030e0e9198a0f9dd5389f2d2e9271', '0138ea33414267375b879ff7ccc1436c'] +\
+      ['07dcc783a318e50156a252af4e922c43', '0efaa70a597665636b23fa1403b57905']
 
-    bad_scenes = bad_scenes_curved_walls + bad_scenes_BIM_ambiguous + bad_scenes_raw_bad + err_scenes + bad_scenes_cannot_parse
+    bad_scenes = bad_scenes_curved_walls + bad_scenes_BIM_ambiguous + bad_scenes_raw_bad + err_scenes + bad_scenes_cannot_parse + too_big
 
     ceiling_bad_sampels = ['00aa93519f5d1a7747d69595cb9e7940','006ab253a81b9cd33ce8f94c6865af81','002ae037be8b7b7a8605866296c2d0a1','000cf80f9ff74db95a46cd3a269a6e7c', '0011725c3f4c57108aa17f90ed8bea54', '003ecdd4fe76e4421091094665f39c5a','0055398beb892233e0664d843eb451ca']

@@ -37,8 +37,8 @@ MAX_SCENE_SIZE = [81.92, 81.92, 10.24]
 
 NO_SPLIT = 1
 
-ALWAYS_UPDATE = 0
-ALWAYS_BIG_SIZE = 1
+ALWAYS_UPDATE = 1
+ALWAYS_BIG_SIZE = 0
 ONLY_MODIFY_BOX = 0
 ALWAYS_UPDATE_MULTI_SPLITS = 0
 assert ALWAYS_BIG_SIZE * ONLY_MODIFY_BOX == 0
@@ -404,8 +404,10 @@ class IndoorData():
     if NO_SPLIT:
       wall_fn = pcl_fn.replace('pcl_camref.ply','object_bbox/wall.txt')
       walls = np.loadtxt(wall_fn).reshape([-1,7])
+      ceil_fn = pcl_fn.replace('pcl_camref.ply','object_bbox/ceiling.txt')
+      ceilings = np.loadtxt(ceil_fn).reshape([-1,7])
 
-      points = forcely_crop_scene(points, walls)
+      points = forcely_crop_scene(points, walls, ceilings)
       points_splited = [points]
     else:
       splited_vidx, block_size = IndoorData.split_xyz(points[:,0:3],
@@ -535,30 +537,28 @@ class IndoorData():
     return splited_vidx, block_size
 
 
-def forcely_crop_scene(pcl0, walls):
+def forcely_crop_scene(pcl0, walls, ceilings):
   scene_min = pcl0[:,:3].min(0)
   scene_max = pcl0[:,:3].max(0)
   scene_size = scene_max - scene_min
   abandon = scene_size - MAX_SCENE_SIZE
 
   masks = []
-  if abandon[2] > 0:
-    masks.append( pcl0[:,2] < scene_min[2] + MAX_SCENE_SIZE[2] )
+  ref_boxes = [walls, walls, ceilings]
+  for i in range(3):
 
-
-  if walls.shape[0] == 0:
-    wall_min = wall_max  = None
-  else:
-    wall_min = walls[:,:2].min(0)
-    wall_max = walls[:,:2].max(0)
-
-  for i in range(2):
     if abandon[i] > 0:
-      if wall_min is None:
-        rate_min = 0.5
+      if ref_boxes[i].shape[0] == 0:
+        if i<2:
+          rate_min = 0.5
+        else:
+          rate_min = 0
+
       else:
-        wmin = wall_min[i] - scene_min[i]
-        wmax =  scene_max[i] - wall_max[i]
+        ref_min = ref_boxes[i][:,i].min()
+        ref_max = ref_boxes[i][:,i].max()
+        wmin = ref_min - scene_min[i]
+        wmax =  scene_max[i] - ref_max
         rate_min = wmin / (wmin+wmax)
       new_mini = scene_min[i] + abandon[i] * rate_min
       new_maxi = scene_max[i] - abandon[i] * (1-rate_min)
@@ -573,13 +573,16 @@ def forcely_crop_scene(pcl0, walls):
   else:
     pcl1 = pcl0
 
-  show = False
+  show = 0
   if show:
+    scene_min_new = pcl1[:,:3].min(0)
+    scene_max_new = pcl1[:,:3].max(0)
+    print(f'Org: {scene_min} - {scene_max}')
+    print(f'New: {scene_min_new} - {scene_max_new}')
     pcl00 = pcl0.copy()
     pcl00[:,2] -= 15
     pcl_show = np.concatenate([pcl00, pcl1], 0)
     Bbox3D.draw_points_bboxes(pcl_show, walls, 'Z', False, points_keep_rate=1)
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
   return pcl1
 def read_house_names(fn):
   with open(fn) as f:
@@ -737,16 +740,16 @@ def creat_splited_pcl_box():
   splited_path = f'{SPLITED_DIR}/houses'
   #house_names = os.listdir(parsed_dir)
 
-  #house_names = SceneSamples.paper0_samples
+  house_names = SceneSamples.pcl_err
 
-  house_names = get_house_names_1level()
+  #house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
-  #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
+  house_names = ['16a5bfe1972802178762f5a052bbf450']
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
 
-  scene_dirs = scene_dirs[4050:]
+  #scene_dirs = scene_dirs[0:]
 
   sn = len(scene_dirs)
   for i,scene_dir in enumerate( scene_dirs ):

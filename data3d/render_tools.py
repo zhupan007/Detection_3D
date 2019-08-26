@@ -24,7 +24,7 @@ CLASSES += ['floor']
 #CLASSES = ['ceiling']
 
 SHOW_PCL = 1
-POINTS_KEEP_RATE = 0.5
+POINTS_KEEP_RATE = 1.0
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
 
@@ -155,8 +155,8 @@ def render_pth_file(pth_fn, show_by_class=0):
   #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
   #show_walls_offsetz(all_bboxes)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
-  Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
-  #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
+  #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
+  Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
@@ -248,8 +248,8 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = house_names[-100:]
 
   #house_names = SceneSamples.very_hard_wall_window_close
-  house_names = SceneSamples.pcl_err
-  #house_names = ['015d0e1cebc9475b8edb17b00b523f83']
+  #house_names = SceneSamples.pcl_err
+  house_names = ['0138ea33414267375b879ff7ccc1436c']
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
   #house_names = ['2659febc41e0436750d035ad38610c4c']
 
@@ -284,8 +284,8 @@ def render_fn():
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
-            r_splited = 0
+            r_whole = 0,
+            r_splited = 1
     )
 
 def summarize():
@@ -293,6 +293,7 @@ def summarize():
   with open(f'{SUNCG_V1_DIR}/house_names_1level.txt', 'r') as h1f:
       house_names_1level = h1f.read().split('\n')
 
+  show_big_size = True
   num_points = []
   xyareas = []
   scene_sizes = []
@@ -331,8 +332,16 @@ def summarize():
     scene_sizes.append(scene_size.reshape([1,-1]))
     xyareas.append(xyarea)
     num_points.append(pn)
-
     print(f'{i} {hn}  point num: {pn}')
+
+    is_big_size = (scene_size > [80,80,10]).any()
+    if show_big_size and is_big_size:
+      print(f'\n\t\t{hn}\norg scene_size: {scene_size}')
+      files = glob.glob( f'{SPLITED_DIR}/houses/{hn}/*.pth')
+      for fl in files:
+        render_pth_file(fl)
+
+
 
   num_points = np.array(num_points).astype(np.double)
   xyareas = np.array(xyareas).astype(np.double)
@@ -373,8 +382,8 @@ def check_data():
 
 if __name__ == '__main__':
     #render_fn()
-    main()
-    #summarize()
+    #main()
+    summarize()
     #check_data()
 
 
