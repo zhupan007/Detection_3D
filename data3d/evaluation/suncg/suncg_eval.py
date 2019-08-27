@@ -7,7 +7,10 @@ import numpy as np
 from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 import matplotlib.pyplot as plt
+from cycler import cycler
 import torch
+from utils3d.color_list import COLOR_LIST
+
 plt.rcParams.update({'font.size': 14, 'figure.figsize': (5,5)})
 
 DEBUG = True
@@ -22,14 +25,16 @@ ONLY_SAVE_NO_SHOW = False
 def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
     obj_gt_nums = defaultdict(list)
+    obj_gt_cum_nums = defaultdict(list)
     for bi in range(batch_size):
         labels = gt_boxlists[bi].get_field('labels').cpu().data.numpy()
         for l in range(dset_metas.num_classes):
             obj = dset_metas.label_2_class[int(l)]
             obj_gt_nums[obj].append( sum(labels==l) )
-    return obj_gt_nums
+            obj_gt_cum_nums[obj].append( sum(labels<l) )
+    return obj_gt_nums, obj_gt_cum_nums
 
-def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger, epoch=None, is_train=None):
+def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger, epoch=None, is_train=None, eval_aug_thickness=None):
     # TODO need to make the use_07_metric format available
     # for the user to choose
     logger.info(f'\n\nis_train: {is_train}\n')
@@ -67,15 +72,15 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
         iou_thresh=iou_thresh_eval,
         dset_metas = dset_metas,
         use_07_metric=True,
+        eval_aug_thickness=eval_aug_thickness
     )
 
-    obj_gt_nums = get_obj_nums(gt_boxlists, dset_metas)
+    obj_gt_nums, obj_gt_cum_nums = get_obj_nums(gt_boxlists, dset_metas)
     if len(result['pred_for_each_gt']) == 0:
       print('\nno pred for each gt\n')
       return
-
-    regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds = \
-        parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, logger, iou_thresh_eval, output_folder)
+    regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, gt_ids_for_goodpreds, small_iou_preds = \
+        parse_pred_for_each_gt(result['pred_for_each_gt'], obj_gt_nums, obj_gt_cum_nums, logger, iou_thresh_eval, output_folder)
 
     recall_precision_score_10steps = result["recall_precision_score_10steps"]
     result_str = performance_str(result, dataset, regression_res)
@@ -97,7 +102,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     if np.isnan(ap).all():
         return result
     gt_boxlists_ = modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums, dset_metas)
-    pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas)
+    pred_boxlists_ = modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas, gt_ids_for_goodpreds)
     files = [dataset.files[i] for i in image_ids]
     #save_preds(gt_boxlists_, pred_boxlists_, files, output_folder)
     if SHOW_PRED:
@@ -136,8 +141,14 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             print(f'xyz_size:{xyz_size}')
 
             #preds.show__together(gt_boxlists_[i], points=None, offset_x=xyz_size[0]+0.3, twolabels=False)
-            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.8, points_sample_rate=0.5)
-            #preds.show_together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True)
+            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, random_color=False)
+
+            gt_ids = preds.get_field('gt_ids').cpu().data.numpy().astype(np.int)+1
+            pred_colors = COLOR_LIST[gt_ids]
+            gt_colors = COLOR_LIST[1:len(gt_boxlists_[i])+1]
+            err_gt_ids = torch.nonzero(gt_boxlists_[i].get_field('labels')==0)[:,0].data.numpy().reshape([-1])
+            gt_colors[err_gt_ids] = COLOR_LIST[0]
+            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
 
             p_labels_org = preds.get_field('labels_org')
             g_labels_org = gt_boxlists_[i].get_field('labels_org')
@@ -272,29 +283,30 @@ def performance_str(result, dataset, regression_res):
     return result_str
 
 
-def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas):
+def modify_pred_labels(pred_boxlists, good_pred_ids, pred_nums, dset_metas, gt_ids_for_goodpreds):
     # incorrect pred: 0,  others: class label
 
     batch_size = len(pred_nums)
-    pred_labels = []
     new_pred_boxlists = []
     for bi in range(batch_size):
         labels_i_org = pred_boxlists[bi].get_field('labels')
         labels_i = np.zeros([pred_nums[bi]], dtype=np.int32)
+        gtids_i = np.zeros([pred_nums[bi]], dtype=np.int32) - 1
         for obj in good_pred_ids:
             l = dset_metas.class_2_label[obj]
             if good_pred_ids[obj][bi].shape[0] > 0:
                 labels_i[good_pred_ids[obj][bi]] = l
-        pred_labels.append(labels_i)
+                gtids_i[good_pred_ids[obj][bi]] = gt_ids_for_goodpreds[obj][bi]
 
         pred = pred_boxlists[bi].copy()
         pred.add_field('labels', labels_i)
         pred.add_field('labels_org', labels_i_org)
+        pred.add_field('gt_ids', gtids_i)
         new_pred_boxlists.append(pred)
     return new_pred_boxlists
 
 def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, obj_gt_nums, dset_metas):
-    # missed:0, matched: class label , multi: 1
+    # missed:0, matched: class label , multi:
 
     batch_size = len(gt_nums)
     gt_labels = []
@@ -308,7 +320,7 @@ def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, ob
         for obj in missed_gt_ids:
             #gt_label_i = dset_metas.class_2_label[obj]
             labels_i[ missed_gt_ids[obj][bi] + start ] = 0
-            labels_i[ multi_preds_gt_ids[obj][bi] + start ] = dset_metas.label_num()
+            #labels_i[ multi_preds_gt_ids[obj][bi] + start ] = dset_metas.label_num()
             start += obj_gt_nums[obj][bi]
         gt_labels.append(labels_i)
 
@@ -319,7 +331,7 @@ def modify_gt_labels(gt_boxlists, missed_gt_ids, multi_preds_gt_ids, gt_nums, ob
 
     return new_gt_boxlists
 
-def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eval, output_folder, score_thres=0.5):
+def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, obj_gt_cum_nums, logger, iou_thresh_eval, output_folder, score_thres=0.5):
     missed_gt_ids = defaultdict(list)
     multi_preds_gt_ids = defaultdict(list)
     ious = defaultdict(list)
@@ -327,6 +339,7 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eva
     good_pred_ids = defaultdict(list)
     score_thres_nums = defaultdict(list)
     success_nums = defaultdict(list)
+    gt_ids_for_goodpreds = defaultdict(list)
 
     ious_flat = {}
     scores_flat = {}
@@ -388,6 +401,8 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eva
                 scores[obj].append(scores_bi)
                 good_pred_ids_bi = np.array(good_pred_ids_bi)[success_mask]
                 good_pred_ids[obj].append( good_pred_ids_bi )
+                base = (np.array(gt_ids_bi)>=0).astype(np.int) * obj_gt_cum_nums[obj][bi]
+                gt_ids_for_goodpreds[obj].append( gt_ids_bi + base)
 
                 #-------------------------------
                 # small iou
@@ -503,7 +518,7 @@ def parse_pred_for_each_gt(pred_for_each_gt, obj_gt_nums, logger, iou_thresh_eva
 
             pass
 
-    return regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, small_iou_preds
+    return regression_res, missed_gt_ids, multi_preds_gt_ids, good_pred_ids, gt_ids_for_goodpreds, small_iou_preds
 
 def regression_res_str(regression_res):
     reg_str = '\n\nregression result\n'
@@ -520,13 +535,63 @@ def draw_recall_precision_score(result, output_folder, flag=''):
     label_2_class = result['label_2_class']
 
     num_classes = len(recall_precision_list)
-    for i in range(num_classes):
+
+    default_cycler = (cycler(color=['r', 'g', 'b', 'y']) + cycler(linestyle=['-', '--', ':', '-.']))
+    plt.rc('lines', linewidth=2)
+    plt.rc('axes', prop_cycle=default_cycler)
+
+    # together
+    fig = plt.figure()
+    for i in range(1,num_classes):
+        obj = label_2_class[i]
+        rp = recall_precision_list[i]
+        if DEBUG:
+          rp = rm_bad_head(rp)
+        rp  = expand_rp_tail(rp)
+        plt.plot(rp[:,0], rp[:,1], label=obj)
+    plt.xlabel('recall')
+    plt.ylabel('precision')
+    plt.legend()
+    fig_fn = output_folder + '/recall_precision.png'
+    fig.savefig(fig_fn)
+    print('save: '+fig_fn)
+    if not ONLY_SAVE_NO_SHOW:
+      plt.show()
+    plt.close()
+
+    fig = plt.figure()
+    for i in range(1,num_classes):
+        obj = label_2_class[i]
+        rp = recall_precision_list[i]
+        rp  = expand_rp_tail(rp)
+        plt.plot(rp[:,0], rp[:,2], label=obj)
+    plt.xlabel('recall')
+    plt.ylabel('score')
+    plt.legend()
+    fig_fn = output_folder + '/recall_score.png'
+    fig.savefig(fig_fn)
+    print('save: '+fig_fn)
+    if not ONLY_SAVE_NO_SHOW:
+      plt.show()
+    plt.close()
+
+    return
+
+
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    # separate
+    for i in range(1,num_classes):
         obj = label_2_class[i]
         if i==0:
             if flag == '10steps':
                 continue
             obj = 'ave'
         rp = recall_precision_list[i]
+
+        if DEBUG:
+          rp = rm_bad_head(rp)
+        rp  = expand_rp_tail(rp)
+
         #print(f'\n{obj} recall - precision - score\n{rp}')
         fig = plt.figure(i)
         plt.plot(rp[:,0], rp[:,1], label='precision')
@@ -542,7 +607,25 @@ def draw_recall_precision_score(result, output_folder, flag=''):
         if not ONLY_SAVE_NO_SHOW:
           plt.show()
         plt.close()
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        pass
 
+def expand_rp_tail(rp):
+  if rp[-1,0] < 1:
+    rp_tail = np.array([[rp[-1,0]+0.01, 0,0], [1,0,0]])
+    rp = np.concatenate([rp,rp_tail],0)
+  return rp
+
+def rm_bad_head(rp):
+  n = int(rp.shape[0] * 0.1)
+  if n < 2:
+    return rp
+  ma = rp[:n, 1].max()
+  mi = rp[n, 1]
+  for i in range(n):
+    rp[i,1] = ma - 1.0*i/n*(ma-mi)
+  #rp[:n,1] = np.clip(rp[:n,1], a_min=m,a_max=None)
+  return rp
 #def get_obejct_numbers(boxlist, dset_metas):
 #    labels = boxlist.get_field('labels').data.numpy()
 #    lset = list(set(labels))
@@ -551,7 +634,7 @@ def draw_recall_precision_score(result, output_folder, flag=''):
 #        obj_nums[dset_metas.label_2_class[l]] = sum(labels==l)
 #    return obj_nums
 
-def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use_07_metric=False):
+def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use_07_metric=False, eval_aug_thickness=None):
     """Evaluate on suncg dataset.
     Args:
         pred_boxlists(list[BoxList3D]): pred boxlist, has labels and scores fields.
@@ -565,7 +648,7 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use
         pred_boxlists
     ), "Length of gt and pred lists need to be same."
     prec, rec, pred_for_each_gt, scores = calc_detection_suncg_prec_rec(
-        pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh, dset_metas=dset_metas
+        pred_boxlists=pred_boxlists, gt_boxlists=gt_boxlists, iou_thresh=iou_thresh, dset_metas=dset_metas, eval_aug_thickness=eval_aug_thickness
     )
     rec_prec_score_org = [np.concatenate([np.array(r).reshape([-1,1]), np.array(p).reshape([-1,1]), np.array(s).reshape([-1,1])],1) \
                     for r,p,s in zip(rec, prec, scores)]
@@ -574,7 +657,7 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use
             "pred_for_each_gt":pred_for_each_gt}
 
 
-def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_metas):
+def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_metas, eval_aug_thickness):
     """Calculate precision and recall based on evaluation code of PASCAL VOC.
     This function calculates precision and recall of
     predicted bounding boxes obtained from a dataset which has :math:`N`
@@ -634,7 +717,7 @@ def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_m
             iou = boxlist_iou_3d(
                 BoxList3D(gt_bbox_l, gt_boxlist.size3d, gt_boxlist.mode, None, gt_boxlist.constants),
                 BoxList3D(pred_bbox_l, pred_boxlist.size3d, pred_boxlist.mode, None, pred_boxlist.constants),
-                aug_thickness = None,
+                aug_thickness = eval_aug_thickness,
                 criterion = -1,
                 flag='eval'
             ).numpy()

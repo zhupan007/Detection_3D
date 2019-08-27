@@ -18,7 +18,7 @@ FRAME_SHOW = 0
 POINTS_KEEP_RATE = 0.7
 POINTS_SAMPLE_RATE = 1.0
 BOX_XSURFACE_COLOR_DIF = False
-CYLINDER_RADIUS = 0.03
+CYLINDER_RADIUS = 0.04
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
@@ -236,14 +236,14 @@ class Bbox3D():
 
   @staticmethod
   def draw_points_bboxes(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None, random_color=True,
-                         points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, animation_fn=None, ani_size=None):
+                         points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, animation_fn=None, ani_size=None, box_colors=None):
     '''
     points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None)
     '''
     if points is not None:
       pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate)
 
-    bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color)
+    bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color, box_colors)
 
     if lines is not None:
       lineset = [Bbox3D.draw_lines_open3d(lines)]
@@ -263,8 +263,8 @@ class Bbox3D():
 
   @staticmethod
   def draw_points_bboxes_mesh(points, gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, lines=None,
-                              points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, animation_fn=None, ani_size=None):
-    mesh = Bbox3D.bboxes_mesh(gt_boxes0, up_axis, is_yx_zb, labels, names)
+                              points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, animation_fn=None, ani_size=None, random_color=False):
+    mesh = Bbox3D.bboxes_mesh(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color=random_color)
     #Bbox3D.video(mesh)
     if points is not None:
       pcl = Bbox3D.draw_points_open3d(points, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate)
@@ -283,14 +283,17 @@ class Bbox3D():
     draw_cus(bboxes_lineset_ls)
 
   @staticmethod
-  def bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True):
+  def bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True, colors=None):
     from color_list import COLOR_LIST
-    if labels is not None:
-      ml = labels.max() + 1
-      colors  = COLOR_LIST[0:ml]
-      print('colors used: {colors}')
     gt_boxes0 = gt_boxes0.reshape([-1,7])
     #gt_boxes0 = np.array([gtb for gtb in gt_boxes0 if gtb[3]>=0])
+    if colors is not None:
+      assert colors.shape[0] == gt_boxes0.shape[0]
+    #else:
+    #  if labels is not None:
+    #    ml = labels.max() + 1
+    #    colors  = COLOR_LIST[0:ml]
+    #    print('colors used: {colors}')
 
     gt_boxes1 = gt_boxes0.copy()
     if is_yx_zb:
@@ -300,12 +303,15 @@ class Bbox3D():
     bbox_meshes = []
     for i in range(bn):
         box = gt_boxes1[i]
-        if random_color:
-          color = COLOR_LIST[i]
+        if colors is not None:
+          color = colors[i]
         else:
-          color = [1,0,0]
-        if labels is not None:
-            color = COLOR_LIST[labels[i]]
+          if random_color:
+            color = COLOR_LIST[i]
+          else:
+            color = [1,0,0]
+            if labels is not None:
+                color = COLOR_LIST[labels[i]]
         bbox_meshes.append( Bbox3D.get_one_bbox(box, up_axis, color=color) )
 
     if bn > 0:
@@ -333,16 +339,16 @@ class Bbox3D():
 
 
   @staticmethod
-  def bboxes_mesh(boxes0, up_axis, is_yx_zb, labels=None, names=None):
+  def bboxes_mesh(boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=False):
     from color_list import COLOR_LIST
     assert boxes0.ndim == 2
     if boxes0.shape[0] == 0:
       return []
-    corners = Bbox3D.bboxes_corners(boxes0, up_axis)
+    corners = Bbox3D.bboxes_corners(boxes0, up_axis, is_yx_zb)
     faces_corners = np.take(corners, Bbox3D._face_vidxs, axis=1)
     n = boxes0.shape[0]
     mesh = []
-    if labels is None:
+    if labels is None or random_color:
         colors = COLOR_LIST[0:n]
     else:
         colors = COLOR_LIST[labels]
@@ -536,8 +542,10 @@ class Bbox3D():
     return corners
 
   @staticmethod
-  def bboxes_corners(bboxes, up_axis):
+  def bboxes_corners(bboxes, up_axis, is_yx_zb=False):
     assert bboxes.ndim==2 and bboxes.shape[1]==7
+    if is_yx_zb:
+      bboxes = Bbox3D.convert_from_yx_zb_boxes(bboxes)
     corners = np.array( [Bbox3D.bbox_corners(box, up_axis) for box in bboxes] )
     return corners
 

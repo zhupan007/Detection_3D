@@ -422,7 +422,7 @@ class BoxList3D(object):
         Bbox3D.draw_points_centroids(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
 
     def show__together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None, offset_x=None, twolabels=False,
-                       mesh=False, points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE):
+                       mesh=False, points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, random_color=False, colors=None):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
       boxes = self.bbox3d.cpu().data.numpy().copy()
@@ -446,6 +446,9 @@ class BoxList3D(object):
           labels = np.array([0]*boxes.shape[0] + [1]*boxes_1.shape[0])
 
       boxes = np.concatenate([boxes, boxes_1], 0)
+      if colors is not None:
+        colors = np.concatenate(colors, 0)
+        assert colors.shape[0] == boxes.shape[0]
 
       if points is None:
         if mesh:
@@ -460,9 +463,10 @@ class BoxList3D(object):
               tp[:,0] += offset_x
               points = np.concatenate([points, tp], 0)
         if mesh:
-          Bbox3D.draw_points_bboxes_mesh(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, points_sample_rate=points_sample_rate)
+          Bbox3D.draw_points_bboxes_mesh(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, points_sample_rate=points_sample_rate, random_color=random_color)
         else:
-          Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=False, points_keep_rate=points_keep_rate,  points_sample_rate=points_sample_rate)
+          Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=random_color,
+                                    points_keep_rate=points_keep_rate,  points_sample_rate=points_sample_rate, box_colors=colors)
 
     def show_highlight(self, ids, points=None):
         from utils3d.bbox3d_ops import Bbox3D

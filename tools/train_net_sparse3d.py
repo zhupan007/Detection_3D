@@ -31,6 +31,10 @@ from data3d.dataset_metas import DSET_METAS
 
 
 def train(cfg, local_rank, distributed, loop, only_test, min_loss):
+    ay = cfg.TEST.EVAL_AUG_THICKNESS_Y_TAR_ANC
+    az = cfg.TEST.EVAL_AUG_THICKNESS_Z_TAR_ANC
+    EVAL_AUG_THICKNESS = {'target_Y':ay[0], 'anchor_Y':ay[1],'target_Z':az[0], 'anchor_Z':az[1], }
+
 
     model = build_detection_model(cfg)
     device = torch.device(cfg.MODEL.DEVICE)
@@ -84,13 +88,18 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
           output_dir,
           cfg.DEBUG.eval_in_train_per_iter,
           cfg.TEST.IOU_THRESHOLD,
-          min_loss
+          min_loss,
+          eval_aug_thickness = EVAL_AUG_THICKNESS
       )
 
     return model, min_loss
 
 
 def test(cfg, model, distributed, epoch):
+    ay = cfg.TEST.EVAL_AUG_THICKNESS_Y_TAR_ANC
+    az = cfg.TEST.EVAL_AUG_THICKNESS_Z_TAR_ANC
+    EVAL_AUG_THICKNESS = {'target_Y':ay[0], 'anchor_Y':ay[1],'target_Z':az[0], 'anchor_Z':az[1], }
+
     if distributed:
         model = model.module
     torch.cuda.empty_cache()  # TODO check if it helps
@@ -104,7 +113,8 @@ def test(cfg, model, distributed, epoch):
         for idx, dataset_name in enumerate(dataset_names):
             dn = len(data_loaders_val[idx])
             iou_thr = int (10*cfg.TEST.IOU_THRESHOLD)
-            output_folder = os.path.join(cfg.OUTPUT_DIR, "inference_3d", dataset_name+f'_{dn}_iou_{iou_thr}')
+            aug_thickness = cfg.TEST.EVAL_AUG_THICKNESS_Y_TAR_ANC[0]
+            output_folder = os.path.join(cfg.OUTPUT_DIR, "inference_3d", dataset_name+f'_{dn}_iou_{iou_thr}_augth_{aug_thickness}')
             mkdir(output_folder)
             output_folders[idx] = output_folder
     for output_folder, dataset_name, data_loader_val in zip(output_folders, dataset_names, data_loaders_val):
@@ -119,7 +129,8 @@ def test(cfg, model, distributed, epoch):
             expected_results_sigma_tol=cfg.TEST.EXPECTED_RESULTS_SIGMA_TOL,
             iou_thresh_eval = cfg.TEST.IOU_THRESHOLD,
             output_folder=output_folder,
-            epoch = epoch
+            epoch = epoch,
+            eval_aug_thickness = EVAL_AUG_THICKNESS,
         )
         synchronize()
     pass
@@ -222,6 +233,7 @@ def intact_cfg(cfg):
   intact_anchor(cfg)
   check_roi_parameters(cfg)
   intact_for_separate_classifier(cfg)
+  intact_aug_thickness(cfg)
 
 def intact_for_separate_classifier(cfg):
   dset_metas = DSET_METAS(cfg.INPUT.CLASSES)
@@ -277,6 +289,8 @@ def intact_anchor(cfg):
   #if len(anchor_size)>1:
   #  assert anchor_size[0][0] > anchor_size[1][0], "ANCHOR_SIZES_3D should set from small to large after reversed, to match scale order of feature map"
 
+def intact_aug_thickness(cfg):
+    pass
 def check_roi_parameters(cfg):
   #spatial_scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL
   #canonical_size = cfg.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE

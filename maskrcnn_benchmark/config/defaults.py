@@ -316,7 +316,8 @@ _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 _C.TEST.IMS_PER_BATCH = 8
 # min iou for positive prediction in evaluation
 _C.TEST.IOU_THRESHOLD = 0.2
-
+_C.TEST.EVAL_AUG_THICKNESS_Y_TAR_ANC = [0.2,0.2]
+_C.TEST.EVAL_AUG_THICKNESS_Z_TAR_ANC = [0.2,0.2]
 # ---------------------------------------------------------------------------- #
 # Misc options
 # ---------------------------------------------------------------------------- #

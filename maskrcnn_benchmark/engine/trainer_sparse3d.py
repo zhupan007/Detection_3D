@@ -53,7 +53,8 @@ def do_train(
     eval_out_dir,
     eval_in_train_per_iter,
     iou_thresh_eval,
-    min_loss
+    min_loss,
+    eval_aug_thickness
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info(f"Start training {epoch_id}")
@@ -166,7 +167,7 @@ def do_train(
       preds = down_sample_for_eval_training(predictions_all)
       eval_res = evaluate(dataset=data_loader.dataset, predictions=preds,
                           iou_thresh_eval=iou_thresh_eval,
-                          output_folder=eval_out_dir, box_only=False, epoch=epoch_id, is_train=True)
+                          output_folder=eval_out_dir, box_only=False, epoch=epoch_id, is_train=True, eval_aug_thickness=eval_aug_thickness)
       pass
     return min_loss
 
