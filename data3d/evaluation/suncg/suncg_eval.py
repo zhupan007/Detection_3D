@@ -34,11 +34,14 @@ def get_obj_nums(gt_boxlists, dset_metas):
             obj_gt_cum_nums[obj].append( sum(labels<l) )
     return obj_gt_nums, obj_gt_cum_nums
 
-def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger, epoch=None, is_train=None, eval_aug_thickness=None):
+def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, logger, epoch=None, is_train=None, eval_aug_thickness=None, score_threshold=0.7):
     # TODO need to make the use_07_metric format available
     # for the user to choose
     logger.info(f'\n\nis_train: {is_train}\n')
     logger.info(f'iou_thresh: {iou_thresh_eval}\n')
+    if eval_aug_thickness is not None:
+      at = eval_aug_thickness['target_Y']
+      logger.info(f'aug_thickness: {at}\n')
     if sum([len(p) for p in predictions]) == 0:
       print('\n\n\tno predictions to evaluate\n\n')
       return
@@ -72,7 +75,8 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
         iou_thresh=iou_thresh_eval,
         dset_metas = dset_metas,
         use_07_metric=True,
-        eval_aug_thickness=eval_aug_thickness
+        eval_aug_thickness=eval_aug_thickness,
+        score_threshold = score_threshold,
     )
 
     obj_gt_nums, obj_gt_cum_nums = get_obj_nums(gt_boxlists, dset_metas)
@@ -177,6 +181,8 @@ def performance_str(result, dataset, regression_res):
     result_str = "\nmAP: {:.4f}\n".format(result["map"])
     ap = result['ap']
     recall_precision_score_10steps = result["recall_precision_score_10steps"]
+    pr_score_th5 = result['pr_score_th5']
+    pr_score_th7 = result['pr_score_th7']
 
     class_num = len(ap)
     class_names = []
@@ -260,24 +266,29 @@ def performance_str(result, dataset, regression_res):
     gt_nums[0] = np.mean(gt_nums[1:]).astype(np.int)
 
 
-    result_str += f'{"class &":13}' + ' & '.join([f'{c:<10}' for c in  class_names]) + '\\\\\n '
+    result_str += f'{"class ":13}' + '  '.join([f'{c:<10}' for c in  class_names]) + '\\\\\n '
     result_str += '\hline\n'
-    result_str += f'{"ap &":13}' + ' & '.join([f'{p:<10.4f}' for p in ap]) + '\\\\\n'
-    result_str += f'{"r7p &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec7_precision]) + '\\\\\n'
-    result_str += f'{"r9p &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec9_precision]) + '\\\\\n'
-    result_str += f'{"s=0.5 prec &":13}' + ' & '.join([f'{p:<10.4f}' for p in score_thr_pre]) + '\\\\\n'
-    result_str += f'{"s=0.5 rec &":13}' + ' & '.join([f'{p:<10.4f}' for p in score_thr_rec]) + '\\\\\n'
-    result_str += f'{"iou mean &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_mean]) + '\\\\\n'
-    result_str += f'{"iou std &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_std]) + '\\\\\n'
-    result_str += f'{"iou min &":13}' + ' & '.join([f'{p:<10.4f}' for p in ious_min]) + '\\\\\n'
-    result_str += f'{"r7s &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec7_score]) + '\\\\\n'
-    result_str += f'{"r9s &":13}' + ' & '.join([f'{p:<10.4f}' for p in rec9_score]) + '\\\\\n'
-    result_str += f'{"score mean &":13}' + ' & '.join([f'{p:<10.4f}' for p in scores_mean]) + '\\\\\n'
-    result_str += f'{"score std &":13}' + ' & '.join([f'{p:<10.4f}' for p in  scores_std]) + '\\\\\n'
-    result_str += f'{"score min &":13}' + ' & '.join([f'{p:<10.4f}' for p in  scores_min]) + '\\\\\n'
-    #result_str += f'{"missed gt &":13}' + ' & '.join([f'{p:<10.4f}' for p in  missed_gt_rates]) + '\\\\\n'
-    result_str += f'{"multi gt &":13}' + ' & '.join([f'{p:<10.4f}' for p in  multi_gt_rates]) + '\\\\\n'
-    result_str += f'{"gt num &":13}' + ' & '.join([f'{p:<10d}' for p in gt_nums]) + '\\\\\n'
+    result_str += f'{"ap ":13}' + '  '.join([f'{p*100:<10.2f}' for p in ap]) + '\\\\\n'
+    result_str += f'{"r7p ":13}' + '  '.join([f'{p*100:<10.2f}' for p in rec7_precision]) + '\\\\\n'
+    result_str += f'{"r9p ":13}' + '  '.join([f'{p*100:<10.2f}' for p in rec9_precision]) + '\\\\\n'
+    result_str += f'{"st5 prec ":13}' + '  '.join([f'{p[0]*100:<10.2f}' for p in pr_score_th5]) + '\\\\\n'
+    result_str += f'{"st5 rec ":13}' + '  '.join([f'{p[1]*100:<10.2f}' for p in pr_score_th5]) + '\\\\\n'
+    result_str += f'{"st7 prec ":13}' + '  '.join([f'{p[0]*100:<10.2f}' for p in pr_score_th7]) + '\\\\\n'
+    result_str += f'{"st7 rec ":13}' + '  '.join([f'{p[1]*100:<10.2f}' for p in pr_score_th7]) + '\\\\\n'
+
+    result_str += f'{"s=0.5 prec ":13}' + '  '.join([f'{p*100:<10.2f}' for p in score_thr_pre]) + '\\\\\n'
+    result_str += f'{"s=0.5 rec ":13}' + '  '.join([f'{p*100:<10.2f}' for p in score_thr_rec]) + '\\\\\n'
+    result_str += f'{"iou mean ":13}' + '  '.join([f'{p:<10.4f}' for p in ious_mean]) + '\\\\\n'
+    result_str += f'{"iou std ":13}' + '  '.join([f'{p:<10.4f}' for p in ious_std]) + '\\\\\n'
+    result_str += f'{"iou min ":13}' + '  '.join([f'{p:<10.4f}' for p in ious_min]) + '\\\\\n'
+    result_str += f'{"r7s ":13}' + '  '.join([f'{p:<10.4f}' for p in rec7_score]) + '\\\\\n'
+    result_str += f'{"r9s ":13}' + '  '.join([f'{p:<10.4f}' for p in rec9_score]) + '\\\\\n'
+    result_str += f'{"score mean ":13}' + '  '.join([f'{p:<10.4f}' for p in scores_mean]) + '\\\\\n'
+    result_str += f'{"score std ":13}' + '  '.join([f'{p:<10.4f}' for p in  scores_std]) + '\\\\\n'
+    result_str += f'{"score min ":13}' + '  '.join([f'{p:<10.4f}' for p in  scores_min]) + '\\\\\n'
+    #result_str += f'{"missed gt ":13}' + '  '.join([f'{p:<10.4f}' for p in  missed_gt_rates]) + '\\\\\n'
+    result_str += f'{"multi gt ":13}' + '  '.join([f'{p:<10.4f}' for p in  multi_gt_rates]) + '\\\\\n'
+    result_str += f'{"gt num ":13}' + '  '.join([f'{p:<10d}' for p in gt_nums]) + '\\\\\n'
     result_str += '\n'
     #print(result_str)
     return result_str
@@ -634,7 +645,7 @@ def rm_bad_head(rp):
 #        obj_nums[dset_metas.label_2_class[l]] = sum(labels==l)
 #    return obj_nums
 
-def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use_07_metric=False, eval_aug_thickness=None):
+def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use_07_metric=False, eval_aug_thickness=None, score_threshold=0.5):
     """Evaluate on suncg dataset.
     Args:
         pred_boxlists(list[BoxList3D]): pred boxlist, has labels and scores fields.
@@ -652,10 +663,21 @@ def eval_detection_suncg(pred_boxlists, gt_boxlists, iou_thresh, dset_metas, use
     )
     rec_prec_score_org = [np.concatenate([np.array(r).reshape([-1,1]), np.array(p).reshape([-1,1]), np.array(s).reshape([-1,1])],1) \
                     for r,p,s in zip(rec, prec, scores)]
+    pr_score_th5 = pr_of_score_threshold(prec, rec, scores, 0.5)
+    pr_score_th7 = pr_of_score_threshold(prec, rec, scores, 0.7)
     ap, recall_precision_score_10steps = calc_detection_suncg_ap(prec, rec, scores, use_07_metric=use_07_metric)
     return {"ap": ap, "map": np.nanmean(ap), "rec_prec_score_org":rec_prec_score_org, "recall_precision_score_10steps":recall_precision_score_10steps,
-            "pred_for_each_gt":pred_for_each_gt}
+            "pred_for_each_gt":pred_for_each_gt, 'pr_score_th5': pr_score_th5, 'pr_score_th7': pr_score_th7 }
 
+def pr_of_score_threshold(prec, rec, scores, score_threshold):
+    pr_score_th = [[np.nan, np.nan]]
+    n = len(prec)
+    for i in range(1,n):
+      k = np.sum(scores[i] > score_threshold)
+      pr_score_th.append( [prec[i][k], rec[i][k]] )
+    pr_score_th = np.array(pr_score_th)
+    pr_score_th[0,:] = pr_score_th[1:,:].mean(0)
+    return pr_score_th
 
 def calc_detection_suncg_prec_rec(gt_boxlists, pred_boxlists, iou_thresh, dset_metas, eval_aug_thickness):
     """Calculate precision and recall based on evaluation code of PASCAL VOC.

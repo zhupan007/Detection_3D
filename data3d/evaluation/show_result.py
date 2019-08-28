@@ -5,6 +5,7 @@ RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6711/infe
 RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_2'
 RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_5'
 RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_3_augth_0.2'
+RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/paper_ac_suncg_test_2_iou_4_augth_2'
 
 def show_prediction():
   pred_fn = os.path.join(RES_PATH, 'preds.pth')

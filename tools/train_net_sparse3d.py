@@ -113,7 +113,7 @@ def test(cfg, model, distributed, epoch):
         for idx, dataset_name in enumerate(dataset_names):
             dn = len(data_loaders_val[idx])
             iou_thr = int (10*cfg.TEST.IOU_THRESHOLD)
-            aug_thickness = cfg.TEST.EVAL_AUG_THICKNESS_Y_TAR_ANC[0]
+            aug_thickness = int(10*cfg.TEST.EVAL_AUG_THICKNESS_Y_TAR_ANC[0])
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference_3d", dataset_name+f'_{dn}_iou_{iou_thr}_augth_{aug_thickness}')
             mkdir(output_folder)
             output_folders[idx] = output_folder
