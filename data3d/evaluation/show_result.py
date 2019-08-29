@@ -1,11 +1,8 @@
 import os, torch
 from data3d.evaluation.suncg.suncg_eval import show_pred, draw_recall_precision_score
 
-RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6711/inference_3d/suncg_test_2_iou_2'
-RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_2'
-RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_5'
-RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_3_augth_0.2'
-RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/paper_ac_suncg_test_2_iou_4_augth_2'
+RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_4_augth_2'
+RES_PATH = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/suncg_test_1605_iou_3_augth_2'
 
 def show_prediction():
   pred_fn = os.path.join(RES_PATH, 'preds.pth')
@@ -16,7 +13,8 @@ def show_prediction():
 def show_performance():
   pred_fn = os.path.join(RES_PATH, 'performance_res.pth')
   result = torch.load(pred_fn)
-  draw_recall_precision_score(result, RES_PATH)
+  #draw_recall_precision_score(result, RES_PATH)
+  draw_recall_precision_score(result, RES_PATH, flag='10steps')
 
 
 if __name__ == '__main__':
