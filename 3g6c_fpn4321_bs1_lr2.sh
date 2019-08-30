@@ -3,12 +3,12 @@ export PYTHONPATH=$PWD
 #export CUDA_VISIBLE_DEVICES=1
 
 #TEST='--skip-test'
-#TEST='--only-test' 
+TEST='--only-test' 
 
 
 
-#CONFIG_FILE='3G6c/3G6c_Fpn4321_bs1_lr2.yaml'
-CONFIG_FILE='3G6c/3G6c_Fpn4321_bs1_lr5.yaml'
+CONFIG_FILE='3G6c/3G6c_Fpn4321_bs1_lr2.yaml'
+#CONFIG_FILE='3G6c/3G6c_Fpn4321_bs1_lr5.yaml'
 
 #CONFIG_FILE='3G6c/3G6c_Fpn4321_bs1_lr5_SD.yaml'
 

@@ -13,8 +13,8 @@ from utils3d.color_list import COLOR_LIST
 
 plt.rcParams.update({'font.size': 15, 'figure.figsize': (5,5)})
 
-DEBUG = True
-SHOW_PRED = DEBUG and  1
+DEBUG = 1
+SHOW_PRED = DEBUG and  0
 DRAW_RECALL_PRECISION = DEBUG and 1
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -543,7 +543,7 @@ def regression_res_str(regression_res):
         reg_str += f'{key}:\n{value}\n'
     return reg_str
 
-def draw_recall_precision_score(result, output_folder, flag=''):
+def draw_recall_precision_score(result, output_folder, flag='', smoothed=False):
     if flag != '10steps':
       rec_prec_sco_iou_list = result['rec_prec_score_iou_org']
     else:
@@ -552,7 +552,7 @@ def draw_recall_precision_score(result, output_folder, flag=''):
 
     num_classes = len(rec_prec_sco_iou_list)
 
-    default_cycler = (cycler(color=['r', 'g', 'b', 'y']) + cycler(linestyle=['-', '--', ':', '-.']))
+    default_cycler = (cycler(color=['r', 'g', 'b', 'y','k']) + cycler(linestyle=['-', '--', ':', '-.','-']))
     plt.rc('lines', linewidth=2)
     plt.rc('axes', prop_cycle=default_cycler)
 
@@ -562,9 +562,10 @@ def draw_recall_precision_score(result, output_folder, flag=''):
     for i in range(1,num_classes):
         obj = label_2_class[i]
         rp = rec_prec_sco_iou_list[i]
-        if DEBUG:
-          rp = rm_bad_head(rp)
-        rp  = expand_rp_tail(rp)
+        if not smoothed:
+            if DEBUG:
+              rp = rm_bad_head(rp)
+            rp  = expand_rp_tail(rp)
         plt.plot(rp[:,0], rp[:,1], label=obj)
     plt.xlabel('recall')
     plt.ylabel('precision')
@@ -583,9 +584,10 @@ def draw_recall_precision_score(result, output_folder, flag=''):
     for i in range(1,num_classes):
         obj = label_2_class[i]
         rp = rec_prec_sco_iou_list[i]
-        if DEBUG:
-          rp = rm_bad_head(rp)
-        rp  = expand_rp_tail(rp)
+        if not smoothed:
+            if DEBUG:
+              rp = rm_bad_head(rp)
+            rp  = expand_rp_tail(rp)
         iou_i = rp[:,3]
         #iou_i = savgol_filter(rp[:,3], 101, 5)
         plt.plot(rp[:,0], iou_i, label=obj)
@@ -604,7 +606,8 @@ def draw_recall_precision_score(result, output_folder, flag=''):
     for i in range(1,num_classes):
         obj = label_2_class[i]
         rp = rec_prec_sco_iou_list[i]
-        rp  = expand_rp_tail(rp)
+        if not smoothed:
+            rp  = expand_rp_tail(rp)
         plt.plot(rp[:,0], rp[:,2], label=obj)
     plt.xlabel('recall')
     plt.ylabel('score')
