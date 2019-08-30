@@ -463,7 +463,7 @@ class BoxList3D(object):
               tp[:,0] += offset_x
               points = np.concatenate([points, tp], 0)
         if mesh:
-          Bbox3D.draw_points_bboxes_mesh(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, points_sample_rate=points_sample_rate, random_color=random_color)
+          Bbox3D.draw_points_bboxes_mesh(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, points_sample_rate=points_sample_rate, random_color=random_color, box_colors=colors)
         else:
           Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=random_color,
                                     points_keep_rate=points_keep_rate,  points_sample_rate=points_sample_rate, box_colors=colors)
@@ -590,6 +590,21 @@ class BoxList3D(object):
         mask = objectness <= threshold
       else:
         mask = objectness > threshold
+
+    def select_by_labels(self,  labels_select):
+      labels = self.get_field('labels')
+      mask = labels == labels_select[0]
+      for i in range(1, len(labels_select)):
+        mask_i = labels == labels_select[i]
+        mask = mask + mask_i
+      ids = np.where(mask)[0]
+      return self[ids]
+
+    def select_by_over_z(self,  z_min):
+      mask = self.bbox3d[:,2] > z_min
+      ids = np.where(mask)[0]
+      return self[ids]
+
 
     def same_loc_anchors(self,items):
       '''

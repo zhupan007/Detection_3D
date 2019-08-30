@@ -2,6 +2,8 @@
 
 
 # on going process
+- A mistake in SUNCG_METAS: 'ceiling':5, 'floor': 4, change to 'ceiling':4, 'floor': 5 later.
+        Modify suncg_eval.py / get_obj_nums as well 
 - Test effect of RPN number: speed and precision trade-off
 - Focal loss
 - - RPN ROI loss weights

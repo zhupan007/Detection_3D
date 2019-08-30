@@ -13,9 +13,9 @@ from utils3d.color_list import COLOR_LIST
 
 plt.rcParams.update({'font.size': 15, 'figure.figsize': (5,5)})
 
-DEBUG = 1
-SHOW_PRED = DEBUG and  0
-DRAW_RECALL_PRECISION = DEBUG and 1
+DEBUG = 0
+SHOW_PRED = DEBUG and  1
+DRAW_RECALL_PRECISION = DEBUG and 0
 SHOW_FILE_NAMES = DEBUG and False
 
 DRAW_REGRESSION_IOU = DEBUG and False
@@ -26,10 +26,18 @@ def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
     obj_gt_nums = defaultdict(list)
     obj_gt_cum_nums = defaultdict(list)
+
+    # switch ceilign and floor label
+    label_2_class = dset_metas.label_2_class
+    class_2_label = dset_metas.class_2_label
+    if 'ceiling' in class_2_label and 'floor' in class_2_label:
+        label_2_class[ class_2_label['floor'] ] = 'ceiling'
+        label_2_class[ class_2_label['ceiling'] ] = 'floor'
+
     for bi in range(batch_size):
         labels = gt_boxlists[bi].get_field('labels').cpu().data.numpy()
         for l in range(dset_metas.num_classes):
-            obj = dset_metas.label_2_class[int(l)]
+            obj = label_2_class[int(l)]
             obj_gt_nums[obj].append( sum(labels==l) )
             obj_gt_cum_nums[obj].append( sum(labels<l) )
     return obj_gt_nums, obj_gt_cum_nums
@@ -136,6 +144,13 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             pcl_i = torch.load(files[i])[0][:,0:6]
             preds = pred_boxlists_[i].remove_low('scores', 0.5)
             #preds = pred_boxlists_[i] # already post processed in:
+
+            #preds = preds.select_by_over_z(1)
+            #gt_boxlists_[i] = gt_boxlists_[i].select_by_over_z(1)
+
+            #preds = preds.select_by_labels([0,2])
+            #gt_boxlists_[i] = gt_boxlists_[i].select_by_labels([0,2])
+
             # ~/Research/Detection_3D/maskrcnn_benchmark/modeling/roi_heads/box_head_3d/inference.py
             # cfg.MODEL.ROI_HEADS.SCORE_THRESH
             xyz_max = pcl_i[:,0:3].max(0)
@@ -145,14 +160,15 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             print(f'xyz_size:{xyz_size}')
 
             #preds.show__together(gt_boxlists_[i], points=None, offset_x=xyz_size[0]+0.3, twolabels=False)
-            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, random_color=False)
+            #preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, random_color=False)
 
             gt_ids = preds.get_field('gt_ids').cpu().data.numpy().astype(np.int)+1
             pred_colors = COLOR_LIST[gt_ids]
             gt_colors = COLOR_LIST[1:len(gt_boxlists_[i])+1]
             err_gt_ids = torch.nonzero(gt_boxlists_[i].get_field('labels')==0)[:,0].data.numpy().reshape([-1])
             gt_colors[err_gt_ids] = COLOR_LIST[0]
-            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
+            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=1, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
             p_labels_org = preds.get_field('labels_org')
             g_labels_org = gt_boxlists_[i].get_field('labels_org')
@@ -164,8 +180,6 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
 
               preds[wwd_mask_p].show__together(gt_boxlists_[i][wwd_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
               preds[cf_mask_p].show__together(gt_boxlists_[i][cf_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
-
-
 
             #gt_boxlists_[i].show_by_labels([1])
             if SHOW_SMALL_IOU:

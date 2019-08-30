@@ -85,7 +85,7 @@ def inference_3d(
         output_folder=None,
         epoch = None,
         eval_aug_thickness = None,
-        load_pred = 1,
+        load_pred = 0,
 ):
     # convert to a torch.device for efficiency
     device = torch.device(device)

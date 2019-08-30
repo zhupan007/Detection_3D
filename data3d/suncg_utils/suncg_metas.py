@@ -1,7 +1,7 @@
 
 class SUNCG_METAS:
-    class_2_label0 = {'background':0,'wall':1, 'window':2, 'door':3, 'floor': 4,
-                    'ceiling':5,'room':6}
+    class_2_label0 = {'background':0,'wall':1, 'window':2, 'door':3,
+                    'ceiling':5, 'floor': 4, 'room':6}
     label_2_class0 = {c:o for c,o in zip(class_2_label0.values(), class_2_label0.keys())}
     num_classes0 = len(class_2_label0)
     classes_order = []
