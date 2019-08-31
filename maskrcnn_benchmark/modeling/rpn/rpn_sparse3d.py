@@ -12,8 +12,8 @@ from maskrcnn_benchmark.structures.bounding_box_3d import cat_scales_anchor, cat
 from maskrcnn_benchmark.modeling.seperate_classifier import SeperateClassifier
 
 DEBUG = True
-SHOW_TARGETS_ANCHORS = DEBUG and False
-SHOW_PRED_GT = DEBUG and False
+SHOW_TARGETS_ANCHORS = DEBUG and 0
+SHOW_PRED_GT = DEBUG and 0
 SHOW_ANCHORS_PER_LOC = DEBUG and False
 
 def cat_scales_obj_reg(objectness, rpn_box_regression, anchors):
@@ -216,12 +216,12 @@ class RPNModule(torch.nn.Module):
               for i in np.random.choice(anchor_num, 5):
                 anchor_i = anchors[int(i)].example(bi)
                 print(f'\n anchor {i} / {anchor_num}')
-                anchor_i.show_together(targets[bi], 200, points=points)
+                anchor_i.show__together(targets[bi], 200, points=points)
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
 
         if SHOW_PRED_GT:
-          self.show_pred_gt(0.95, rpn_box_regression, anchors, objectness, targets)
+          self.show_pred_gt(0.95, rpn_box_regression, anchors, objectness, targets, inputs_sparse[1][:,:6].cpu().data.numpy())
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
 
@@ -230,14 +230,18 @@ class RPNModule(torch.nn.Module):
         else:
             return self._forward_test(anchors, objectness, rpn_box_regression, targets)
 
-    def show_pred_gt(self, thres, rpn_box_regression, anchors, objectness, targets):
+    def show_pred_gt(self, thres, rpn_box_regression, anchors, objectness, targets, points):
         pred_boxes_3d = self.box_coder.decode(rpn_box_regression, anchors.bbox3d)
         objectness_normed = objectness.sigmoid()
         pred_boxes = anchors.copy()
-        pred_boxes.bbox3d = pred_boxes_3d
-        pred_boxes.add_field('objectness', objectness_normed)
-        for bi,pdb in enumerate(pred_boxes.seperate_examples()):
-          pdb.show_by_objectness(0.97, targets[bi])
+        pred_boxes.bbox3d = pred_boxes_3d.reshape([-1,7])
+        pred_boxes.add_field('objectness', objectness_normed.reshape([-1]))
+        for bi,pred in enumerate(pred_boxes.seperate_examples()):
+          pred.show_by_objectness(0.8,  points=points)
+          #pred.show_by_objectness(0.97, targets[bi], points=points)
+
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
 
     def _forward_train(self, anchors, objectness, rpn_box_regression, targets, debugs={}):
         if self.cfg.MODEL.RPN_ONLY:
