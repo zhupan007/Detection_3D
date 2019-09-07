@@ -463,7 +463,7 @@ class BoxList3D(object):
               tp[:,0] += offset_x
               points = np.concatenate([points, tp], 0)
         if mesh:
-          Bbox3D.draw_points_bboxes_mesh(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, points_sample_rate=points_sample_rate, random_color=random_color, box_colors=colors)
+          Bbox3D.draw_points_bboxes_mesh(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, points_keep_rate=points_keep_rate,   points_sample_rate=points_sample_rate, random_color=random_color, box_colors=colors)
         else:
           Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb', labels=labels, random_color=random_color,
                                     points_keep_rate=points_keep_rate,  points_sample_rate=points_sample_rate, box_colors=colors)

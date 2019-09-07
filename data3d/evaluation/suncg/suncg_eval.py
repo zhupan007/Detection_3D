@@ -13,7 +13,7 @@ from utils3d.color_list import COLOR_LIST
 
 plt.rcParams.update({'font.size': 18, 'figure.figsize': (5,5)})
 
-DEBUG = 0
+DEBUG = 1
 SHOW_PRED = DEBUG and  1
 DRAW_RECALL_PRECISION = DEBUG and 0
 SHOW_FILE_NAMES = DEBUG and False
@@ -145,8 +145,12 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             preds = pred_boxlists_[i].remove_low('scores', 0.5)
             #preds = pred_boxlists_[i] # already post processed in:
 
-            preds = preds.select_by_labels([1,2,3], 'labels_org')
-            gt_boxlists_[i] = gt_boxlists_[i].select_by_labels([1,2,3], 'labels_org')
+            select_ids = 1
+            if select_ids:
+              ids = [1,2,3]
+              ids = [5]
+              preds = preds.select_by_labels(ids, 'labels_org')
+              gt_boxlists_[i] = gt_boxlists_[i].select_by_labels(ids, 'labels_org')
 
             # ~/Research/Detection_3D/maskrcnn_benchmark/modeling/roi_heads/box_head_3d/inference.py
             # cfg.MODEL.ROI_HEADS.SCORE_THRESH
@@ -163,6 +167,11 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             compare_instances_with_offset = True
             if compare_instances_with_offset:
               gt_ids = preds.get_field('gt_ids').cpu().data.numpy().astype(np.int)+1
+
+              if select_ids:
+                base = np.min(gt_ids[ gt_ids > 0]) - 1
+                gt_ids[gt_ids > 0] -= base
+
               pred_colors = COLOR_LIST[gt_ids].copy()
               gt_colors = COLOR_LIST[1:len(gt_boxlists_[i])+1].copy()
               err_gt_ids = torch.nonzero(gt_boxlists_[i].get_field('labels')==0)[:,0].data.numpy().reshape([-1])
@@ -171,23 +180,23 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
               #preds.show(points=pcl_i, points_keep_rate=0.9, points_sample_rate=1.0, colors=pred_colors)
               #gt_boxlists_[i].show(points=pcl_i, points_keep_rate=0.9, points_sample_rate=1.0, colors=gt_colors)
 
-              preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+10, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
+              preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+10, twolabels=False, mesh=1, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
 
 
 
 
-              preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0)
+              #preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0)
 
-            p_labels_org = preds.get_field('labels_org')
-            g_labels_org = gt_boxlists_[i].get_field('labels_org')
-            if g_labels_org.max() == 5:
-              wwd_mask_p = torch.nonzero( p_labels_org <= 3).squeeze()
-              wwd_mask_g = torch.nonzero( g_labels_org <= 3).squeeze()
-              cf_mask_p  = torch.nonzero( p_labels_org > 3).squeeze()
-              cf_mask_g  = torch.nonzero( g_labels_org > 3).squeeze()
+            #p_labels_org = preds.get_field('labels_org')
+            #g_labels_org = gt_boxlists_[i].get_field('labels_org')
+            #if g_labels_org.max() == 5:
+            #  wwd_mask_p = torch.nonzero( p_labels_org <= 3).squeeze()
+            #  wwd_mask_g = torch.nonzero( g_labels_org <= 3).squeeze()
+            #  cf_mask_p  = torch.nonzero( p_labels_org > 3).squeeze()
+            #  cf_mask_g  = torch.nonzero( g_labels_org > 3).squeeze()
 
-              preds[wwd_mask_p].show__together(gt_boxlists_[i][wwd_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
-              preds[cf_mask_p].show__together(gt_boxlists_[i][cf_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
+            #  preds[wwd_mask_p].show__together(gt_boxlists_[i][wwd_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
+            #  preds[cf_mask_p].show__together(gt_boxlists_[i][cf_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
 
             #gt_boxlists_[i].show_by_labels([1])
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
