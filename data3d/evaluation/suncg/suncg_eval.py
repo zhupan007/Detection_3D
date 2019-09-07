@@ -11,16 +11,16 @@ from cycler import cycler
 import torch
 from utils3d.color_list import COLOR_LIST
 
-plt.rcParams.update({'font.size': 15, 'figure.figsize': (5,5)})
+plt.rcParams.update({'font.size': 18, 'figure.figsize': (5,5)})
 
 DEBUG = 0
 SHOW_PRED = DEBUG and  1
 DRAW_RECALL_PRECISION = DEBUG and 0
 SHOW_FILE_NAMES = DEBUG and False
 
-DRAW_REGRESSION_IOU = DEBUG and False
+DRAW_REGRESSION_IOU = 0
 
-ONLY_SAVE_NO_SHOW = False
+ONLY_SAVE_NO_SHOW = 0
 
 def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
@@ -145,11 +145,8 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             preds = pred_boxlists_[i].remove_low('scores', 0.5)
             #preds = pred_boxlists_[i] # already post processed in:
 
-            #preds = preds.select_by_over_z(1)
-            #gt_boxlists_[i] = gt_boxlists_[i].select_by_over_z(1)
-
-            #preds = preds.select_by_labels([0,2])
-            #gt_boxlists_[i] = gt_boxlists_[i].select_by_labels([0,2])
+            preds = preds.select_by_labels([1,2,3], 'labels_org')
+            gt_boxlists_[i] = gt_boxlists_[i].select_by_labels([1,2,3], 'labels_org')
 
             # ~/Research/Detection_3D/maskrcnn_benchmark/modeling/roi_heads/box_head_3d/inference.py
             # cfg.MODEL.ROI_HEADS.SCORE_THRESH
@@ -162,13 +159,24 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             #preds.show__together(gt_boxlists_[i], points=None, offset_x=xyz_size[0]+0.3, twolabels=False)
             #preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, random_color=False)
 
-            gt_ids = preds.get_field('gt_ids').cpu().data.numpy().astype(np.int)+1
-            pred_colors = COLOR_LIST[gt_ids]
-            gt_colors = COLOR_LIST[1:len(gt_boxlists_[i])+1]
-            err_gt_ids = torch.nonzero(gt_boxlists_[i].get_field('labels')==0)[:,0].data.numpy().reshape([-1])
-            gt_colors[err_gt_ids] = COLOR_LIST[0]
-            preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=1, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+
+            compare_instances_with_offset = True
+            if compare_instances_with_offset:
+              gt_ids = preds.get_field('gt_ids').cpu().data.numpy().astype(np.int)+1
+              pred_colors = COLOR_LIST[gt_ids].copy()
+              gt_colors = COLOR_LIST[1:len(gt_boxlists_[i])+1].copy()
+              err_gt_ids = torch.nonzero(gt_boxlists_[i].get_field('labels')==0)[:,0].data.numpy().reshape([-1])
+              gt_colors[err_gt_ids] = COLOR_LIST[0].copy()
+
+              #preds.show(points=pcl_i, points_keep_rate=0.9, points_sample_rate=1.0, colors=pred_colors)
+              #gt_boxlists_[i].show(points=pcl_i, points_keep_rate=0.9, points_sample_rate=1.0, colors=gt_colors)
+
+              preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+10, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
+
+
+
+
+              preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=0, twolabels=True, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0)
 
             p_labels_org = preds.get_field('labels_org')
             g_labels_org = gt_boxlists_[i].get_field('labels_org')
@@ -182,6 +190,7 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
               preds[cf_mask_p].show__together(gt_boxlists_[i][cf_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
 
             #gt_boxlists_[i].show_by_labels([1])
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             if SHOW_SMALL_IOU:
                 small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
                 small_ious = [p['iou'] for p in  small_iou_preds[i]]
@@ -284,13 +293,13 @@ def performance_str(result, dataset, regression_res):
     result_str += f'{"class ":13}' + '  '.join([f'{c:<10}' for c in  class_names]) + '\\\\\n '
     result_str += '\hline\n'
     result_str += f'{"AP ":13}' + '  '.join([f'{p*100:<10.2f}' for p in ap]) + '\\\\\n'
-    result_str += f'{"mIoU ":13}' + '  '.join([f'{p:<10.3f}' for p in ave_prec_scr_iou[:,2]]) + '\\\\\n'
+    result_str += f'{"mIoU ":13}' + '  '.join([f'{p*100:<10.2f}' for p in ave_prec_scr_iou[:,2]]) + '\\\\\n'
 
     result_str += f'\n{"st5 prec ":13}' + '  '.join([f'{p[0]*100:<10.2f}' for p in pr_score_th5]) + '\\\\\n'
     result_str += f'{"st5 rec ":13}' + '  '.join([f'{p[1]*100:<10.2f}' for p in pr_score_th5]) + '\\\\\n'
-    result_str += f'{"iou mean ":13}' + '  '.join([f'{p:<10.4f}' for p in ious_mean]) + '\\\\\n'
-    result_str += f'{"iou std ":13}' + '  '.join([f'{p:<10.4f}' for p in ious_std]) + '\\\\\n'
-    result_str += f'{"iou min ":13}' + '  '.join([f'{p:<10.4f}' for p in ious_min]) + '\\\\\n'
+    result_str += f'{"iou mean ":13}' + '  '.join([f'{p*100:<10.2f}' for p in ious_mean]) + '\\\\\n'
+    result_str += f'{"iou std ":13}' + '  '.join([f'{p*100:<10.2f}' for p in ious_std]) + '\\\\\n'
+    result_str += f'{"iou min ":13}' + '  '.join([f'{p*100:<10.2f}' for p in ious_min]) + '\\\\\n'
 
     result_str += f'\n{"s=0.5 prec ":13}' + '  '.join([f'{p*100:<10.2f}' for p in score_thr_pre]) + '\\\\\n'
     result_str += f'{"s=0.5 rec ":13}' + '  '.join([f'{p*100:<10.2f}' for p in score_thr_rec]) + '\\\\\n'
@@ -566,7 +575,7 @@ def draw_recall_precision_score(result, output_folder, flag='', smoothed=False):
 
     num_classes = len(rec_prec_sco_iou_list)
 
-    default_cycler = (cycler(color=['r', 'g', 'b', 'y','k']) + cycler(linestyle=['-', '--', ':', '-.','-']))
+    default_cycler = (cycler(color=['r', 'g', 'b', 'y','k']) + cycler(linestyle=['-', '--', ':', '-.','--']))
     plt.rc('lines', linewidth=2)
     plt.rc('axes', prop_cycle=default_cycler)
 
@@ -580,9 +589,9 @@ def draw_recall_precision_score(result, output_folder, flag='', smoothed=False):
             if DEBUG:
               rp = rm_bad_head(rp)
             rp  = expand_rp_tail(rp)
-        plt.plot(rp[:,0], rp[:,1], label=obj)
-    plt.xlabel('recall')
-    plt.ylabel('precision')
+        plt.plot(rp[:,0]*100, rp[:,1]*100, label=obj)
+    plt.xlabel('recall (%)')
+    plt.ylabel('precision (%)')
     plt.legend()
     fig_fn = output_folder + '/recall_precision.png'
     fig.savefig(fig_fn)
@@ -604,9 +613,9 @@ def draw_recall_precision_score(result, output_folder, flag='', smoothed=False):
             rp  = expand_rp_tail(rp)
         iou_i = rp[:,3]
         #iou_i = savgol_filter(rp[:,3], 101, 5)
-        plt.plot(rp[:,0], iou_i, label=obj)
-    plt.xlabel('recall')
-    plt.ylabel('iou')
+        plt.plot(rp[:,0]*100, iou_i*100, label=obj)
+    plt.xlabel('recall (%)')
+    plt.ylabel('IoU (%)')
     plt.legend()
     fig_fn = output_folder + '/recall_iou.png'
     fig.savefig(fig_fn)
@@ -622,8 +631,8 @@ def draw_recall_precision_score(result, output_folder, flag='', smoothed=False):
         rp = rec_prec_sco_iou_list[i]
         if not smoothed:
             rp  = expand_rp_tail(rp)
-        plt.plot(rp[:,0], rp[:,2], label=obj)
-    plt.xlabel('recall')
+        plt.plot(rp[:,0]*100, rp[:,2], label=obj)
+    plt.xlabel('recall (%)')
     plt.ylabel('score')
     plt.legend()
     fig_fn = output_folder + '/recall_score.png'
@@ -721,7 +730,7 @@ def pr_of_score_threshold(prec, rec, scores, score_threshold):
     pr_score_th = [[np.nan, np.nan]]
     n = len(prec)
     for i in range(1,n):
-      k = np.sum(scores[i] > score_threshold)
+      k = np.sum(scores[i] > score_threshold) - 1
       pr_score_th.append( [prec[i][k], rec[i][k]] )
     pr_score_th = np.array(pr_score_th)
     pr_score_th[0,:] = pr_score_th[1:,:].mean(0)

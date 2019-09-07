@@ -5,6 +5,8 @@ from data3d.evaluation.suncg.suncg_eval import show_pred, draw_recall_precision_
 RES_PATH0 = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inference_3d/paper_suncg_test_1605_iou_3_augth_2'
 RES_PATH1 = '/home/z/Research/Detection_3D/RES/res_CiFl_Fpn21_bs1_lr2_T5223/inference_3d/suncg_test_1309_iou_3_augth_2'
 
+RES_PATH = '/home/z/Research/Detection_3D/RES/res_3G6c_Fpn4321_bs1_lr5_T5223/inference_3d/suncg_test_1309_iou_3_augth_2'
+
 Two_Res_Path = [RES_PATH0, RES_PATH1]
 
 def show_prediction():
@@ -16,8 +18,9 @@ def show_prediction():
 def show_performance():
   pred_fn = os.path.join(RES_PATH, 'performance_res.pth')
   result = torch.load(pred_fn)
-  #draw_recall_precision_score(result, RES_PATH)
-  draw_recall_precision_score(result, RES_PATH, flag='10steps')
+  result['rec_prec_score_iou_org'] = smooth_curve (result['rec_prec_score_iou_org'])
+  draw_recall_precision_score(result, RES_PATH)
+  #draw_recall_precision_score(result, RES_PATH, flag='10steps')
 
 
 def show_performance_of_two():
@@ -69,6 +72,6 @@ def smooth_curve(rec_prec_score_iou_org, iou_threshold=0.3):
 
 if __name__ == '__main__':
   #show_prediction()
-  #show_performance()
-  show_performance_of_two()
+  show_performance()
+  #show_performance_of_two()
 
