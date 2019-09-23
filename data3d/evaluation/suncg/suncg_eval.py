@@ -14,7 +14,7 @@ from utils3d.color_list import COLOR_LIST
 plt.rcParams.update({'font.size': 18, 'figure.figsize': (5,5)})
 
 DEBUG = 1
-SHOW_PRED = DEBUG and  1
+SHOW_PRED = DEBUG and  0
 DRAW_RECALL_PRECISION = DEBUG and 0
 SHOW_FILE_NAMES = DEBUG and False
 
