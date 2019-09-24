@@ -3,14 +3,18 @@
 * Five objects: wall, window, door, ceiling, floor
 * Output: 3D bounding boxes of objects
 
-# SYNBIM
-We have constructed the first large-scale as-built BIM dataset.
+# Data
+We have constructed the first large-scale as-built BIM dataset (SYNBIM).
 * 5239 for training + 1311 for test
 * Average foot area of each building is 471.936 m^2. Total area reaches 3.093 km^2.
 
-# Detection Examles    
+# Assumption
+* Wall install: shortest pattern
+
+# Detection Performance
 * mAP: 77%
 * mIoU: 75%
+* time per building: 4.75 s
 
 
 # Scene 1
