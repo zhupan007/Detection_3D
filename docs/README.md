@@ -6,7 +6,7 @@
 # SYNBIM
 We have constructed the first large-scale as-built BIM dataset.
 * 5239 for training + 1311 for test
-* Average foot area of each building is 471.936 $m^2$. Total area reaches 3.093 $km^2$.
+* Average foot area of each building is 471.936 m^2. Total area reaches 3.093 km^2.
 
 # Detection Examles    
 mAP: 81%
@@ -14,8 +14,8 @@ mIoU: 86%
 
 # Scene 1
 | | ![Pcl1](./detect_res/1/pcl1.png) Point cloud  |
-|---|---|
-| ![Gt1](./detect_res/1/gt1.png) Ground truth  | ![Det1](./detect_res/1/det1.png) Detection   |
+:-------------------------:|:-------------------------:
+ ![Gt1](./detect_res/1/gt1.png) Ground truth  | ![Det1](./detect_res/1/det1.png) Detection   
 
 # Scene 2
 | | ![Pcl2](./detect_res/2/pcl2.png) Point cloud   |
