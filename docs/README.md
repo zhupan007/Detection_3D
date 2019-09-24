@@ -15,7 +15,7 @@ mIoU: 86%
 | First Header  | Second Header |
 | ------------- | ------------- |
 | Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  |
+| Content Cell  | ![Pcl1](./detect_res/1/pcl1.png)  |
 
 # Scene 1
 |||
