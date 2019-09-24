@@ -12,9 +12,15 @@ We have constructed the first large-scale as-built BIM dataset.
 mAP: 81%
 mIoU: 86%
 
+| First Header  | Second Header |
+| ------------- | ------------- |
+| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  |
+
 # Scene 1
-| | ![Pcl1](./detect_res/1/pcl1.png) Point cloud  |
+|||
 :-------------------------:|:-------------------------:
+ | ![Pcl1](./detect_res/1/pcl1.png) Point cloud  
  ![Gt1](./detect_res/1/gt1.png) Ground truth  | ![Det1](./detect_res/1/det1.png) Detection   
 
 # Scene 2
