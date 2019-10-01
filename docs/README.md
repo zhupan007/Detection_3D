@@ -12,7 +12,7 @@ We have constructed the first large-scale synthetic as-built BIM dataset (SYNBIM
 * Average foot area of each building is 471.936 m^2. Total area reaches 3.093 km^2.
 
 # Assumption
-* Wall install: shortest pattern
+* Shortest wall instance: Long wall pieces are croped by intersected ones to generate short instances.
 
 # Detection Performance
 * time per building: 4.75 s
