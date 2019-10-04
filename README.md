@@ -1,13 +1,14 @@
 This is the first 3D object detection network optimized for building primitives. 
 Potential applications: as-built BIM, indoor map reconstruction.
 
+
 # Task
 * Input: point cloud of indoor building. 
 * Five objects: wall, window, door, ceiling, floor
 * Output: 3D bounding boxes of objectis
 
 # Data
-We have constructed the first large-scale synthetic as-built BIM dataset (SYNBIM).
+We have constructed the first large-scale synthetic as-built BIM dataset (SYNBIM). The dataset will be opened very soon.
 * 6550 buildings: 5239 for training + 1311 for test
 * Average foot area of each building is 471.936 m^2. Total area reaches 3.093 km^2.
 
@@ -23,6 +24,8 @@ We have constructed the first large-scale synthetic as-built BIM dataset (SYNBIM
 | AIoU(%) | 78.33 | 65.88 | 86.22 | 78.84| 78.21 | **77.50** |
 
 
+# Activities
+* Looking for cooperation to improve the quality of the dataset and rich it with real scanning data.
 
 # Scene 1
 Each intance is colorized by a random color, except blue denotes incorrect detection or missed ground truth.

@@ -15,10 +15,10 @@ from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF, angle_with_x
 DEBUG = True
 
 FRAME_SHOW = 0
-POINTS_KEEP_RATE = 0.7
+POINTS_KEEP_RATE = 1.0
 POINTS_SAMPLE_RATE = 1.0
 BOX_XSURFACE_COLOR_DIF = False
-CYLINDER_RADIUS = 0.04   # paper: 0.04
+CYLINDER_RADIUS = 0.01   # paper: 0.04
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
