@@ -38,12 +38,15 @@ def gen_junction_labels(pth_fn):
 
   connect_nums = {}
   for obj in corners:
-    connect_nums[obj] = cal_connection_label(corners[obj], all_corners)
+    if corners[obj].shape[0] == 0:
+      connect_nums[obj] = corners[obj]
+    else:
+      connect_nums[obj] = cal_connection_label(corners[obj], all_corners)
 
 
   if not os.path.exists( os.path.dirname(new_pth_fn) ):
     os.mkdir( os.path.dirname(new_pth_fn) )
-  torch.save([pcl,bboxes0,connect_nums], new_pth_fn)
+  torch.save([pcl, bboxes0, connect_nums], new_pth_fn)
   print(f'save {new_pth_fn}')
 
 if __name__ == '__main__':
