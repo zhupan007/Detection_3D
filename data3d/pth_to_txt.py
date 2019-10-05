@@ -1,3 +1,5 @@
+
+from utils3d.bbox3d_ops import Bbox3D
 import torch, os
 import numpy as np
 
@@ -15,7 +17,8 @@ def pth_to_txt(pth_fn):
     os.makedirs(path)
   for i in range(n):
     txt_fn = os.path.join(path,f'room_{i}.txt')
-    room = np.concatenate([bboxes[i], labels[i].reshape(-1,1)], 1)
+    boxes = Bbox3D.convert_from_yx_zb_boxes(bboxes[i].data.numpy())
+    room = np.concatenate([boxes, labels[i].reshape(-1,1)], 1)
     np.savetxt(txt_fn, room)
     print(f'save {txt_fn} ok')
   pass
