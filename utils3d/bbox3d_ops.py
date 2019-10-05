@@ -550,7 +550,7 @@ class Bbox3D():
     if is_yx_zb:
       bboxes = Bbox3D.convert_from_yx_zb_boxes(bboxes)
     corners = np.array( [Bbox3D.bbox_corners(box, up_axis) for box in bboxes] )
-    return corners
+    return corners.astype(bboxes.dtype)
 
   @staticmethod
   def bboxes_centroid_lines(bboxes, cen_axis, up_axis):
