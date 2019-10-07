@@ -14,7 +14,7 @@ from utils3d.color_list import COLOR_LIST
 plt.rcParams.update({'font.size': 18, 'figure.figsize': (5,5)})
 
 DEBUG = 1
-SHOW_PRED = DEBUG and  1
+SHOW_PRED = DEBUG and  0
 DRAW_RECALL_PRECISION = DEBUG and 0
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -311,8 +311,8 @@ def performance_str(result, dataset, regression_res):
     result_str += f'{"iou std ":13}' + '  '.join([f'{p*100:<10.2f}' for p in ious_std]) + '\\\\\n'
     result_str += f'{"iou min ":13}' + '  '.join([f'{p*100:<10.2f}' for p in ious_min]) + '\\\\\n'
 
-    result_str += f'\n{"s=0.5 prec ":13}' + '  '.join([f'{p*100:<10.2f}' for p in score_thr_pre]) + '\\\\\n'
-    result_str += f'{"s=0.5 rec ":13}' + '  '.join([f'{p*100:<10.2f}' for p in score_thr_rec]) + '\\\\\n'
+    #result_str += f'\n{"s=0.5 prec ":13}' + '  '.join([f'{p*100:<10.2f}' for p in score_thr_pre]) + '\\\\\n'
+    #result_str += f'{"s=0.5 rec ":13}' + '  '.join([f'{p*100:<10.2f}' for p in score_thr_rec]) + '\\\\\n'
 
     result_str += f'\n{"st7 prec ":13}' + '  '.join([f'{p[0]*100:<10.2f}' for p in pr_score_th7]) + '\\\\\n'
     result_str += f'{"st7 rec ":13}' + '  '.join([f'{p[1]*100:<10.2f}' for p in pr_score_th7]) + '\\\\\n'
