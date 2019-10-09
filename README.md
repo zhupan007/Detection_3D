@@ -32,31 +32,31 @@ Each intance is colorized by a random color, except blue denotes incorrect detec
 
 |Synthetic mesh  | Point Cloud   |
 | :-------------: | :-------------: |
-| ![Mesh1](./detect_res/1/mesh1.png)  | ![Pcl1](./detect_res/1/pcl1.png) |
+| ![Mesh1](./docs/detect_res/1/mesh1.png)  | ![Pcl1](./docs/detect_res/1/pcl1.png) |
 | **Ground truth** | **Detection** |
-| ![Gt1](./detect_res/1/gt1.png) | ![Det1](./detect_res/1/det1.png) | 
+| ![Gt1](./docs/detect_res/1/gt1.png) | ![Det1](./docs/detect_res/1/det1.png) | 
 
 # Scene 2
   
 |Synthetic mesh  | Point Cloud   |
 | :-------------: | :-------------: |
-| ![Mesh2](./detect_res/2/mesh2.png)  | ![Pcl2](./detect_res/2/pcl2.png)  |
+| ![Mesh2](./docs/detect_res/2/mesh2.png)  | ![Pcl2](./docs/detect_res/2/pcl2.png)  |
 | **Ground truth** | **Detection** |
-|![Gt2](./detect_res/2/gt2.png) | ![Det2](./detect_res/2/det2.png)   |
+|![Gt2](./docs/detect_res/2/gt2.png) | ![Det2](./docs/detect_res/2/det2.png)   |
 
 # Scene 3
   
 |Synthetic mesh  | Point Cloud   |
 | :-------------: | :-------------: |
-|  ![Mesh3](./detect_res/3/mesh3.png)   |![Pcl3](./detect_res/3/pcl3.png) |
+|  ![Mesh3](./docs/detect_res/3/mesh3.png)   |![Pcl3](./docs/detect_res/3/pcl3.png) |
 | **Ground truth** | **Detection** |
-| ![Gt3](./detect_res/3/gt3.png)  | ![Det3](./detect_res/3/det3.png) |
+| ![Gt3](./docs/detect_res/3/gt3.png)  | ![Det3](./docs/detect_res/3/det3.png) |
 
 # Scene 4
   
 |Synthetic mesh  | Point Cloud   |
 | :-------------: | :-------------: |
-|  ![Mesh4](./detect_res/4/mesh4.png)  | ![Pcl4](./detect_res/4/pcl4.png) |
+|  ![Mesh4](./docs/detect_res/4/mesh4.png)  | ![Pcl4](./docs/detect_res/4/pcl4.png) |
 | **Ground truth** | **Detection** |
-|![Gt4](./detect_res/4/gt4.png)  | ![Det4](./detect_res/4/det4.png)  |
+|![Gt4](./docs/detect_res/4/gt4.png)  | ![Det4](./docs/detect_res/4/det4.png)  |
 
