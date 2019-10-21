@@ -12,6 +12,65 @@ from second.core.non_max_suppression.nms_gpu import (nms_gpu_cc, rotate_iou_gpu,
 from second.core.non_max_suppression.nms_cpu import rotate_nms_cc, rotate_nms_3d_cc
 
 
+def second_corner_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=False):
+    """box encode for VoxelNet
+    Args:
+        boxes ([N, 7] Tensor): normal boxes: x, y, z, l, w, h, r
+        anchors ([N, 7] Tensor): anchors
+    """
+    xa0, ya0, xa1, ya1, za0, za1, tha = torch.split(anchors, 1, dim=-1)
+    xg0, yg0, xg1, yg1, zg0, zg1, thg = torch.split(boxes, 1, dim=-1)
+    axs = xa0-xa1
+    ays = ya0-ya1
+    xydis = torch.sqrt(axs**2 + ays**2)
+    azs = torch.abs(za0-za1)
+
+    xt0 = (xg0 - xa0) / xydis
+    yt0 = (yg0 - ya0) / xydis
+
+    xt1 = (xg1 - xa1) / xydis
+    yt1 = (yg1 - ya1) / xydis
+
+    zt0 = (zg0 - za0) / azs
+    zt1 = (zg1 - za1) / azs
+
+
+    if smooth_dim:
+        tht = thg / tha - 1
+    else:
+        tht = torch.log(thg / tha)
+    return torch.cat([xt0, yt0, xt1, yt1, zt0, zt1, tht], dim=-1)
+
+    # rt = rg - ra
+    # return torch.cat([xt, yt, zt, wt, lt, ht, rt], dim=-1)
+
+def second_corner_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smooth_dim=False):
+    """box decode for VoxelNet in lidar
+    Args:
+        boxes ([N, 7] Tensor): normal boxes: x, y, z, w, l, h, r
+        anchors ([N, 7] Tensor): anchors
+    """
+    xa0, ya0, xa1, ya1, za0, za1, tha = torch.split(anchors, 1, dim=-1)
+    xt0, yt0, xt1, yt1, zt0, zt1, tht = torch.split(box_encodings, 1, dim=-1)
+
+    axs = xa0-xa1
+    ays = ya0-ya1
+    xydis = torch.sqrt(axs**2 + ays**2)
+    azs = torch.abs(za0-za1)
+
+    xg0 = xt0 * xydis + xa0
+    yg0 = yt0 * xydis + ya0
+    xg1 = xt1 * xydis + xa1
+    yg1 = yt1 * xydis + ya1
+
+    if smooth_dim:
+        thg = (tht + 1) * tha
+    else:
+        thg = torch.exp(tht) * tha
+    return torch.cat([xg0,xg1,yg0,yg1,zg0,zg1,thg], dim=-1)
+
+
+
 def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=False):
     """box encode for VoxelNet
     Args:
@@ -20,7 +79,7 @@ def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=F
     """
     xa, ya, za, wa, la, ha, ra = torch.split(anchors, 1, dim=-1)
     xg, yg, zg, wg, lg, hg, rg = torch.split(boxes, 1, dim=-1)
-    diagonal = torch.sqrt(la**2 + wa**2)
+    diagonal = torch.sqrt(la**2 + wa**2 + ha**2)
     xt = (xg - xa) / diagonal
     yt = (yg - ya) / diagonal
     zt = (zg - za) / ha
@@ -86,6 +145,7 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
         rg = rt + ra
     # zg = zg - hg / 2
     return torch.cat([xg, yg, zg, wg, lg, hg, rg], dim=-1)
+
 
 def bev_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=False):
     """box encode for VoxelNet

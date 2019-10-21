@@ -740,6 +740,9 @@ def pr_of_score_threshold(prec, rec, scores, score_threshold):
     pr_score_th = [[np.nan, np.nan]]
     n = len(prec)
     for i in range(1,n):
+      if scores[i] is None:
+        pr_score_th.append( [np.nan, np.nan] )
+        continue
       k = np.sum(scores[i] > score_threshold) - 1
       pr_score_th.append( [prec[i][k], rec[i][k]] )
     pr_score_th = np.array(pr_score_th)

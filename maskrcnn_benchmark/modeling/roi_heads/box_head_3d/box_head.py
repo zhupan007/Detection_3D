@@ -107,7 +107,7 @@ class ROIBoxHead3D(torch.nn.Module):
         # feature_extractor generally corresponds to the pooler + heads
         x = self.feature_extractor(features, proposals)
         # final classifier that converts the features into predictions
-        class_logits, box_regression = self.predictor(x)
+        class_logits, box_regression, bbox_connects = self.predictor(x)
 
         if not self.training:
             result = self.post_processor((class_logits, box_regression), proposals)

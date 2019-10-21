@@ -1,13 +1,13 @@
 DEBUG:
-  eval_in_train: 10
+  eval_in_train: 1
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
   #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28']
-  #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
-  SCENES: [ '00922f91aa09dbdda3a74489ea0e21eb']
+  SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
+  #SCENES: [ '00922f91aa09dbdda3a74489ea0e21eb']
 MODEL:
-  SEPARATE_CLASSES: [['wall'], ['ceiling','floor']]
+        #SEPARATE_CLASSES: [['wall'], ['ceiling','floor']]
   BACKBONE:
     OUT_CHANNELS: 128
   RPN:
@@ -21,7 +21,7 @@ MODEL:
     FG_IOU_THRESHOLD: 0.55 #  0.7
     BG_IOU_THRESHOLD: 0.2 # 0.3
   ROI_BOX_HEAD:
-    POOLER_RESOLUTION: (6,8,4)
+    POOLER_RESOLUTION: (5,11,4)
     POOLER_SCALES_FROM_TOP: (4,3)
   LOSS:
     YAW_MODE: 'Diff'

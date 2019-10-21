@@ -57,6 +57,9 @@ class FPN2MLPFeatureExtractor(nn.Module):
         sampling_ratio = cfg.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO
         canonical_size = cfg.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE
         voxel_scale = cfg.SPARSE3D.VOXEL_SCALE
+        roi_cor_body = [11, 3, 7]
+        assert resolution[1] == roi_cor_body[0]
+        representation_size = cfg.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM
 
         pooler = Pooler(
             output_size=(resolution[0], resolution[1], resolution[2]),
@@ -65,22 +68,26 @@ class FPN2MLPFeatureExtractor(nn.Module):
             canonical_size=canonical_size,
             canonical_level=None
         )
-        input_size = cfg.MODEL.BACKBONE.OUT_CHANNELS * resolution[0] * resolution[1] * resolution[2]
-        representation_size = cfg.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM
+        input_size_cor = representation_size//2 * resolution[0] * roi_cor_body[1]
+        input_size_body = representation_size//2 * resolution[0] * roi_cor_body[2]
+
+        #input_size = representation_size * resolution[0] * resolution[1]
         self.pooler = pooler
         self.voxel_scale = voxel_scale
 
         pooler_z = cfg.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION[2]
-        conv3d_ = nn.Conv3d(cfg.MODEL.BACKBONE.OUT_CHANNELS, representation_size,
+        conv3d_ = nn.Conv3d(cfg.MODEL.BACKBONE.OUT_CHANNELS, representation_size//2,
                                kernel_size=[1,1,pooler_z], stride=[1,1,1])
-        bn = nn.BatchNorm3d(representation_size, track_running_stats=cfg.SOLVER.TRACK_RUNNING_STATS)
+        bn = nn.BatchNorm3d(representation_size//2, track_running_stats=cfg.SOLVER.TRACK_RUNNING_STATS)
         relu = nn.ReLU(inplace=True)
         self.conv3d = nn.Sequential(conv3d_, bn, relu)
 
-        self.fc6 = nn.Linear(input_size, representation_size)
-        self.fc7 = nn.Linear(representation_size, representation_size)
+        self.fc6_cor  = nn.Linear(input_size_cor, representation_size)
+        self.fc6_body = nn.Linear(input_size_body, representation_size)
+        self.fc7_cor  = nn.Linear(representation_size, representation_size)
+        self.fc7_body = nn.Linear(representation_size, representation_size)
 
-        for l in [self.fc6, self.fc7]:
+        for l in [self.fc6_cor, self.fc6_body, self.fc7_cor, self.fc7_body]:
             # Caffe2 implementation uses XavierFill, which in fact
             # corresponds to kaiming_uniform_ in PyTorch
             nn.init.kaiming_uniform_(l.weight, a=1)
@@ -94,27 +101,45 @@ class FPN2MLPFeatureExtractor(nn.Module):
       #print(proposals0[0].bbox3d[:,0])
       return proposals
 
+    def roi_separate(self, roi_2d):
+      assert roi_2d.shape[3] == 11
+      cor0 = roi_2d[:,:,:,0:3]
+      body = roi_2d[:,:,:,2:9]
+      cor1 = roi_2d[:,:,:,8:11]
+      return [cor0, cor1, body]
+
     def forward(self, x0, proposals):
         proposals = self.convert_metric_to_pixel(proposals)
         x1_ = self.pooler(x0, proposals)
+
         x1 = self.conv3d(x1_)
+        x1s = self.roi_separate(x1.squeeze())
 
-        x2 = x1.view(x1.size(0), -1)
+        x4s = []
+        for i in range(3):
+          x1 = x1s[i]
+          x2 = x1.contiguous().view(x1.size(0), -1)
+          if i < 2:
+            fc6 = self.fc6_cor
+            fc7 = self.fc7_cor
+          else:
+            fc6 = self.fc6_body
+            fc7 = self.fc7_body
+          x3 = F.relu(fc6(x2))
+          x4 = F.relu(fc7(x3))
+          x4s.append(x4)
 
-        x3 = F.relu(self.fc6(x2))
-        x4 = F.relu(self.fc7(x3))
-
-        if DEBUG:
-          print('\nFPN2MLPFeatureExtractorN:\n')
-          scale_num = len(x0)
-          print(f"scale_num: {scale_num}")
-          for s in range(scale_num):
-            print(f"x0[{s}]: {x0[s].features.shape}, {x0[s].spatial_size}")
-          print(f'x1: {x1.shape}')
-          print(f'x2: {x2.shape}')
-          print(f'x3: {x3.shape}')
-          print(f'x4: {x4.shape}')
-        return x4
+          if DEBUG:
+            print('\nFPN2MLPFeatureExtractorN:\n')
+            scale_num = len(x0)
+            print(f"scale_num: {scale_num}")
+            for s in range(scale_num):
+              print(f"x0[{s}]: {x0[s].features.shape}, {x0[s].spatial_size}")
+            print(f'x1: {x1.shape}')
+            print(f'x2: {x2.shape}')
+            print(f'x3: {x3.shape}')
+            print(f'x4: {x4.shape}')
+        return x4s
 
 
 def make_roi_box_feature_extractor(cfg):

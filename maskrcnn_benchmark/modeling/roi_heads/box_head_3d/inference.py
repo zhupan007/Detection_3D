@@ -61,6 +61,7 @@ class PostProcessor(nn.Module):
         box_regression, concat_boxes
         )
 
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         num_classes = class_prob.shape[1]
 
         proposals = proposals.split(boxes_per_image, dim=0)
