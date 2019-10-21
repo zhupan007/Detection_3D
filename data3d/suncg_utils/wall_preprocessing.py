@@ -17,12 +17,15 @@ def preprocess_walls(wall_bboxes):
     3) If a wall in SUNCG actually contains several finally walls, crop it
     4) Clean repeated walls
   '''
-  show_pro = False
+  show_pro = 0
   if show_pro:
     print('original')
-    show_walls_offsetz(wall_bboxes)
+    #show_walls_offsetz(wall_bboxes)
     #Bbox3D.draw_bboxes_mesh(wall_bboxes, 'Z', False)
-    #Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
+    Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
+  if DEBUG and 1:
+    Bbox3D.draw_bboxes(wall_bboxes, 'Z', False)
+
   if wall_bboxes.shape[0] == 0:
       return wall_bboxes
 
@@ -60,8 +63,9 @@ def preprocess_walls(wall_bboxes):
     #mask =( wall_bboxes[:,0] < 45) *  (wall_bboxes[:,0] > 43)
     #wall_bboxes_ = wall_bboxes[mask]
 
-  if DEBUG and False:
+  if DEBUG and 0:
     show_walls_offsetz(wall_bboxes)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   return wall_bboxes
 
 

@@ -397,21 +397,21 @@ class Suncg():
     scene_ids = os.listdir(root_path+'/house')
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
     house_fns.sort()
-    self.house_fns = house_fns[0:3]
+    self.house_fns = house_fns[0:1000]
     #if SAGE:
     #  #self.house_fns = house_fns[5000: 7000]
     #  self.house_fns = house_fns[7000: 9000]
     #else:
     #  self.house_fns = house_fns[4460:5000]
 
-    if Debug and 1:
+    if Debug and 0:
       scene_id = '1d84d7ca97f9e05534bf408779406e30'
       scene_id = '00e030e0e9198a0f9dd5389f2d2e9271'
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
-      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.pcl_err]
+      #self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.pcl_err]
 
-    self.house_fns = rm_bad_scenes(self.house_fns)
+    #self.house_fns = rm_bad_scenes(self.house_fns)
 
     print(f'house num: {len(self.house_fns)}')
 
@@ -454,6 +454,9 @@ def parse_house_onef( house_fn, find_fail_scene=False ):
     is_gen_bbox = 1
     is_gen_cam = 1 - find_fail_scene
     is_gen_pcl = 1 - find_fail_scene
+    if Debug:
+      is_gen_cam = 0
+      is_gen_pcl = 0
 
     is_gen_house_obj = Debug and 0
     if is_gen_house_obj:
@@ -605,7 +608,7 @@ def gen_bbox(house_fn):
 
 
     level_num = len(house['levels'])
-    if level_num == 1:
+    if level_num == 1 and not Debug:
       bboxes['wall'] = preprocess_walls(bboxes['wall'])
       bboxes['window'] = preprocess_windows(bboxes['window'], bboxes['wall'])
       bboxes['door'] = preprocess_doors(bboxes['door'], bboxes['wall'])
@@ -613,6 +616,10 @@ def gen_bbox(house_fn):
       bboxes['floor_raw'] = bboxes['floor'].copy()
       bboxes['ceiling'] = preprocess_cfr(bboxes['ceiling'], bboxes['wall'], 'ceiling')
       bboxes['floor'] = preprocess_cfr(bboxes['floor'], bboxes['wall'], 'floor')
+    if level_num == 2:
+      bboxes['wall'] = preprocess_walls(bboxes['wall'])
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
 
     # save bbox in ply and txt
     object_bbox_dir = os.path.join(parsed_dir, 'object_bbox')
@@ -1185,10 +1192,10 @@ def parse_house():
   '''
   suncg = Suncg(SUNCG_V1_DIR)
   #suncg.parse_houses_pool()
-  #suncg.parse_houses(False)
+  suncg.parse_houses(False)
 
 if __name__ == '__main__':
-  #parse_house()
+  parse_house()
   #gen_house_names_1level()
 
   #check_house_status()
