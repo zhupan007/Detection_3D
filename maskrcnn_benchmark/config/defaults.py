@@ -47,8 +47,9 @@ _C.SPARSE3D.VOXEL_FULL_SCALE = [1536, 1536, 320]
 _C.SPARSE3D.VAL_REPS = 3
 _C.SPARSE3D.RESIDUAL_BLOCK = True
 _C.SPARSE3D.BLOCK_REPS = 1
-_C.SPARSE3D.nPlaneMap = 128
-_C.SPARSE3D.nPlanesFront = [32, 64, 64, 128, 128, 128, 256, 256, 256, 256]
+_C.SPARSE3D.nPlaneMap = 64 # BACKBONE OUTPUT
+_C.SPARSE3D.nPlanesFront = [16, 32, 32, 64, 64, 64, 64, 128, 128, 128]
+#_C.SPARSE3D.nPlanesFront = [32, 64, 64, 128, 128, 128, 256, 256, 256, 256]
 _C.SPARSE3D.KERNEL = [[2,2,4], [2,2,4], [2,2,4], [1,1,4], [2,2,4], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
 _C.SPARSE3D.STRIDE = [[2,2,2], [2,2,4], [2,2,4], [1,1,4], [2,2,1], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
 # -----------------------------------------------------------------------------
@@ -109,7 +110,7 @@ _C.MODEL.BACKBONE.CONV_BODY = "Sparse-R-50-FPN"
 
 # Add StopGrad at a specified stage so the bottom layers are frozen
 _C.MODEL.BACKBONE.FREEZE_CONV_BODY_AT = 2
-_C.MODEL.BACKBONE.OUT_CHANNELS = 128
+#_C.MODEL.BACKBONE.OUT_CHANNELS = 128
 
 
 # ---------------------------------------------------------------------------- #
@@ -191,7 +192,7 @@ _C.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS = (1.,1,1,1, 1,1,1) # (10., 10., 10, 5., 5.,
 # Total number of RoIs per training minibatch =
 #   TRAIN.BATCH_SIZE_PER_IM * TRAIN.IMS_PER_BATCH * NUM_GPUS
 # E.g., a common configuration is: 512 * 2 * 8 = 8192
-_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 512
+_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 300
 # Target fraction of RoI minibatch that is labeled foreground (i.e. class > 0)
 _C.MODEL.ROI_HEADS.POSITIVE_FRACTION = 0.25
 
@@ -220,7 +221,7 @@ _C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 2
 #_C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (0.5,0.25, 0.125)  # (1.0 / 16,)
 #_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
 # Hidden layer dimension when using an MLP for the RoI box head
-_C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 512 # 512
+_C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 256 # 512
 _C.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE = 8.0
 _C.MODEL.ROI_BOX_HEAD.POOLER_SCALES_FROM_TOP = (4,3)
 

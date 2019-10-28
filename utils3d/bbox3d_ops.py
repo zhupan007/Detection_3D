@@ -93,6 +93,7 @@ class Bbox3D():
   '''
       bbox standard: [xc, yc, zc, x_size, y_size, z_size, yaw]
       bbox yx_zb  : [xc, yc, z_bot, y_size, x_size, z_size, yaw-0.5pi]
+      thickness: y_size
 
       All the approaches here (In data generation) are designed for standard boxes, up_axis='Z'.
       The original up_axis from SUNCG is 'Y' (cam frame), but is already converted to 'Z' here.
@@ -143,6 +144,7 @@ class Bbox3D():
 
     The output format is the standard format I used in Bbox3D
     '''
+    assert boxes.shape[1] == 7
     boxes = boxes.copy().reshape([-1,7])
     if boxes.shape[0] == 0:
       return boxes
@@ -162,7 +164,7 @@ class Bbox3D():
     Output
       bbox yx_zb
     '''
-    assert boxes.copy().shape[1] == 7
+    assert boxes.shape[1] == 7
 
     # This should be implemented in data prepration. For ceiling, floor, room,
     # temporaly performed here.
@@ -518,7 +520,7 @@ class Bbox3D():
   @staticmethod
   def bbox_corners(bbox, up_axis):
     '''
-    for yaw, clock wise is positive.
+    yaw: clock wise is positive.
     In Geou.Rz, anticlock wise is positive. But by:
       corners = (np.matmul(R, (corners-bsize*0.5).T )).T + bsize*0.5
     do not use R.transpose(), it is changed to clock wise.

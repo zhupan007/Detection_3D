@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 from torch import nn
 import torch
-
+from utils3d.bbox3d_ops_torch import Box3D_Torch
 
 class FastRCNNPredictor(nn.Module):
     def __init__(self, config, pretrained=None):
@@ -43,29 +43,38 @@ class FPNPredictor(nn.Module):
         self.num_classes = num_classes
 
         self.cls_score_body = nn.Linear(representation_size, num_classes)
-        self.bbox_pred_body = nn.Linear(representation_size, num_classes * 3) # z0, z1, thickness
-        self.bbox_connect_cor = nn.Linear(representation_size, 4*2) # connection along four directions: binary class at each directon
-        self.bbox_pred_cor = nn.Linear(representation_size, num_classes * 2) # x,y
+        self.bbox_pred_body = nn.Linear(representation_size,  3) # z0, z1, thickness
+        #self.bbox_pred_body = nn.Linear(representation_size, num_classes * 3) # z0, z1, thickness
+        self.bbox_connect_cor = nn.Linear(representation_size, 16) # connection along four directions: binary class at each directon
+        self.bbox_pred_cor = nn.Linear(representation_size, 2) # x,y
+        self.score_pred_cor = nn.Linear(representation_size, 1)
 
         nn.init.normal_(self.cls_score_body.weight, std=0.01)
         nn.init.normal_(self.bbox_pred_body.weight, std=0.001)
         nn.init.normal_(self.bbox_pred_cor.weight, std=0.001)
-        for l in [self.cls_score_body, self.bbox_pred_body, self.bbox_pred_cor]:
+        for l in [self.cls_score_body, self.bbox_pred_body, self.bbox_pred_cor, self.score_pred_cor]:
             nn.init.constant_(l.bias, 0)
 
     def forward(self, x):
         x_cor0, x_cor1, x_body = x
         scores = self.cls_score_body(x_body)
-        bbox_body = self.bbox_pred_body(x_body).view([-1, self.num_classes,3])
-        bbox_cor0 = self.bbox_pred_cor(x_cor0).view([-1, self.num_classes,2])
-        bbox_cor1 = self.bbox_pred_cor(x_cor1).view([-1, self.num_classes,2])
-        bbox_deltas = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 2).view([-1,self.num_classes*7])
+        bbox_body = self.bbox_pred_body(x_body)
+        bbox_cor0 = self.bbox_pred_cor(x_cor0)
+        bbox_cor1 = self.bbox_pred_cor(x_cor1)
+
+        bbox_corners = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 1)
+        bbox_centroids = Box3D_Torch.corner_box_to_yxzb(bbox_corners)
+
+        cor0_score = self.score_pred_cor(x_cor0)
+        cor1_score = self.score_pred_cor(x_cor1)
+        corner_scores = torch.cat([cor0_score, cor1_score], 1)
 
         bbox_con_cor0 = self.bbox_connect_cor(x_cor0)
         bbox_con_cor1 = self.bbox_connect_cor(x_cor1)
         bbox_connects = torch.cat([bbox_con_cor0, bbox_con_cor1],1)
 
-        return scores, bbox_deltas, bbox_connects
+
+        return scores, bbox_centroids, bbox_connects
 
 
 _ROI_BOX_PREDICTOR = {

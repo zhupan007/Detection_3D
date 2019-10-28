@@ -76,7 +76,7 @@ class FPN2MLPFeatureExtractor(nn.Module):
         self.voxel_scale = voxel_scale
 
         pooler_z = cfg.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION[2]
-        conv3d_ = nn.Conv3d(cfg.MODEL.BACKBONE.OUT_CHANNELS, representation_size//2,
+        conv3d_ = nn.Conv3d(cfg.SPARSE3D.nPlaneMap, representation_size//2,
                                kernel_size=[1,1,pooler_z], stride=[1,1,1])
         bn = nn.BatchNorm3d(representation_size//2, track_running_stats=cfg.SOLVER.TRACK_RUNNING_STATS)
         relu = nn.ReLU(inplace=True)
