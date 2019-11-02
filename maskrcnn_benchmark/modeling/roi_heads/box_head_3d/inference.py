@@ -60,7 +60,8 @@ class PostProcessor(nn.Module):
         proposals = self.box_coder.decode_corner_box(
         box_regression, concat_boxes
         )
-        proposals = Box3D_Torch.from_2corners_to_yxzb(proposals)
+        proposals = Box3D_Torch.corner_box_to_yxzb(proposals)
+
 
         num_classes = class_prob.shape[1]
 

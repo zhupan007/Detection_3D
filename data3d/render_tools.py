@@ -253,7 +253,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = SceneSamples.hard_samples_window_wall_close
   #house_names = ['0138ea33414267375b879ff7ccc1436c']
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
-  #house_names = ['0055398beb892233e0664d843eb451ca']
+  house_names = ['0058113bdc8bee5f387bb5ad316d7b28']
 
   print(f'totally {len(house_names)} houses')
 
