@@ -76,8 +76,6 @@ class FastRCNNLossComputation(object):
         ROI is only performed on matched proposals.
         Generate class label and regression_targets for all matched proposals.
         '''
-        for tar in targets:
-          tar.transfer_to_2corners()
 
         labels = []
         regression_targets = []

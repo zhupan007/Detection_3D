@@ -231,7 +231,7 @@ class RPNModule(torch.nn.Module):
             return self._forward_test(anchors, objectness, rpn_box_regression, targets)
 
     def show_pred_gt(self, thres, rpn_box_regression, anchors, objectness, targets, points):
-        pred_boxes_3d = self.box_coder.decode(rpn_box_regression, anchors.bbox3d)
+        pred_boxes_3d = self.box_coder.decode_cenbox(rpn_box_regression, anchors.bbox3d)
         objectness_normed = objectness.sigmoid()
         pred_boxes = anchors.copy()
         pred_boxes.bbox3d = pred_boxes_3d.reshape([-1,7])

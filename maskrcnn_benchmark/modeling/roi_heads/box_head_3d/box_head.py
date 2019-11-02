@@ -8,7 +8,7 @@ from .inference import make_roi_box_post_processor
 from .loss import make_roi_box_loss_evaluator
 
 DEBUG = True
-SHOW_ROI_INPUT = DEBUG and False
+SHOW_ROI_INPUT = DEBUG and 0
 SHOW_PRO_NUMS = DEBUG and False
 
 def rm_gt_from_proposals_(class_logits, box_regression, proposals, targets):
@@ -38,6 +38,7 @@ class ROIBoxHead3D(torch.nn.Module):
     """
 
     def __init__(self, cfg):
+        self.cfg = cfg
         super(ROIBoxHead3D, self).__init__()
         self.feature_extractor = make_roi_box_feature_extractor(cfg)
         self.predictor = make_roi_box_predictor(cfg)
@@ -83,15 +84,23 @@ class ROIBoxHead3D(torch.nn.Module):
         """
 
         proposals = proposals.seperate_examples()
-        if SHOW_ROI_INPUT and False:
-          fgt = cfg.MODEL.ROI_HEADS.FG_IOU_THRESHOLD
-          bgt = cfg.MODEL.ROI_HEADS.BG_IOU_THRESHOLD
-          print(f"proposals over FG_IOU_THRESHOLD: {fgt}")
-          proposals[0].show_by_objectness(fgt, targets[0])
-          print(f"proposals below BG_IOU_THRESHOLD: {bgt}")
-          proposals[0].show_by_objectness(bgt, targets[0], below=True)
+
+        if SHOW_ROI_INPUT and 1:
+          print(f"proposals with objectness over 0.5")
+          proposals[0].show_by_objectness(0.5, targets[0])
+          print(f"proposals with objectness below 0.5")
+          proposals[0].show_by_objectness(0.5, targets[0], below=True)
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
+
+
+        for pro in proposals:
+          pro.transfer_to_2corners()
+
+        if targets is not None:
+          for tar in targets:
+            tar.transfer_to_2corners()
+
         if SHOW_PRO_NUMS:
           print(f'\n\nRPN out proposals num: {len(proposals[0])}')
 
