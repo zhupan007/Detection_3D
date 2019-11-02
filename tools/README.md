@@ -2,6 +2,7 @@
 
 
 # on going process
+- utils3d.bbox3d_ops_torch.yxzb_to_2corners: use pytorch instead
 - check utilsed.geometric_torch.angle_from_vec0_to_vec1 sign is correct
 -
 - A mistake in SUNCG_METAS: 'ceiling':5, 'floor': 4, change to 'ceiling':4, 'floor': 5 later.

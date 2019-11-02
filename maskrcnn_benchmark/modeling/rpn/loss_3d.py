@@ -187,7 +187,7 @@ class RPNLossComputation(object):
             labels_per_image[inds_to_discard] = -1
 
             # compute regression targets
-            regression_targets_per_image = self.box_coder.encode(
+            regression_targets_per_image = self.box_coder.encode_cenbox(
                 matched_targets.bbox3d, anchors_per_image.bbox3d
             )
 

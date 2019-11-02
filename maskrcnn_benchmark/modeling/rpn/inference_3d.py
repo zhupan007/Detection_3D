@@ -119,7 +119,7 @@ class RPNPostProcessor(torch.nn.Module):
           concat_anchors_i = concat_anchors_i[topk_idx]
 
           # decode box_regression to get proposals
-          proposals_i = self.box_coder.decode(
+          proposals_i = self.box_coder.decode_cenbox(
               box_regression_i, concat_anchors_i )
 
           #*********************************************************************

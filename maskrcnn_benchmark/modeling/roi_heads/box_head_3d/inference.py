@@ -7,7 +7,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_nms_3d
 from maskrcnn_benchmark.structures.boxlist_ops_3d import cat_boxlist_3d
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
-
+from utils3d.bbox3d_ops_torch import Box3D_Torch
 
 DEBUG = False
 
@@ -57,9 +57,10 @@ class PostProcessor(nn.Module):
         boxes_per_image = [len(box) for box in boxes]
         concat_boxes = torch.cat([a.bbox3d for a in boxes], dim=0)
 
-        proposals = self.box_coder.decode(
+        proposals = self.box_coder.decode_corner_box(
         box_regression, concat_boxes
         )
+        proposals = Box3D_Torch.from_2corners_to_yxzb(proposals)
 
         num_classes = class_prob.shape[1]
 
@@ -70,9 +71,12 @@ class PostProcessor(nn.Module):
         for prob, boxes_per_img, size3d in zip(
             class_prob, proposals, size3ds
         ):
-            boxlist = self.prepare_boxlist(boxes_per_img, prob, size3d)
+            boxlist, is_class_specific = self.prepare_boxlist(boxes_per_img, prob, size3d)
             #boxlist = boxlist.clip_to_pcl(remove_empty=False)
-            boxlist = self.filter_results(boxlist, num_classes)
+            if is_class_specific:
+              boxlist = self.filter_results_class_specific(boxlist, num_classes)
+            else:
+              boxlist = self.filter_results_class_agnostic(boxlist, num_classes)
             results.append(boxlist)
         return results
 
@@ -80,23 +84,85 @@ class PostProcessor(nn.Module):
         """
         Returns BoxList3D from `boxes` and adds probability scores information
         as an extra field
-        `boxes` has shape (#detections, 4 * #classes), where each row represents
+        `boxes` has shape (#detections, 7 * #classes), where each row represents
         a list of predicted bounding boxes for each of the object classes in the
         dataset (including the background class). The detections in each row
         originate from the same object proposal.
         `scores` has shape (#detection, #classes), where each row represents a list
         of object detection confidence scores for each of the object classes in the
         dataset (including the background class). `scores[i, j]`` corresponds to the
-        box at `boxes[i, j * 4:(j + 1) * 4]`.
+        box at `boxes[i, j * 7:(j + 1) * 7]`.
         """
-        boxes = boxes.reshape(-1, 7)
-        scores = scores.reshape(-1)
+        is_class_specific = boxes.shape[1] == scores.shape[1]*7
+        if is_class_specific:
+          boxes = boxes.reshape(-1, 7)
+          scores = scores.reshape(-1)
+        else:
+          # class agnostic
+          assert boxes.shape[1] == 7
+          scores, class_ids = torch.max( scores, 1 )
         boxlist = BoxList3D(boxes, size3d, mode="yx_zb", examples_idxscope=None,
           constants={'prediction': True})
         boxlist.add_field("scores", scores)
-        return boxlist
+        if not is_class_specific:
+          boxlist.add_field("class_ids", class_ids)
+        return boxlist, is_class_specific
 
-    def filter_results(self, boxlist, num_classes):
+    def filter_results_class_agnostic(self, boxlist, num_classes):
+        """Returns bounding-box detection results by thresholding on scores and
+        applying non-maximum suppression (NMS).
+        """
+        # unwrap the boxlist to avoid additional overhead.
+        # if we had multi-class NMS, we could perform this directly on the boxlist
+        boxes = boxlist.bbox3d
+        scores = boxlist.get_field("scores")
+        class_ids = boxlist.get_field("class_ids")
+
+        device = scores.device
+        result = []
+        # Apply threshold on detection probabilities and apply NMS
+        # Skip j = 0, because it's the background class
+        inds_all = (scores > self.score_thresh).nonzero().squeeze(1)
+        for j in range(1, num_classes):
+            ids_class_j = (class_ids == j).nonzero().squeeze(1)
+            inds = inds_all[ids_class_j]
+            scores_j = scores[inds]
+            boxes_j = boxes[inds, :]
+            boxlist_for_class = BoxList3D(boxes_j, boxlist.size3d, mode="yx_zb",
+              examples_idxscope=None, constants={'prediction':True})
+            boxlist_for_class.add_field("scores", scores_j)
+            boxlist_for_class = boxlist_nms_3d(
+              boxlist_for_class, nms_thresh=self.nms,
+              nms_aug_thickness=self.nms_aug_thickness, score_field="scores", flag='roi_post'
+            )
+            num_labels = len(boxlist_for_class)
+            boxlist_for_class.add_field(
+                "labels", torch.full((num_labels,), j, dtype=torch.int64, device=device)
+            )
+            result.append(boxlist_for_class)
+
+            # debuging
+            if DEBUG:
+                inds_small_scrore = (1-inds_all[:, j]).nonzero().squeeze(1)
+                scores_small_j = scores[inds_small_scrore,j]
+                max_score_abandoned = scores_small_j.max()
+                print(f'max_score_abandoned: {max_score_abandoned}')
+
+        result = cat_boxlist_3d(result, per_example=False)
+        number_of_detections = len(result)
+
+        # Limit to max_per_image detections **over all classes**
+        if number_of_detections > self.detections_per_img > 0:
+            cls_scores = result.get_field("scores")
+            image_thresh, _ = torch.kthvalue(
+                cls_scores.cpu(), number_of_detections - self.detections_per_img + 1
+            )
+            keep = cls_scores >= image_thresh.item()
+            keep = torch.nonzero(keep).squeeze(1)
+            result = result[keep]
+        return result
+
+    def filter_results_class_specific(self, boxlist, num_classes):
         """Returns bounding-box detection results by thresholding on scores and
         applying non-maximum suppression (NMS).
         """

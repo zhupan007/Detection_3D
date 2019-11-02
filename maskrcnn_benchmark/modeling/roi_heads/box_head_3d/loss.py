@@ -76,6 +76,9 @@ class FastRCNNLossComputation(object):
         ROI is only performed on matched proposals.
         Generate class label and regression_targets for all matched proposals.
         '''
+        for tar in targets:
+          tar.transfer_to_2corners()
+
         labels = []
         regression_targets = []
         for proposals_per_image, targets_per_image in zip(proposals, targets):
@@ -105,7 +108,7 @@ class FastRCNNLossComputation(object):
             labels_per_image[ignore_inds] = -1  # -1 is ignored by sampler
 
             # compute regression targets
-            regression_targets_per_image = self.box_coder.encode(
+            regression_targets_per_image = self.box_coder.encode_corner_box(
                 matched_targets.bbox3d, proposals_per_image.bbox3d
             )
 

@@ -14,7 +14,7 @@ from geometric_util import Rz as geo_Rz, angle_of_2lines, OBJ_DEF, angle_with_x
 
 DEBUG = True
 
-FRAME_SHOW = 0
+FRAME_SHOW = 1
 POINTS_KEEP_RATE = 1.0
 POINTS_SAMPLE_RATE = 1.0
 BOX_XSURFACE_COLOR_DIF = False
@@ -283,6 +283,12 @@ class Bbox3D():
         labels[highlight_ids] = 0
     bboxes_lineset_ls = Bbox3D.bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels, names, random_color=random_color)
     draw_cus(bboxes_lineset_ls)
+
+  @staticmethod
+  def show_bboxes_with_corners(boxes, up_axis, is_yx_zb):
+    corners = Bbox3D.bboxes_corners(boxes, up_axis, is_yx_zb)
+    corners = corners.reshape([-1,3])
+    Bbox3D.draw_points_bboxes(corners, boxes, up_axis, is_yx_zb)
 
   @staticmethod
   def bboxes_lineset(gt_boxes0, up_axis, is_yx_zb, labels=None, names=None, random_color=True, colors=None):
@@ -555,7 +561,40 @@ class Bbox3D():
     return corners.astype(bboxes.dtype)
 
   @staticmethod
-  def bboxes_centroid_lines(bboxes, cen_axis, up_axis):
+  def bboxes_corners_xz_central_surface(bboxes, up_axis='Z', is_yx_zb=False):
+    '''
+      in:
+        bboxes: [n,7]
+        axis: 'X'/'Y'/'Z'
+        up_axis: 'Y'/'Z'
+      out:
+        zpos_corners: [n, 2,3]
+        zneg_corners: [n, 2,3]
+    '''
+    if bboxes.shape[0] == 0:
+        return np.empty([0,2,3]), np.empty([0,2,3])
+    corners = Bbox3D.bboxes_corners(bboxes, up_axis, is_yx_zb)
+    cen_axis = 'Y'
+    if cen_axis == 'X':
+      neg_vs = Bbox3D._xneg_vs
+      pos_vs = Bbox3D._xpos_vs
+    elif cen_axis == 'Y':
+      neg_vs = Bbox3D._yneg_vs
+      pos_vs = Bbox3D._ypos_vs
+    elif cen_axis == 'Z':
+      neg_vs = Bbox3D._zneg_vs
+      pos_vs = Bbox3D._zpos_vs
+    else:
+        raise NotImplementedError
+    negc = corners[:,neg_vs]
+    posc = corners[:,pos_vs]
+    cen_corners = (negc + posc)/2.0
+    zneg_corners = cen_corners[:,[0,1],:]
+    zpos_corners = cen_corners[:,[2,3],:]
+    return zneg_corners, zpos_corners
+
+  @staticmethod
+  def bboxes_centroid_lines(bboxes, cen_axis, up_axis, is_yx_zb=False):
     '''
       in:
         bboxes: [n,7]
@@ -566,7 +605,7 @@ class Bbox3D():
     '''
     if bboxes.shape[0] == 0:
         return np.empty([0,2,3])
-    corners = Bbox3D.bboxes_corners(bboxes, up_axis)
+    corners = Bbox3D.bboxes_corners(bboxes, up_axis, is_yx_zb)
     if cen_axis == 'X':
       neg_vs = Bbox3D._xneg_vs
       pos_vs = Bbox3D._xpos_vs

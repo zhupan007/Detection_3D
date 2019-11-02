@@ -43,10 +43,19 @@ class FPNPredictor(nn.Module):
         self.num_classes = num_classes
 
         self.cls_score_body = nn.Linear(representation_size, num_classes)
-        self.bbox_pred_body = nn.Linear(representation_size,  3) # z0, z1, thickness
-        #self.bbox_pred_body = nn.Linear(representation_size, num_classes * 3) # z0, z1, thickness
+
+        self.class_specific = True
+        if self.class_specific:
+          # class specific
+          self.bbox_pred_body = nn.Linear(representation_size, num_classes * 3) # z0, z1, thickness
+          self.bbox_pred_cor = nn.Linear(representation_size, num_classes * 2) # x,y
+        else:
+          # class agnostic
+          self.bbox_pred_body = nn.Linear(representation_size,  3) # z0, z1, thickness
+          self.bbox_pred_cor = nn.Linear(representation_size, 2) # x,y
+
+
         self.bbox_connect_cor = nn.Linear(representation_size, 16) # connection along four directions: binary class at each directon
-        self.bbox_pred_cor = nn.Linear(representation_size, 2) # x,y
         self.score_pred_cor = nn.Linear(representation_size, 1)
 
         nn.init.normal_(self.cls_score_body.weight, std=0.01)
@@ -56,14 +65,25 @@ class FPNPredictor(nn.Module):
             nn.init.constant_(l.bias, 0)
 
     def forward(self, x):
+        '''
+        box out: [n,7*num_classes]
+        '''
         x_cor0, x_cor1, x_body = x
         scores = self.cls_score_body(x_body)
         bbox_body = self.bbox_pred_body(x_body)
         bbox_cor0 = self.bbox_pred_cor(x_cor0)
         bbox_cor1 = self.bbox_pred_cor(x_cor1)
 
-        bbox_corners = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 1)
-        bbox_centroids = Box3D_Torch.corner_box_to_yxzb(bbox_corners)
+        if self.class_specific:
+          n = bbox_body.shape[0]
+          bbox_cor0 = bbox_cor0.view([n, self.num_classes, 2])
+          bbox_cor1 = bbox_cor1.view([n, self.num_classes, 2])
+          bbox_body = bbox_body.view([n, self.num_classes, 3])
+          bbox_corners = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 2).view([n,-1])
+        else:
+          bbox_corners = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 1)
+        #bbox_centroids = Box3D_Torch.corner_box_to_yxzb(bbox_corners)
+        bbox_centroids = bbox_corners
 
         cor0_score = self.score_pred_cor(x_cor0)
         cor1_score = self.score_pred_cor(x_cor1)
@@ -72,7 +92,6 @@ class FPNPredictor(nn.Module):
         bbox_con_cor0 = self.bbox_connect_cor(x_cor0)
         bbox_con_cor1 = self.bbox_connect_cor(x_cor1)
         bbox_connects = torch.cat([bbox_con_cor0, bbox_con_cor1],1)
-
 
         return scores, bbox_centroids, bbox_connects
 

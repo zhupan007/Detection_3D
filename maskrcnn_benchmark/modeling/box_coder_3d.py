@@ -2,7 +2,7 @@
 import math
 
 import torch
-from second.pytorch.core.box_torch_ops import second_box_encode, second_box_decode
+from second.pytorch.core.box_torch_ops import second_box_encode, second_box_decode, second_corner_box_decode, second_corner_box_encode
 from utils3d.geometric_torch import limit_period
 
 class BoxCoder3D(object):
@@ -28,14 +28,47 @@ class BoxCoder3D(object):
         self.bbox_xform_clip = bbox_xform_clip
 
 
-    def encode(self, targets, anchors):
+    def encode_corner_box(self, targets, anchors):
+        box_encodings = second_corner_box_encode(targets, anchors, smooth_dim=self.smooth_dim)
+        box_encodings = box_encodings * self.weights.to(box_encodings.device)
+        return box_encodings
+
+    def encode_cenbox(self, targets, anchors):
         box_encodings = second_box_encode(targets, anchors, smooth_dim=self.smooth_dim)
         # yaw diff in [-pi/2, pi/2]
         box_encodings[:,-1] = limit_period(box_encodings[:,-1], 0.5, math.pi)
         box_encodings = box_encodings * self.weights.to(box_encodings.device)
         return box_encodings
 
-    def decode(self, box_encodings, anchors):
+    def decode_corner_box(self, box_encodings, anchors):
+        """
+        From a set of original boxes and encoded relative box offsets,
+        get the decoded boxes.
+
+        Arguments:
+            rel_codes (Tensor): encoded boxes
+            boxes (Tensor): reference boxes.
+        """
+        assert box_encodings.shape[0] == anchors.shape[0]
+        assert anchors.shape[1] == 7
+        num_classes = int(box_encodings.shape[1]/7)
+        if num_classes != 1:
+          num_loc = box_encodings.shape[0]
+          box_encodings = box_encodings.view(-1, 7)
+          anchors = anchors.view(num_loc,1,7)
+          anchors = anchors.repeat(1,num_classes,1).view(-1,7)
+
+        box_encodings = box_encodings / self.weights.to(box_encodings.device)
+        box_encodings[:,3:6] = torch.clamp(box_encodings[:,3:6], max=self.bbox_xform_clip)
+        boxes_decoded = second_corner_box_decode(box_encodings, anchors, smooth_dim=self.smooth_dim)
+
+        if num_classes != 1:
+          boxes_decoded = boxes_decoded.view(-1,num_classes*7)
+
+        return boxes_decoded
+
+
+    def decode_cenbox(self, box_encodings, anchors):
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.
@@ -63,3 +96,4 @@ class BoxCoder3D(object):
           boxes_decoded = boxes_decoded.view(-1,num_classes*7)
 
         return boxes_decoded
+

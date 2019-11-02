@@ -84,6 +84,7 @@ def do_train(
 
 
         if CHECK_NAN:
+          loss_vs = [ v.data for v in loss_dict.values() ]
           any_nan = sum(torch.isnan(v.data) for v in loss_dict.values())
           if any_nan:
             print(f'\nGot nan loss:\n{fn}\n')

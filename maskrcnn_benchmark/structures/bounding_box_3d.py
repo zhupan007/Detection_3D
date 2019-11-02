@@ -3,6 +3,7 @@ import torch, math
 import numpy as np
 
 from utils3d.geometric_torch import limit_period, OBJ_DEF
+from utils3d.bbox3d_ops_torch import Box3D_Torch
 
 # transpose
 FLIP_LEFT_RIGHT = 0
@@ -132,7 +133,7 @@ class BoxList3D(object):
         examples_idxscope=None: for batch_size=1
         constants={}: for non required
         '''
-        assert mode == 'yx_zb' or mode == 'standard'
+        assert mode == 'yx_zb' or mode == 'standard' or mode == '2corners'
         assert bbox3d.shape[1] == 7, bbox3d.shape
         if examples_idxscope is None:
           examples_idxscope = torch.tensor([[0, bbox3d.shape[0]]], dtype=torch.int32)
@@ -185,7 +186,7 @@ class BoxList3D(object):
     def is_prediction(self):
       return 'prediction' in self.constants and self.constants['prediction']
     def check_mode(self, mode):
-        if mode not in ("standard", "yx_zb"):
+        if mode not in ("standard", "yx_zb", '2corners'):
             raise ValueError("mode should be 'standard' or 'yx_zb'")
 
     def batch_size(self):
@@ -220,7 +221,7 @@ class BoxList3D(object):
 
     def convert(self, mode):
         # ref: utils3d/bbox3d_ops.py/Bbox3D
-        self.check_mode(mode)
+        assert mode in ("standard", "yx_zb")
         if mode == self.mode:
             return self
         bbox3d0 = self.bbox3d
@@ -239,6 +240,9 @@ class BoxList3D(object):
         bbox._copy_extra_fields(self)
         return bbox
 
+    def transfer_to_2corners(self):
+      assert self.mode == 'yx_zb'
+      self.bbox3d = Box3D_Torch.yxzb_to_2corners(self.bbox3d)
 
     # Tensor-like methods
     def to(self, device):

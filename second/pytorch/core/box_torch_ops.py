@@ -39,7 +39,11 @@ def second_corner_box_encode(boxes, anchors, encode_angle_to_vector=False, smoot
         tht = thg / tha - 1
     else:
         tht = torch.log(thg / tha)
-    return torch.cat([xt0, yt0, xt1, yt1, zt0, zt1, tht], dim=-1)
+    regression =  torch.cat([xt0, yt0, xt1, yt1, zt0, zt1, tht], dim=-1)
+    if torch.any(torch.isnan(regression)):
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
+    return regression
 
     # rt = rg - ra
     # return torch.cat([xt, yt, zt, wt, lt, ht, rt], dim=-1)
@@ -62,6 +66,9 @@ def second_corner_box_decode(box_encodings, anchors, encode_angle_to_vector=Fals
     yg0 = yt0 * xydis + ya0
     xg1 = xt1 * xydis + xa1
     yg1 = yt1 * xydis + ya1
+
+    zg0 = azs * zt0 + za0
+    zg1 = azs * zt1 + za1
 
     if smooth_dim:
         thg = (tht + 1) * tha
