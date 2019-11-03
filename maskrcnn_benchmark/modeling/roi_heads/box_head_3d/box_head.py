@@ -9,9 +9,15 @@ from .loss import make_roi_box_loss_evaluator
 
 DEBUG = True
 SHOW_ROI_INPUT = DEBUG and 0
-SHOW_PRO_NUMS = DEBUG and False
+SHOW_PRO_NUMS = DEBUG and 0
+SHOW_POST_NMS = DEBUG and 0
+NO_RMGT = DEBUG and 0
+SET_REG_GT = DEBUG and 0
 
 def rm_gt_from_proposals_(class_logits, box_regression, proposals, targets):
+    if  NO_RMGT:
+      return class_logits, box_regression, proposals
+
     class_logits = class_logits.clone().detach()
     box_regression = box_regression.clone().detach()
 
@@ -57,17 +63,6 @@ class ROIBoxHead3D(torch.nn.Module):
           proposals = self.seperate_classifier.post_processor(class_logits, box_regression, proposals, self.post_processor_)
         return proposals
 
-    #def rm_gt_from_proposals(self,
-    #                  class_logits, box_regression, proposals, targets):
-    #    if not self.need_seperate:
-    #        #class_logits_, box_regression_, proposals_ =
-    #        return rm_gt_from_proposals_(
-    #                class_logits, box_regression, proposals, targets)
-    #    else:
-    #        #class_logits_, box_regression_, proposals_ =
-    #        return self.seperate_classifier.rm_gt_from_proposals_seperated( rm_gt_from_proposals_,
-    #                class_logits, box_regression, proposals, targets)
-
     def forward(self, features, proposals, targets=None):
         """
         Arguments:
@@ -93,16 +88,11 @@ class ROIBoxHead3D(torch.nn.Module):
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
 
-
-        for pro in proposals:
-          pro.transfer_to_2corners()
-
-        if targets is not None:
-          for tar in targets:
-            tar.transfer_to_2corners()
-
         if SHOW_PRO_NUMS:
           print(f'\n\nRPN out proposals num: {len(proposals[0])}')
+          proposals[0].show_by_objectness(0.5, targets[0])
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
 
         if self.training:
             # Faster R-CNN subsamples during training the proposals with a fixed
@@ -117,6 +107,10 @@ class ROIBoxHead3D(torch.nn.Module):
         x = self.feature_extractor(features, proposals)
         # final classifier that converts the features into predictions
         class_logits, box_regression, bbox_connects = self.predictor(x)
+        if SET_REG_GT:
+          box_regression *= 0
+          class_logits[:,0] *= 0
+          class_logits[:,1] = 1
 
         if not self.training:
             result = self.post_processor((class_logits, box_regression), proposals)
@@ -127,7 +121,7 @@ class ROIBoxHead3D(torch.nn.Module):
         if self.eval_in_train > 0:
             if self.add_gt_proposals:
                 class_logits_, box_regression_, proposals_ = rm_gt_from_proposals_(
-                    class_logits, box_regression, proposals, targets)
+                      class_logits, box_regression, proposals, targets)
                 if SHOW_PRO_NUMS:
                   print(f'Eval in train rm gt proposals num: {len(proposals_[0])}')
             proposals = self.post_processor((class_logits_, box_regression_), proposals_)
@@ -137,7 +131,7 @@ class ROIBoxHead3D(torch.nn.Module):
         loss_classifier, loss_box_reg = self.loss_evaluator(
             [class_logits], [box_regression], targets=targets
         )
-        if DEBUG and False:
+        if SHOW_POST_NMS:
           print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")
           batch_size = len(proposals)
           proposals[0].show_by_objectness(0.5, targets[0])

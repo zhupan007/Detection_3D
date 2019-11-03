@@ -54,6 +54,7 @@ def second_corner_box_decode(box_encodings, anchors, encode_angle_to_vector=Fals
         boxes ([N, 7] Tensor): normal boxes: x, y, z, w, l, h, r
         anchors ([N, 7] Tensor): anchors
     """
+    assert anchors.shape[1] == box_encodings.shape[1] == 7
     xa0, ya0, xa1, ya1, za0, za1, tha = torch.split(anchors, 1, dim=-1)
     xt0, yt0, xt1, yt1, zt0, zt1, tht = torch.split(box_encodings, 1, dim=-1)
 
@@ -74,7 +75,8 @@ def second_corner_box_decode(box_encodings, anchors, encode_angle_to_vector=Fals
         thg = (tht + 1) * tha
     else:
         thg = torch.exp(tht) * tha
-    return torch.cat([xg0,xg1,yg0,yg1,zg0,zg1,thg], dim=-1)
+    boxes_2corners = torch.cat([xg0,yg0, xg1,yg1, zg0,zg1,thg], dim=-1)
+    return boxes_2corners
 
 
 

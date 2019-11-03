@@ -3,7 +3,7 @@ import torch, math
 import numpy as np
 
 from utils3d.geometric_torch import limit_period, OBJ_DEF
-from utils3d.bbox3d_ops_torch import Box3D_Torch
+#from utils3d.bbox3d_ops_torch import Box3D_Torch
 
 # transpose
 FLIP_LEFT_RIGHT = 0
@@ -240,9 +240,9 @@ class BoxList3D(object):
         bbox._copy_extra_fields(self)
         return bbox
 
-    def transfer_to_2corners(self):
+    def unused_get_2corners_bbox3d(self):
       assert self.mode == 'yx_zb'
-      self.bbox3d = Box3D_Torch.yxzb_to_2corners(self.bbox3d)
+      return Box3D_Torch.yxzb_to_2corners(self.bbox3d.clone())
 
     # Tensor-like methods
     def to(self, device):

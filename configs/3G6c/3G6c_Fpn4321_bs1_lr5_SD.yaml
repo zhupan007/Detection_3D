@@ -1,5 +1,5 @@
 DEBUG:
-  eval_in_train: 10
+  eval_in_train: -1
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
@@ -33,12 +33,12 @@ DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
   EPOCHS: 200
-  EPOCHS_BETWEEN_TEST: 20
+  EPOCHS_BETWEEN_TEST: 100
   IMS_PER_BATCH: 1
   BASE_LR: 0.005
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (100,)
-  CHECKPOINT_PERIOD_EPOCHS: 20
+  CHECKPOINT_PERIOD_EPOCHS: 50
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
 OUTPUT_DIR: "RES/res_3G6c_Fpn4321_bs1_lr5"

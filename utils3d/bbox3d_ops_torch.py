@@ -13,7 +13,7 @@ class Box3D_Torch():
       y_size is thickness
   '''
   @staticmethod
-  def corner_box_to_yxzb(boxes):
+  def from_2corners_to_yxzb(boxes, debug=0):
     assert boxes.dim() == 2
     assert boxes.shape[-1] % 7 == 0
     boxes = boxes.clone()
@@ -22,14 +22,14 @@ class Box3D_Torch():
       n = boxes.shape[0]
       k = boxes.shape[1] // 7
       boxes = boxes.view([-1,7])
-    boxes_stand = Box3D_Torch.corner_box_to_standard(boxes)
-    boxes_yxzb = Box3D_Torch.convert_to_yx_zb_boxes(boxes_stand)
+    boxes_stand = Box3D_Torch.corner_box_to_standard(boxes, debug)
+    boxes_yxzb = Box3D_Torch.convert_to_yx_zb_boxes(boxes_stand, debug)
     if k>0:
       boxes_yxzb = boxes_yxzb.view([n,k*7])
     return boxes_yxzb
 
   @staticmethod
-  def corner_box_to_standard(boxes, debug=0):
+  def corner_box_to_standard(boxes, debug=1):
     assert boxes.shape[1] == 7
     centroid = (boxes[:,[0,1,4]] + boxes[:,[2,3,5]])/2.0
     box_direction = boxes[:,[2,3]] - boxes[:,[0,1]]
@@ -77,21 +77,21 @@ class Box3D_Torch():
     return boxes
 
   @staticmethod
-  def convert_to_yx_zb_boxes(boxes):
+  def convert_to_yx_zb_boxes(boxes_standard, debug=0):
     '''
     Input
       bbox standard
     Output
       bbox yx_zb
     '''
-    assert boxes.dim() == 2
-    assert boxes.shape[1] == 7
+    assert boxes_standard.dim() == 2
+    assert boxes_standard.shape[1] == 7
 
     # This should be implemented in data prepration. For ceiling, floor, room,
     # temporaly performed here.
     #boxes = Bbox3D.define_walls_direction(boxes, 'Z', yx_zb=False, check_thickness=False)
 
-    boxes = boxes[:,[0,1,2,4,3,5,6]]
+    boxes = boxes_standard[:,[0,1,2,4,3,5,6]]
     boxes[:,2] = boxes[:,2] - boxes[:,5]*0.5
     boxes[:,-1] -= math.pi*0.5
     boxes[:,_yaw] = OBJ_DEF.limit_yaw(boxes[:,_yaw], True)
@@ -99,9 +99,10 @@ class Box3D_Torch():
     return boxes
 
   @staticmethod
-  def yxzb_to_2corners(boxes):
-    device = boxes.device
-    boxes0 = boxes.cpu().numpy()
+  def from_yxzb_to_2corners(boxes_yxzb):
+    device = boxes_yxzb.device
+    boxes = boxes_yxzb.clone().detach()
+    boxes0 = boxes.cpu().data.numpy()
     zneg_corners, zpos_corners = Bbox3D.bboxes_corners_xz_central_surface(boxes0, is_yx_zb = True)
     zneg_corners = torch.from_numpy(zneg_corners).to(device)
     zpos_corners = torch.from_numpy(zpos_corners).to(device)
@@ -113,7 +114,7 @@ class Box3D_Torch():
     z0  = zneg_corners[:,0,2].view([-1,1])
     z1  = zpos_corners[:,0,2].view([-1,1])
     th = boxes[:,3].view([-1,1])
-    boxes_2corners = torch.cat([c0x, c0y, c1x, c1y, z0, z1, th], 1)
+    boxes_2corners = torch.cat([c0x, c0y, c1x, c1y, z0, z1, th], 1).to(device)
     return boxes_2corners
 
 def show_boxes_corners_boxes(boxes, is_yx_zb, boxes_corners):
@@ -128,6 +129,15 @@ def box_dif(boxes0, boxes1):
   boxes_dif[:,-1] = torch.abs( OBJ_DEF.limit_yaw(boxes_dif[:,-1], yx_zb=True) )
   difv_s1 = torch.max(boxes_dif)
   return difv_s1
+
+
+def test1():
+  boxes_yxzb0 = torch.tensor( [[0.0780, 6.1881, 0.0496, 0.0947, 4.8724, 2.7350, 0.0000]] )
+  boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(boxes_yxzb0)
+  boxes_yxzb_1 = Box3D_Torch.from_2corners_to_yxzb(boxes_2corners)
+  print('Y1', box_dif( boxes_yxzb0, boxes_yxzb_1 ) )
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  pass
 
 def test():
   boxes_standard0 = torch.tensor( [[0.0,0,0, 8,1,3, math.pi * 0.15]] )
@@ -156,12 +166,12 @@ def test():
 
   print('S1', box_dif( boxes_standard1, boxes_standard0 ) )
 
-  boxes_2corners = Box3D_Torch.yxzb_to_2corners(boxes_yxzb0)
+  boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(boxes_yxzb0)
   #show_boxes_corners_boxes(boxes_yxzb0, True, boxes_2corners)
   boxes_standard2 = Box3D_Torch.corner_box_to_standard(boxes_2corners,debug=1).view([n,-1])
   #show_boxes_corners_boxes(boxes_standard2, False, boxes_2corners)
 
-  boxes_yxzb_1 = Box3D_Torch.corner_box_to_yxzb(boxes_2corners)
+  boxes_yxzb_1 = Box3D_Torch.from_2corners_to_yxzb(boxes_2corners)
   boxes_standard3 = Box3D_Torch.corner_box_to_standard(boxes_2corners).view([n,-1])
 
   print('S2', box_dif( boxes_standard2, boxes_standard0 ) )
@@ -184,4 +194,4 @@ def test():
   pass
 
 if __name__ == '__main__':
-  test()
+  test1()

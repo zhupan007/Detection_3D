@@ -7,7 +7,6 @@ from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_nms_3d
 from maskrcnn_benchmark.structures.boxlist_ops_3d import cat_boxlist_3d
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
-from utils3d.bbox3d_ops_torch import Box3D_Torch
 
 DEBUG = False
 
@@ -58,10 +57,8 @@ class PostProcessor(nn.Module):
         concat_boxes = torch.cat([a.bbox3d for a in boxes], dim=0)
 
         proposals = self.box_coder.decode_corner_box(
-        box_regression, concat_boxes
-        )
-        proposals = Box3D_Torch.corner_box_to_yxzb(proposals)
-
+          box_regression, concat_boxes
+          )
 
         num_classes = class_prob.shape[1]
 

@@ -106,6 +106,9 @@ class FastRCNNLossComputation(object):
             labels_per_image[ignore_inds] = -1  # -1 is ignored by sampler
 
             # compute regression targets
+            #target_2corners_bbox3d = matched_targets.get_2corners_bbox3d()
+            #proposal_2corners_bbox3d = proposals_per_image.get_2corners_bbox3d()
+
             regression_targets_per_image = self.box_coder.encode_corner_box(
                 matched_targets.bbox3d, proposals_per_image.bbox3d
             )

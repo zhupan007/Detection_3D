@@ -61,6 +61,9 @@ def angle_from_vec0_to_vec1(vec0, vec1, scope_id=0, debug=0):
     vec0 = torch.cat([vec0, tmp], 1)
     vec1 = torch.cat([vec1, tmp], 1)
   cz = torch.cross( vec0, vec1, dim=1)[:,2]
+  # sometimes abs(cz)>1 because of float drift. result in nan angle
+  mask = (torch.abs(cz) > 1).to(torch.float)
+  cz = cz * (1 - mask*1e-7)
   angle = torch.asin(cz)
   # cross is positive for anti-clock wise. change to clock-wise
   angle = -angle  # [-pi/2, pi/2]
@@ -69,8 +72,6 @@ def angle_from_vec0_to_vec1(vec0, vec1, scope_id=0, debug=0):
   cosa = torch.sum(vec0 * vec1,dim=1)
   mask = (cosa >= 0).to(torch.float)
   angle = angle * mask + (math.pi - angle)* (1-mask)
-  if debug:
-    pass
 
   if scope_id == 1:
     # [-pi/2, pi]: offset=0.5, period=pi
@@ -115,7 +116,10 @@ class OBJ_DEF():
       #if not torch.max(torch.abs(bboxes[:,-1]))<=math.pi*0.5+ofs:
       #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
       #  pass
-      assert torch.max(torch.abs(bboxes[:,-1]))<=math.pi*0.5+ofs
+      max_abs = torch.max(torch.abs(bboxes[:,-1]))
+      if not max_abs<=math.pi*0.5+ofs:
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        pass
     else:
       if check_thickness:
         assert torch.all(bboxes[:,3] >= bboxes[:,4])
