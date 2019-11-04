@@ -3,6 +3,8 @@ from torch import nn
 import torch
 from utils3d.bbox3d_ops_torch import Box3D_Torch
 
+CORNER_BODY_ROI = 0
+
 class FastRCNNPredictor(nn.Module):
     def __init__(self, config, pretrained=None):
         super(FastRCNNPredictor, self).__init__()
@@ -42,32 +44,53 @@ class FPNPredictor(nn.Module):
           num_classes += len(separate_classes)
         self.num_classes = num_classes
 
-        self.cls_score_body = nn.Linear(representation_size, num_classes)
 
-        self.class_specific = True
-        if self.class_specific:
-          # class specific
-          self.bbox_pred_body = nn.Linear(representation_size, num_classes * 3) # z0, z1, thickness
-          self.bbox_pred_cor = nn.Linear(representation_size, num_classes * 2) # x,y
+        if not CORNER_BODY_ROI:
+            self.cls_score = nn.Linear(representation_size, num_classes)
+            self.bbox_pred = nn.Linear(representation_size, num_classes * 7)
+            nn.init.normal_(self.cls_score.weight, std=0.01)
+            nn.init.normal_(self.bbox_pred.weight, std=0.001)
+            for l in [self.cls_score, self.bbox_pred]:
+                nn.init.constant_(l.bias, 0)
+
+
         else:
-          # class agnostic
-          self.bbox_pred_body = nn.Linear(representation_size,  3) # z0, z1, thickness
-          self.bbox_pred_cor = nn.Linear(representation_size, 2) # x,y
+          self.cls_score_body = nn.Linear(representation_size, num_classes)
+          self.class_specific = True
+          if self.class_specific:
+            # class specific
+            self.bbox_pred_body = nn.Linear(representation_size, num_classes * 3) # z0, z1, thickness
+            self.bbox_pred_cor = nn.Linear(representation_size, num_classes * 2) # x,y
+          else:
+            # class agnostic
+            self.bbox_pred_body = nn.Linear(representation_size,  3) # z0, z1, thickness
+            self.bbox_pred_cor = nn.Linear(representation_size, 2) # x,y
 
 
-        self.bbox_connect_cor = nn.Linear(representation_size, 16) # connection along four directions: binary class at each directon
-        self.score_pred_cor = nn.Linear(representation_size, 1)
+          self.bbox_connect_cor = nn.Linear(representation_size, 16) # connection along four directions: binary class at each directon
+          self.score_pred_cor = nn.Linear(representation_size, 1)
 
-        nn.init.normal_(self.cls_score_body.weight, std=0.01)
-        nn.init.normal_(self.bbox_pred_body.weight, std=0.001)
-        nn.init.normal_(self.bbox_pred_cor.weight, std=0.001)
-        for l in [self.cls_score_body, self.bbox_pred_body, self.bbox_pred_cor, self.score_pred_cor]:
-            nn.init.constant_(l.bias, 0)
+          nn.init.normal_(self.cls_score_body.weight, std=0.01)
+          nn.init.normal_(self.bbox_pred_body.weight, std=0.001)
+          nn.init.normal_(self.bbox_pred_cor.weight, std=0.001)
+          for l in [self.cls_score_body, self.bbox_pred_body, self.bbox_pred_cor, self.score_pred_cor]:
+              nn.init.constant_(l.bias, 0)
 
     def forward(self, x):
         '''
         box out: [n,7*num_classes]
         '''
+        if CORNER_BODY_ROI:
+          return self.forward_corner_body(x)
+        else:
+          return self.forward_centroid(x)
+
+    def forward_centroid(self, x):
+        scores = self.cls_score(x)
+        bbox_deltas = self.bbox_pred(x)
+        return scores, bbox_deltas, None
+
+    def forward_corner_body(self, x):
         x_cor0, x_cor1, x_body = x
         scores = self.cls_score_body(x_body)
         bbox_body = self.bbox_pred_body(x_body)

@@ -7,6 +7,7 @@ from maskrcnn_benchmark.modeling.backbone import resnet
 from maskrcnn_benchmark.modeling.poolers_3d import Pooler
 import math
 
+CORNER_BODY_ROI = 0
 DEBUG = False
 
 @registry.ROI_BOX_FEATURE_EXTRACTORS.register("ResNet50Conv5ROIFeatureExtractor")
@@ -52,6 +53,8 @@ class FPN2MLPFeatureExtractor(nn.Module):
     def __init__(self, cfg):
         super(FPN2MLPFeatureExtractor, self).__init__()
 
+        self.corner_roi = CORNER_BODY_ROI
+
         resolution = cfg.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION
         scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL
         sampling_ratio = cfg.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO
@@ -68,8 +71,11 @@ class FPN2MLPFeatureExtractor(nn.Module):
             canonical_size=canonical_size,
             canonical_level=None
         )
-        input_size_cor = representation_size//2 * resolution[0] * roi_cor_body[1]
-        input_size_body = representation_size//2 * resolution[0] * roi_cor_body[2]
+        if self.corner_roi:
+          input_size_cor = representation_size//2 * resolution[0] * roi_cor_body[1]
+          input_size_body = representation_size//2 * resolution[0] * roi_cor_body[2]
+        else:
+          input_size = representation_size//2 * resolution[0] * resolution[1]
 
         #input_size = representation_size * resolution[0] * resolution[1]
         self.pooler = pooler
@@ -82,16 +88,28 @@ class FPN2MLPFeatureExtractor(nn.Module):
         relu = nn.ReLU(inplace=True)
         self.conv3d = nn.Sequential(conv3d_, bn, relu)
 
-        self.fc6_cor  = nn.Linear(input_size_cor, representation_size)
-        self.fc6_body = nn.Linear(input_size_body, representation_size)
-        self.fc7_cor  = nn.Linear(representation_size, representation_size)
-        self.fc7_body = nn.Linear(representation_size, representation_size)
 
-        for l in [self.fc6_cor, self.fc6_body, self.fc7_cor, self.fc7_body]:
-            # Caffe2 implementation uses XavierFill, which in fact
-            # corresponds to kaiming_uniform_ in PyTorch
-            nn.init.kaiming_uniform_(l.weight, a=1)
-            nn.init.constant_(l.bias, 0)
+        if self.corner_roi:
+            self.fc6_cor  = nn.Linear(input_size_cor, representation_size)
+            self.fc6_body = nn.Linear(input_size_body, representation_size)
+            self.fc7_cor  = nn.Linear(representation_size, representation_size)
+            self.fc7_body = nn.Linear(representation_size, representation_size)
+
+            for l in [self.fc6_cor, self.fc6_body, self.fc7_cor, self.fc7_body]:
+                # Caffe2 implementation uses XavierFill, which in fact
+                # corresponds to kaiming_uniform_ in PyTorch
+                nn.init.kaiming_uniform_(l.weight, a=1)
+                nn.init.constant_(l.bias, 0)
+
+        else:
+            self.fc6 = nn.Linear(input_size, representation_size)
+            self.fc7  = nn.Linear(representation_size, representation_size)
+
+            for l in [self.fc6, self.fc7]:
+                # Caffe2 implementation uses XavierFill, which in fact
+                # corresponds to kaiming_uniform_ in PyTorch
+                nn.init.kaiming_uniform_(l.weight, a=1)
+                nn.init.constant_(l.bias, 0)
 
     def convert_metric_to_pixel(self, proposals0):
       #print(proposals0[0].bbox3d[:,0])
@@ -113,21 +131,27 @@ class FPN2MLPFeatureExtractor(nn.Module):
         x1_ = self.pooler(x0, proposals)
 
         x1 = self.conv3d(x1_)
-        x1s = self.roi_separate(x1.squeeze())
+        if not self.corner_roi:
+          x2 = x1.view(x1.size(0), -1)
+          x3 = F.relu(self.fc6(x2))
+          x4 = F.relu(self.fc7(x3))
+          return x4
+        else:
+          x1s = self.roi_separate(x1.squeeze())
 
-        x4s = []
-        for i in range(3):
-          x1 = x1s[i]
-          x2 = x1.contiguous().view(x1.size(0), -1)
-          if i < 2:
-            fc6 = self.fc6_cor
-            fc7 = self.fc7_cor
-          else:
-            fc6 = self.fc6_body
-            fc7 = self.fc7_body
-          x3 = F.relu(fc6(x2))
-          x4 = F.relu(fc7(x3))
-          x4s.append(x4)
+          x4s = []
+          for i in range(3):
+            x1 = x1s[i]
+            x2 = x1.contiguous().view(x1.size(0), -1)
+            if i < 2:
+              fc6 = self.fc6_cor
+              fc7 = self.fc7_cor
+            else:
+              fc6 = self.fc6_body
+              fc7 = self.fc7_body
+            x3 = F.relu(fc6(x2))
+            x4 = F.relu(fc7(x3))
+            x4s.append(x4)
 
           if DEBUG:
             print('\nFPN2MLPFeatureExtractorN:\n')

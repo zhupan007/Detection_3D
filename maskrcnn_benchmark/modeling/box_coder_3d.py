@@ -6,6 +6,8 @@ from second.pytorch.core.box_torch_ops import second_box_encode, second_box_deco
 from utils3d.geometric_torch import limit_period
 from utils3d.bbox3d_ops_torch import Box3D_Torch
 
+CORNER_ROI = 0
+
 class BoxCoder3D(object):
     """
     This class encodes and decodes a set of bounding boxes into
@@ -33,6 +35,8 @@ class BoxCoder3D(object):
         '''
         input: boxes of yx_zb
         '''
+        if not CORNER_ROI:
+          return self.encode_cenbox(targets, anchors)
         #return self.encode_cenbox(targets, anchors)
         targets = Box3D_Torch.from_yxzb_to_2corners(targets)
         anchors = Box3D_Torch.from_yxzb_to_2corners(anchors)
@@ -57,7 +61,8 @@ class BoxCoder3D(object):
             rel_codes (Tensor): encoded boxes
             boxes (Tensor): reference boxes.
         """
-        #return self.decode_cenbox(box_encodings, proposals)
+        if not CORNER_ROI:
+          return self.decode_cenbox(box_encodings, proposals_yxzb)
         assert box_encodings.shape[0] == proposals_yxzb.shape[0]
         assert proposals_yxzb.shape[1] == 7
         proposals = Box3D_Torch.from_yxzb_to_2corners(proposals_yxzb)
