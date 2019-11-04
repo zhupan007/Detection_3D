@@ -14,7 +14,7 @@ from utils3d.color_list import COLOR_LIST
 plt.rcParams.update({'font.size': 18, 'figure.figsize': (5,5)})
 
 DEBUG = 1
-SHOW_PRED = DEBUG and  0
+SHOW_PRED = DEBUG and 0
 DRAW_RECALL_PRECISION = DEBUG and 0
 SHOW_FILE_NAMES = DEBUG and False
 
@@ -181,7 +181,8 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
               #gt_boxlists_[i].show(points=pcl_i, points_keep_rate=0.9, points_sample_rate=1.0, colors=gt_colors)
 
               #preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+10, twolabels=False, mesh=1, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
-              preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+7, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
+              preds.show__together(gt_boxlists_[i], offset_x=xyz_size[0]+7, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
+              #preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+7, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
 
 
 

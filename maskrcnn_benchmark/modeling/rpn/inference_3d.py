@@ -13,7 +13,6 @@ DEBUG = True
 SHOW_RPN_OUT_BEFORE_NMS = DEBUG and False
 SHOW_NMS_OUT = DEBUG and False
 SHOW_PRO_NUMS = DEBUG and False
-ONLY_GT_PRO = DEBUG and 0
 
 class RPNPostProcessor(torch.nn.Module):
     """
@@ -68,9 +67,6 @@ class RPNPostProcessor(torch.nn.Module):
             gt_box.add_field("is_gt", torch.ones(len(gt_box), device=device))
             gt_box.constants = proposals.constants
 
-        if ONLY_GT_PRO:
-          proposals = cat_boxlist_3d(gt_boxes, per_example=True)
-          return proposals
 
         proposals.add_field("is_gt", torch.zeros(len(proposals), device=device))
 
