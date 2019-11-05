@@ -6,20 +6,19 @@ import torch
 from second.pytorch.core.box_torch_ops import second_box_encode, second_box_decode, second_corner_box_encode, second_corner_box_decode
 from utils3d.geometric_torch import limit_period
 
-CORNER_ROI = 1
-
 class BoxCoder3D(object):
     """
     This class encodes and decodes a set of bounding boxes into
     the representation used for training the regressors.
     """
 
-    def __init__(self, weights=(1.0,)*7):
+    def __init__(self, is_corner_roi, weights=(1.0,)*7):
         """
         Arguments:
             weights (4-element tuple)
             bbox_xform_clip (float)
         """
+        self.is_corner_roi = is_corner_roi
         self.smooth_dim = True
         weights = torch.tensor(weights).view(1,7)
         self.weights = weights
@@ -31,13 +30,13 @@ class BoxCoder3D(object):
         self.bbox_xform_clip = bbox_xform_clip
 
     def encode(self, targets, anchors):
-        if CORNER_ROI:
+        if self.is_corner_roi:
           return self.encode_corner_box(targets, anchors)
         else:
           return self.encode_centroid_box(targets, anchors)
 
     def decode(self, box_encodings, anchors):
-        if CORNER_ROI:
+        if self.is_corner_roi:
           return  self.decode_corner_box(box_encodings, anchors)
         else:
           return  self.decode_centroid_box(box_encodings, anchors)
