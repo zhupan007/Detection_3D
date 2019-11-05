@@ -539,6 +539,7 @@ class Bbox3D():
     if yaw!=0:
       R = Bbox3D.get_yaw_R(bbox, up_axis)
       corners = (np.matmul(R, (corners-bsize*0.5).T )).T + bsize*0.5
+      corners = corners.astype(bbox.dtype)
 
     zero = centroid - bsize*0.5
     corners += zero
@@ -581,6 +582,39 @@ class Bbox3D():
     centroid_lines = np.concatenate([negc, posc], 1)
     return centroid_lines
 
+
+  @staticmethod
+  def bboxes_corners_xz_central_surface(bboxes, up_axis='Z', is_yx_zb=False):
+    '''
+      in:
+        bboxes: [n,7]
+        axis: 'X'/'Y'/'Z'
+        up_axis: 'Y'/'Z'
+      out:
+        zpos_corners: [n, 2,3]
+        zneg_corners: [n, 2,3]
+    '''
+    if bboxes.shape[0] == 0:
+        return np.empty([0,2,3]), np.empty([0,2,3])
+    corners = Bbox3D.bboxes_corners(bboxes, up_axis, is_yx_zb)
+    cen_axis = 'Y'
+    if cen_axis == 'X':
+      neg_vs = Bbox3D._xneg_vs
+      pos_vs = Bbox3D._xpos_vs
+    elif cen_axis == 'Y':
+      neg_vs = Bbox3D._yneg_vs
+      pos_vs = Bbox3D._ypos_vs
+    elif cen_axis == 'Z':
+      neg_vs = Bbox3D._zneg_vs
+      pos_vs = Bbox3D._zpos_vs
+    else:
+        raise NotImplementedError
+    negc = corners[:,neg_vs]
+    posc = corners[:,pos_vs]
+    cen_corners = (negc + posc)/2.0
+    zneg_corners = cen_corners[:,[0,1],:]
+    zpos_corners = cen_corners[:,[2,3],:]
+    return zneg_corners, zpos_corners
 
   @staticmethod
   def point_in_box(points, bboxes, up_axis='Z'):
