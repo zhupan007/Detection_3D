@@ -12,7 +12,7 @@ class BoxCoder3D(object):
     the representation used for training the regressors.
     """
 
-    def __init__(self, is_corner_roi, weights=(1.0,)*7):
+    def __init__(self, is_corner_roi, weights):
         """
         Arguments:
             weights (4-element tuple)
@@ -20,6 +20,8 @@ class BoxCoder3D(object):
         """
         self.is_corner_roi = is_corner_roi
         self.smooth_dim = True
+        if weights is None:
+            weights=(1.0,)*7
         weights = torch.tensor(weights).view(1,7)
         self.weights = weights
         if not self.smooth_dim:

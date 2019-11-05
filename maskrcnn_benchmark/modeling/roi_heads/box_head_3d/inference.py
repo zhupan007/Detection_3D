@@ -153,7 +153,7 @@ def make_roi_box_post_processor(cfg):
     use_fpn = cfg.MODEL.ROI_HEADS.USE_FPN
 
     bbox_reg_weights = cfg.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS
-    box_coder = BoxCoder3D(weights=bbox_reg_weights)
+    box_coder = BoxCoder3D(is_corner_roi=cfg.MODEL.CORNER_ROI,  weights=bbox_reg_weights)
 
     score_thresh = cfg.MODEL.ROI_HEADS.SCORE_THRESH
     nms_thresh = cfg.MODEL.ROI_HEADS.NMS

@@ -150,7 +150,7 @@ class RPNModule(torch.nn.Module):
             cfg, in_channels, anchor_generator.num_anchors_per_location()
         )
 
-        rpn_box_coder = BoxCoder3D(is_corner_roi = cfg.MODEL.CORNER_ROI)
+        rpn_box_coder = BoxCoder3D(is_corner_roi = False, weights=None)
 
         box_selector_train = make_rpn_postprocessor(cfg, rpn_box_coder, is_train=True)
         box_selector_test = make_rpn_postprocessor(cfg, rpn_box_coder, is_train=False)

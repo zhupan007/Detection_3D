@@ -319,7 +319,7 @@ def make_roi_box_loss_evaluator(cfg):
     )
 
     bbox_reg_weights = cfg.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS
-    box_coder = BoxCoder3D(weights=bbox_reg_weights)
+    box_coder = BoxCoder3D(is_corner_roi = cfg.MODEL.CORNER_ROI,  weights=bbox_reg_weights)
 
     fg_bg_sampler = BalancedPositiveNegativeSampler(
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE, cfg.MODEL.ROI_HEADS.POSITIVE_FRACTION
