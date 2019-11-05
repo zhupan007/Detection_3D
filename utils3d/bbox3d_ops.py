@@ -550,7 +550,7 @@ class Bbox3D():
     assert bboxes.ndim==2 and bboxes.shape[1]==7
     if is_yx_zb:
       bboxes = Bbox3D.convert_from_yx_zb_boxes(bboxes)
-    corners = np.array( [Bbox3D.bbox_corners(box, up_axis) for box in bboxes] )
+    corners = np.array( [Bbox3D.bbox_corners(box, up_axis) for box in bboxes], dtype=np.float32 )
     return corners
 
   @staticmethod

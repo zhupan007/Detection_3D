@@ -78,41 +78,40 @@ class BoxCoder3D(object):
 
         return boxes_decoded
 
-    def encode_corner_box(self, targets, anchors):
+    def encode_corner_box(self, targets_yxzb, anchors_yxzb):
         '''
         input: boxes of yx_zb
         '''
-        #return self.encode_cenbox(targets, anchors)
-        targets = Box3D_Torch.from_yxzb_to_2corners(targets)
-        anchors = Box3D_Torch.from_yxzb_to_2corners(anchors)
+        targets = Box3D_Torch.from_yxzb_to_2corners(targets_yxzb)
+        anchors = Box3D_Torch.from_yxzb_to_2corners(anchors_yxzb)
 
         box_encodings = second_corner_box_encode(targets, anchors, smooth_dim=self.smooth_dim)
         box_encodings = box_encodings * self.weights.to(box_encodings.device)
         return box_encodings
 
-    def decode_corner_box(self, box_encodings, proposals_yxzb):
+    def decode_corner_box(self, box_encodings_2corners, proposals_yxzb):
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.
 
         Arguments:
-            rel_codes (Tensor): encoded boxes
-            boxes (Tensor): reference boxes.
+            box_encodings_2corners (Tensor): encoded boxes of 2 corners format
+            boxes (Tensor): reference boxes of yx_zb format
         """
-        assert box_encodings.shape[0] == proposals_yxzb.shape[0]
+        assert box_encodings_2corners.shape[0] == proposals_yxzb.shape[0]
         assert proposals_yxzb.shape[1] == 7
         proposals = Box3D_Torch.from_yxzb_to_2corners(proposals_yxzb)
 
-        num_classes = int(box_encodings.shape[1]/7)
+        num_classes = int(box_encodings_2corners.shape[1]/7)
         if num_classes != 1:
-          num_loc = box_encodings.shape[0]
-          box_encodings = box_encodings.view(-1, 7)
+          num_loc = box_encodings_2corners.shape[0]
+          box_encodings_2corners = box_encodings_2corners.view(-1, 7)
           proposals = proposals.view(num_loc,1,7)
           proposals = proposals.repeat(1,num_classes,1).view(-1,7)
 
-        box_encodings = box_encodings / self.weights.to(box_encodings.device)
-        box_encodings[:,3:6] = torch.clamp(box_encodings[:,3:6], max=self.bbox_xform_clip)
-        boxes_decoded = second_corner_box_decode(box_encodings, proposals, smooth_dim=self.smooth_dim)
+        box_encodings_2corners = box_encodings_2corners / self.weights.to(box_encodings_2corners.device)
+        box_encodings_2corners[:,3:6] = torch.clamp(box_encodings_2corners[:,3:6], max=self.bbox_xform_clip)
+        boxes_decoded = second_corner_box_decode(box_encodings_2corners, proposals, smooth_dim=self.smooth_dim)
 
         boxes_decoded_yxzb = Box3D_Torch.from_2corners_to_yxzb(boxes_decoded)
 
