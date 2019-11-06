@@ -91,6 +91,7 @@ class FPN2MLPFeatureExtractor(nn.Module):
                 nn.init.constant_(l.bias, 0)
         else:
             roi_all_cor_body = [11, 3, 7]
+            assert resolution[1] == roi_all_cor_body[0]
             input_size_cor = representation_size * resolution[0] * roi_all_cor_body[1]
             input_size_body = representation_size * resolution[0] * roi_all_cor_body[2]
             self.fc6_cor = nn.Linear(input_size_cor, representation_size)
@@ -118,9 +119,32 @@ class FPN2MLPFeatureExtractor(nn.Module):
       else:
         return self.forward_centroid_box(x0, proposals)
 
+    def roi_separate(self, roi_2d):
+       assert roi_2d.shape[3] == 11
+       cor0 = roi_2d[:,:,:,0:3]
+       body = roi_2d[:,:,:,2:9]
+       cor1 = roi_2d[:,:,:,8:11]
+       return [cor0, cor1, body]
+
     def forward_corner_box(self, x0, proposals):
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      pass
+      proposals = self.convert_metric_to_pixel(proposals)
+      x1_ = self.pooler(x0, proposals)
+      x1 = self.conv3d(x1_)
+      x1s = self.roi_separate(x1.squeeze())
+      x4s = []
+      for i in range(3):
+        x1 = x1s[i]
+        x2 = x1.contiguous().view(x1.size(0), -1)
+        if i < 2:
+          fc6 = self.fc6_cor
+          fc7 = self.fc7_cor
+        else:
+          fc6 = self.fc6_body
+          fc7 = self.fc7_body
+        x3 = F.relu(fc6(x2))
+        x4 = F.relu(fc7(x3))
+        x4s.append(x4)
+      return x4s
 
     def forward_centroid_box(self, x0, proposals):
         proposals = self.convert_metric_to_pixel(proposals)
