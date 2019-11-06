@@ -144,7 +144,7 @@ class RPNModule(torch.nn.Module):
 
         anchor_generator = make_anchor_generator(cfg)
 
-        in_channels = cfg.MODEL.BACKBONE.OUT_CHANNELS
+        in_channels = cfg.SPARSE3D.nPlaneMap
         rpn_head = registry.RPN_HEADS[cfg.MODEL.RPN.RPN_HEAD]
         head = rpn_head(
             cfg, in_channels, anchor_generator.num_anchors_per_location()

@@ -29,7 +29,7 @@ _C.MODEL.RPN_ONLY = False
 _C.MODEL.MASK_ON = False
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.META_ARCHITECTURE = "SparseRCNN"
-_C.MODEL.CORNER_ROI = True
+_C.MODEL.CORNER_ROI = False
 
 # If the WEIGHT starts with a catalog://, like :R-50, the code will look for
 # the path in paths_catalog. Else, it will use it as the specified absolute
@@ -110,7 +110,7 @@ _C.MODEL.BACKBONE.CONV_BODY = "Sparse-R-50-FPN"
 
 # Add StopGrad at a specified stage so the bottom layers are frozen
 _C.MODEL.BACKBONE.FREEZE_CONV_BODY_AT = 2
-_C.MODEL.BACKBONE.OUT_CHANNELS = 128
+#_C.MODEL.BACKBONE.OUT_CHANNELS = 128
 
 
 # ---------------------------------------------------------------------------- #
@@ -221,7 +221,7 @@ _C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 2
 #_C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (0.5,0.25, 0.125)  # (1.0 / 16,)
 #_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
 # Hidden layer dimension when using an MLP for the RoI box head
-_C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 512
+_C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 256
 _C.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE = 8.0
 _C.MODEL.ROI_BOX_HEAD.POOLER_SCALES_FROM_TOP = (4,3)
 

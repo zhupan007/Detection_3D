@@ -52,11 +52,14 @@ class FPN2MLPFeatureExtractor(nn.Module):
     def __init__(self, cfg):
         super(FPN2MLPFeatureExtractor, self).__init__()
 
+        self.corner_roi = cfg.MODEL.CORNER_ROI
+
         resolution = cfg.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION
         scales = cfg.MODEL.ROI_BOX_HEAD.POOLER_SCALES_SPATIAL
         sampling_ratio = cfg.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO
         canonical_size = cfg.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE
         voxel_scale = cfg.SPARSE3D.VOXEL_SCALE
+        backbone_out = cfg.SPARSE3D.nPlaneMap
 
         pooler = Pooler(
             output_size=(resolution[0], resolution[1], resolution[2]),
@@ -65,26 +68,41 @@ class FPN2MLPFeatureExtractor(nn.Module):
             canonical_size=canonical_size,
             canonical_level=None
         )
-        input_size = cfg.MODEL.BACKBONE.OUT_CHANNELS * resolution[0] * resolution[1] * resolution[2]
         representation_size = cfg.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM
         self.pooler = pooler
         self.voxel_scale = voxel_scale
 
         pooler_z = cfg.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION[2]
-        conv3d_ = nn.Conv3d(cfg.MODEL.BACKBONE.OUT_CHANNELS, representation_size,
+        conv3d_ = nn.Conv3d(backbone_out, representation_size,
                                kernel_size=[1,1,pooler_z], stride=[1,1,1])
         bn = nn.BatchNorm3d(representation_size, track_running_stats=cfg.SOLVER.TRACK_RUNNING_STATS)
         relu = nn.ReLU(inplace=True)
         self.conv3d = nn.Sequential(conv3d_, bn, relu)
 
-        self.fc6 = nn.Linear(input_size, representation_size)
-        self.fc7 = nn.Linear(representation_size, representation_size)
+        if not self.corner_roi:
+            input_size = representation_size * resolution[0] * resolution[1]
+            self.fc6 = nn.Linear(input_size, representation_size)
+            self.fc7 = nn.Linear(representation_size, representation_size)
 
-        for l in [self.fc6, self.fc7]:
-            # Caffe2 implementation uses XavierFill, which in fact
-            # corresponds to kaiming_uniform_ in PyTorch
-            nn.init.kaiming_uniform_(l.weight, a=1)
-            nn.init.constant_(l.bias, 0)
+            for l in [self.fc6, self.fc7]:
+                # Caffe2 implementation uses XavierFill, which in fact
+                # corresponds to kaiming_uniform_ in PyTorch
+                nn.init.kaiming_uniform_(l.weight, a=1)
+                nn.init.constant_(l.bias, 0)
+        else:
+            roi_all_cor_body = [11, 3, 7]
+            input_size_cor = representation_size * resolution[0] * roi_all_cor_body[1]
+            input_size_body = representation_size * resolution[0] * roi_all_cor_body[2]
+            self.fc6_cor = nn.Linear(input_size_cor, representation_size)
+            self.fc6_body = nn.Linear(input_size_body, representation_size)
+            self.fc7_cor = nn.Linear(representation_size, representation_size)
+            self.fc7_body = nn.Linear(representation_size, representation_size)
+
+            for l in [self.fc6_cor, self.fc6_body, self.fc7_cor, self.fc7_body]:
+                # Caffe2 implementation uses XavierFill, which in fact
+                # corresponds to kaiming_uniform_ in PyTorch
+                nn.init.kaiming_uniform_(l.weight, a=1)
+                nn.init.constant_(l.bias, 0)
 
     def convert_metric_to_pixel(self, proposals0):
       #print(proposals0[0].bbox3d[:,0])
@@ -95,6 +113,16 @@ class FPN2MLPFeatureExtractor(nn.Module):
       return proposals
 
     def forward(self, x0, proposals):
+      if self.corner_roi:
+        return self.forward_corner_box(x0, proposals)
+      else:
+        return self.forward_centroid_box(x0, proposals)
+
+    def forward_corner_box(self, x0, proposals):
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
+
+    def forward_centroid_box(self, x0, proposals):
         proposals = self.convert_metric_to_pixel(proposals)
         x1_ = self.pooler(x0, proposals)
         x1 = self.conv3d(x1_)
