@@ -2,7 +2,7 @@
 import torch, math
 from utils3d.geometric_torch import limit_period
 
-ENABLE_SYMEETRIC_CORNER = True
+ENABLE_SYMEETRIC_CORNER = False
 
 def parse_yaw_loss_mode(yaw_loss_mode0):
     tmp = yaw_loss_mode0.split('_')
