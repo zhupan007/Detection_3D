@@ -21,6 +21,15 @@ CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 SuncgTorch_PATH = os.path.join(CUR_DIR, 'SuncgTorch')
 ELEMENTS_IDS = {'xyz':[0,1,2], 'color':[3,4,5], 'normal':[6,7,8]}
 
+POINTS_NUM = int(1e5)
+
+def points_sample(pcl):
+  if pcl.shape[0] > POINTS_NUM:
+    ids = np.random.choice(pcl.shape[0], POINTS_NUM)
+    ids_t = torch.from_numpy(ids)
+    pcl = pcl[ids_t]
+  return pcl
+
 class SUNCGDataset(torch.utils.data.Dataset):
   def __init__(self, split, cfg):
     logger = logging.getLogger("maskrcnn_benchmark.input")
@@ -90,6 +99,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
         #else:
         #  print(f'\n(suncg_dataset.py) test  {index}-th  {hn}\n')
         pcl_i, bboxes_dic_i_0 = torch.load(fn)
+        #points_sample(pcl_i)
 
         a = pcl_i[:,0:3].copy()
         b = pcl_i
