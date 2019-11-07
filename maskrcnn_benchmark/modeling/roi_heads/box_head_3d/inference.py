@@ -58,8 +58,8 @@ class PostProcessor(nn.Module):
         concat_boxes = torch.cat([a.bbox3d for a in boxes], dim=0)
 
         proposals = self.box_coder.decode(
-        box_regression, concat_boxes
-        )
+          box_regression, concat_boxes
+          )
 
         num_classes = class_prob.shape[1]
 

@@ -85,11 +85,9 @@ class FPNPredictor(nn.Module):
           bbox_cor0 = bbox_cor0.view([n, self.num_classes, 2])
           bbox_cor1 = bbox_cor1.view([n, self.num_classes, 2])
           bbox_body = bbox_body.view([n, self.num_classes, 3])
-          bbox_corners = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 2).view([n,-1])
+          bbox_regression_corners = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 2).view([n,-1])
         else:
-          bbox_corners = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 1)
-        #bbox_centroids = Box3D_Torch.corner_box_to_yxzb(bbox_corners)
-        bbox_centroids = bbox_corners
+          bbox_regression_corners = torch.cat([bbox_cor0, bbox_cor1, bbox_body], 1)
 
         cor0_score = self.score_pred_cor(x_cor0)
         cor1_score = self.score_pred_cor(x_cor1)
@@ -99,7 +97,7 @@ class FPNPredictor(nn.Module):
         bbox_con_cor1 = self.bbox_connect_cor(x_cor1)
         bbox_connects = torch.cat([bbox_con_cor0, bbox_con_cor1],1)
 
-        return scores, bbox_centroids, bbox_connects
+        return scores, bbox_regression_corners, bbox_connects
 
     def forward_centroid_box(self, x):
         scores = self.cls_score(x)
