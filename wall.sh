@@ -7,8 +7,9 @@ export PYTHONPATH=$PWD
 
 
 
-CONFIG_FILE='Wall/wall_Fpn432_BEV_bs1_lr20_SD.yaml'
-CONFIG_FILE='Wall/wall_Fpn432_BEV_bs1_lr20.yaml'
+#CONFIG_FILE='Wall/wall_Fpn432_BEV_bs1_lr20_SD.yaml'
+CONFIG_FILE='Wall/wall_Fpn432_BEV_bs1_lr5.yaml'
+#CONFIG_FILE='Wall/wall_CenB_Fpn432_BEV_bs1_lr5.yaml'
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 

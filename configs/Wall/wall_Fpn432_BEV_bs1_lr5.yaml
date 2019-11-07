@@ -1,12 +1,12 @@
 DEBUG:
-  eval_in_train: 10
+  eval_in_train: 1
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'wall']
   #CLASSES: ['background', 'wall', 'door', 'window', 'ceiling', 'floor']
   #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28']
   #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
-  SCENES: [ '00922f91aa09dbdda3a74489ea0e21eb']
+  #SCENES: [ '00922f91aa09dbdda3a74489ea0e21eb']
 MODEL:
   CORNER_ROI: True
   #RPN_ONLY: True
@@ -38,13 +38,13 @@ SOLVER:
   EPOCHS: 200
   EPOCHS_BETWEEN_TEST: 200
   IMS_PER_BATCH: 1
-  BASE_LR: 0.02
+  BASE_LR: 0.005
   WEIGHT_DECAY: 0.000
   LR_STEP_EPOCHS: (100,)
   CHECKPOINT_PERIOD_EPOCHS: 50
   WARMUP_EPOCHS: 0.1
   TRACK_RUNNING_STATS: False
-OUTPUT_DIR: "RES/res_wall_Fpn432_BEV_bs1_lr20"
+OUTPUT_DIR: "RES/res_wall_Fpn432_BEV_bs1_lr5"
 TEST:
   IMS_PER_BATCH: 1
   IOU_THRESHOLD: 0.2
