@@ -2,6 +2,7 @@
 import torch, math
 from utils3d.geometric_torch import limit_period
 
+ENABLE_SYMEETRIC_CORNER = True
 
 def parse_yaw_loss_mode(yaw_loss_mode0):
     tmp = yaw_loss_mode0.split('_')
@@ -29,6 +30,7 @@ def get_yaw_loss(yaw_loss_mode0, input, target, anchor):
     yaw_loss *= yaw_loss_weight
     return yaw_loss
 
+
 def smooth_l1_loss(input, target, anchor, beta=1. / 9, size_average=True, yaw_loss_mode = 'Diff'):
     """
     very similar to the smooth_l1_loss from pytorch, but with
@@ -44,6 +46,19 @@ def smooth_l1_loss(input, target, anchor, beta=1. / 9, size_average=True, yaw_lo
     cond = dif < beta
     loss = torch.where(cond, 0.5 * dif ** 2 / beta, dif - 0.5 * beta)
 
-    if size_average:
-        return loss.mean()
-    return loss.sum()
+    if not ENABLE_SYMEETRIC_CORNER:
+      if size_average:
+          return loss.mean()
+      return loss.sum()
+
+    else:
+      dif_sym_cor = torch.abs(input[:,[2,3,0,1]] - target[:,0:4])
+      cond = dif_sym_cor < beta
+      loss_sym_cor = torch.where(cond, 0.5 * dif_sym_cor ** 2 / beta, dif_sym_cor - 0.5 * beta)
+
+      loss_cor1 = loss[:,0:4].sum(1)
+      loss_cor2 = loss_sym_cor.sum(1) * 5
+      loss_cor = torch.min(loss_cor1, loss_cor2)
+      loss_zt = loss[:,4:].sum()
+      return loss_cor.sum() + loss_zt
+
