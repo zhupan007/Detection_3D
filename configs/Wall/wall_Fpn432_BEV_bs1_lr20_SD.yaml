@@ -8,6 +8,7 @@ INPUT:
   #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
   SCENES: [ '00922f91aa09dbdda3a74489ea0e21eb']
 MODEL:
+  CORNER_ROI: True
   #RPN_ONLY: True
   #SEPARATE_CLASSES: [['wall'], ['ceiling','floor']]
   RPN:
@@ -30,7 +31,7 @@ SPARSE3D:
   KERNEL: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
   STRIDE: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
   VOXEL_FULL_SCALE: [4096, 4096, 512]
-  VOXEL_SCALE: 20
+  VOXEL_SCALE: 30
 DATALOADER:
   SIZE_DIVISIBILITY: 6
 SOLVER:
