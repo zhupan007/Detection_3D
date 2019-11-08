@@ -9,8 +9,8 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import cat_boxlist_3d
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 
 
-DEBUG = False
-SHOW_BEFORE_FILTER = DEBUG and False
+DEBUG = True
+SHOW_FILTER = DEBUG and True
 
 class PostProcessor(nn.Module):
     """
@@ -73,9 +73,11 @@ class PostProcessor(nn.Module):
         ):
             boxlist = self.prepare_boxlist(boxes_per_img, prob, size3d)
             #boxlist = boxlist.clip_to_pcl(remove_empty=False)
-            if SHOW_BEFORE_FILTER:
-              show_before_filter(boxlist)
+            if SHOW_FILTER:
+              show_before_filter(boxlist, 'before filter')
             boxlist = self.filter_results(boxlist, num_classes)
+            if SHOW_FILTER:
+              show_before_filter(boxlist, 'after filter')
             results.append(boxlist)
         return results
 
@@ -131,7 +133,7 @@ class PostProcessor(nn.Module):
             result.append(boxlist_for_class)
 
             # debuging
-            if DEBUG:
+            if DEBUG and False:
                 inds_small_scrore = (1-inds_all[:, j]).nonzero().squeeze(1)
                 scores_small_j = scores[inds_small_scrore,j]
                 max_score_abandoned = scores_small_j.max()
@@ -151,8 +153,9 @@ class PostProcessor(nn.Module):
             result = result[keep]
         return result
 
-def show_before_filter(boxlist):
-  boxlist.show()
+def show_before_filter(boxlist, msg):
+  print(msg)
+  boxlist.show_with_corners()
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
   pass
 

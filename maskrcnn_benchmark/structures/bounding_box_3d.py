@@ -3,6 +3,7 @@ import torch, math
 import numpy as np
 
 from utils3d.geometric_torch import limit_period, OBJ_DEF
+from utils3d.bbox3d_ops_torch import Box3D_Torch
 
 # transpose
 FLIP_LEFT_RIGHT = 0
@@ -218,6 +219,28 @@ class BoxList3D(object):
         for k, v in bbox.extra_fields.items():
             self.extra_fields[k] = v
 
+    def get_2corners_boxes(self):
+      boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(self.bbox3d)
+      return boxes_2corners
+
+    def get_2top_corners(self):
+      assert self.mode == 'yx_zb'
+      boxes_2corners = self.get_2corners_boxes()
+      corners0 = boxes_2corners[:,[0,1,5]]
+      corners1 = boxes_2corners[:,[2,3,5]]
+      n = corners0.shape[0]
+      corners = torch.cat([corners0.view(n,1,3),  corners1.view(n,1,3) ], 1 )
+      # offset the corners
+      centroids = corners.mean(dim=1, keepdim=True)
+      #centroids = (corners0 + corners1) / 2.0
+      offset = (centroids - corners)
+      offset_norm = offset.norm(dim=2).view([n,2,1])
+      thickness = self.bbox3d[:,3].view(n,1,1)
+      offset = offset / offset_norm * thickness * 0.5
+      corners = corners + offset
+      corners = corners.view([-1,3])
+      return corners
+
     def convert(self, mode):
         # ref: utils3d/bbox3d_ops.py/Bbox3D
         self.check_mode(mode)
@@ -407,7 +430,7 @@ class BoxList3D(object):
         labels = labels, random_color=False)
       else:
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb',\
-        labels = labels,  random_color=False, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate, box_colors=colors)
+          labels = labels,  random_color=False, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate, box_colors=colors)
 
     def show_centroids(self, max_num=-1, points=None):
       import numpy as np
@@ -420,6 +443,16 @@ class BoxList3D(object):
         Bbox3D.draw_centroids(boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
       else:
         Bbox3D.draw_points_centroids(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb')
+
+    def show_with_corners(self):
+      import numpy as np
+      from utils3d.bbox3d_ops import Bbox3D
+      corners = self.get_2top_corners()
+      points = corners.cpu().data.numpy()
+      boxes = self.bbox3d.cpu().data.numpy()
+      Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb',\
+          random_color=False)
+      pass
 
     def show__together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None, offset_x=None, twolabels=False,
                        mesh=False, points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, random_color=False, colors=None):
