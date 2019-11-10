@@ -10,7 +10,7 @@ from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 from utils3d.bbox3d_ops_torch import Box3D_Torch
 
 DEBUG = True
-SHOW_FILTER = DEBUG and False
+SHOW_FILTER = DEBUG and 0
 
 class PostProcessor(nn.Module):
     """
@@ -76,9 +76,9 @@ class PostProcessor(nn.Module):
             #if SHOW_FILTER:
             #  show_before_filter(boxlist, 'before filter')
             boxlist = self.filter_results(boxlist, num_classes)
-            #if SHOW_FILTER:
-            #  show_before_filter(boxlist, 'after filter')
             boxlist = self.merge_by_corners(boxlist)
+            if SHOW_FILTER:
+              show_before_filter(boxlist, 'after filter')
             results.append(boxlist)
         return results
 
