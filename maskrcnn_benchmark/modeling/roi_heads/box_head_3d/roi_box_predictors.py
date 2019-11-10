@@ -43,8 +43,10 @@ class FPNPredictor(nn.Module):
         self.num_classes = num_classes
 
         self.corner_roi = cfg.MODEL.CORNER_ROI
+        self.class_specific = cfg.MODEL.CLASS_SPECIFIC
 
         if not self.corner_roi:
+            assert self.class_specific == True
             self.cls_score = nn.Linear(representation_size, num_classes)
             self.bbox_pred = nn.Linear(representation_size, num_classes * 7)
 
@@ -55,7 +57,6 @@ class FPNPredictor(nn.Module):
 
         else:
             self.cls_score_body = nn.Linear(representation_size, num_classes)
-            self.class_specific = True
             if self.class_specific:
               self.bbox_pred_body = nn.Linear(representation_size, num_classes * 3) # z0, z1, thickness
               self.bbox_pred_cor = nn.Linear(representation_size, num_classes * 2) # x,y
