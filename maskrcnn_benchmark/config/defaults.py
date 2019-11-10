@@ -193,7 +193,7 @@ _C.MODEL.ROI_HEADS.BBOX_REG_WEIGHTS = (1.,1,1,1, 1,1,1) # (10., 10., 10, 5., 5.,
 # Total number of RoIs per training minibatch =
 #   TRAIN.BATCH_SIZE_PER_IM * TRAIN.IMS_PER_BATCH * NUM_GPUS
 # E.g., a common configuration is: 512 * 2 * 8 = 8192
-_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 300
+_C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 500
 # Target fraction of RoI minibatch that is labeled foreground (i.e. class > 0)
 _C.MODEL.ROI_HEADS.POSITIVE_FRACTION = 0.25
 
@@ -222,7 +222,7 @@ _C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 2
 #_C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (0.5,0.25, 0.125)  # (1.0 / 16,)
 #_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
 # Hidden layer dimension when using an MLP for the RoI box head
-_C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 256
+_C.MODEL.ROI_BOX_HEAD.MLP_HEAD_DIM = 512
 _C.MODEL.ROI_BOX_HEAD.CANONICAL_SIZE = 8.0
 _C.MODEL.ROI_BOX_HEAD.POOLER_SCALES_FROM_TOP = (4,3)
 

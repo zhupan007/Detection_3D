@@ -100,6 +100,8 @@ class Box3D_Torch():
 
   @staticmethod
   def from_yxzb_to_2corners(boxes_yxzb):
+    if boxes_yxzb.shape[0] == 0:
+      return boxes_yxzb
     device = boxes_yxzb.device
     boxes = boxes_yxzb.clone().detach()
     boxes0 = boxes.cpu().data.numpy()

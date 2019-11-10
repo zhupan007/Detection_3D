@@ -76,7 +76,7 @@ class PostProcessor(nn.Module):
             #if SHOW_FILTER:
             #  show_before_filter(boxlist, 'before filter')
             boxlist = self.filter_results(boxlist, num_classes)
-            boxlist = self.merge_by_corners(boxlist)
+            #boxlist = self.merge_by_corners(boxlist)
             if SHOW_FILTER:
               show_before_filter(boxlist, 'after filter')
             results.append(boxlist)
