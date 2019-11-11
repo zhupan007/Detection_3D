@@ -20,7 +20,7 @@ class PostProcessor(nn.Module):
     """
 
     def __init__(
-        self, score_thresh=0.05, nms=0.5, nms_aug_thickness=None, detections_per_img=100, box_coder=None
+        self, score_thresh=0.05, nms=0.5, nms_aug_thickness=None, detections_per_img=100, box_coder=None, class_specific=True
     ):
         """
         Arguments:
@@ -37,6 +37,7 @@ class PostProcessor(nn.Module):
             box_coder = BoxCoder3D(weights=(10., 10., 5., 5.))
         self.box_coder = box_coder
         self.nms_aug_thickness = nms_aug_thickness
+        self.class_specific = class_specific
 
     def forward(self, x, boxes):
         """
@@ -95,6 +96,9 @@ class PostProcessor(nn.Module):
         dataset (including the background class). `scores[i, j]`` corresponds to the
         box at `boxes[i, j * 4:(j + 1) * 4]`.
         """
+        if not self.class_specific:
+          class_num = scores.shape[1]
+          boxes = boxes.unsqueeze(1).repeat(1,class_num,1)
         boxes = boxes.reshape(-1, 7)
         scores = scores.reshape(-1)
         boxlist = BoxList3D(boxes, size3d, mode="yx_zb", examples_idxscope=None,
@@ -239,11 +243,13 @@ def make_roi_box_post_processor(cfg):
     nms_thresh = cfg.MODEL.ROI_HEADS.NMS
     nms_aug_thickness = cfg.MODEL.ROI_HEADS.NMS_AUG_THICKNESS_Y_Z
     detections_per_img = cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG
+    class_specific = cfg.MODEL.CLASS_SPECIFIC
 
     postprocessor = PostProcessor(
         score_thresh, nms_thresh,
       nms_aug_thickness=nms_aug_thickness,
       detections_per_img=detections_per_img,
-      box_coder=box_coder
+      box_coder=box_coder,
+      class_specific=class_specific
     )
     return postprocessor

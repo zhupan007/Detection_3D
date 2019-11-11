@@ -30,7 +30,7 @@ _C.MODEL.MASK_ON = False
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.META_ARCHITECTURE = "SparseRCNN"
 _C.MODEL.CORNER_ROI = True
-_C.MODEL.CLASS_SPECIFIC = True
+_C.MODEL.CLASS_SPECIFIC = False
 
 # If the WEIGHT starts with a catalog://, like :R-50, the code will look for
 # the path in paths_catalog. Else, it will use it as the specified absolute

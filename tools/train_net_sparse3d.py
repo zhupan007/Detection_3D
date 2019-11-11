@@ -186,6 +186,8 @@ def main():
     train_example_num = get_train_example_num(cfg)
     croi = '_CROI' if cfg.MODEL.CORNER_ROI else ''
     cfg['OUTPUT_DIR'] = f'{cfg.OUTPUT_DIR}_T{train_example_num}{croi}'
+    if not cfg.MODEL.CLASS_SPECIFIC:
+      cfg['OUTPUT_DIR'] += '_CA'
     output_dir = cfg.OUTPUT_DIR
     if output_dir:
         mkdir(output_dir)

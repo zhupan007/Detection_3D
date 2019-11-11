@@ -25,7 +25,7 @@ class FastRCNNLossComputation(object):
     Also supports FPN
     """
 
-    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier):
+    def __init__(self, proposal_matcher, fg_bg_sampler, box_coder, yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier, class_specific):
         """
         Arguments:
             proposal_matcher (Matcher)
@@ -43,6 +43,7 @@ class FastRCNNLossComputation(object):
         self.aug_thickness = aug_thickness
         self.seperate_classifier = seperate_classifier
         self.need_seperate = seperate_classifier.need_seperate
+        self.class_specific = class_specific
 
     def match_targets_to_proposals(self, proposal, target):
         match_quality_matrix = boxlist_iou_3d(target, proposal, aug_thickness=self.aug_thickness, criterion=-1, flag='roi_label_generation')
@@ -208,14 +209,22 @@ class FastRCNNLossComputation(object):
 
 
     def box_loss(self, labels, box_regression, regression_targets, bbox3ds):
+        '''
+        class_specific:
+          labels:[n], box_regression:[n,c*7], regression_targets:[n,7], bbox3ds:[n,7]
+        '''
         # get indices that correspond to the regression targets for
         # the corresponding ground truth labels, to be used with
         # advanced indexing
         device = box_regression.device
         sampled_pos_inds_subset = torch.nonzero(labels > 0).squeeze(1)
         labels_pos = labels[sampled_pos_inds_subset]
-        map_inds = 7 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3, 4, 5, 6], device=device)
-        box_regression_pos = box_regression[sampled_pos_inds_subset[:, None], map_inds]
+        if self.class_specific:
+          map_inds = 7 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3, 4, 5, 6], device=device)
+          box_regression_pos = box_regression[sampled_pos_inds_subset[:, None], map_inds]
+        else:
+          box_regression_pos = box_regression[sampled_pos_inds_subset, :]
+
         regression_targets_pos = regression_targets[sampled_pos_inds_subset]
 
         if CHECK_REGRESSION_TARGET_YAW:
@@ -334,9 +343,11 @@ def make_roi_box_loss_evaluator(cfg):
 
     seperate_classes = cfg.MODEL.SEPARATE_CLASSES_ID
     seperate_classifier = SeperateClassifier( seperate_classes, num_input_classes )
+    class_specific = cfg.MODEL.CLASS_SPECIFIC
 
     loss_evaluator = FastRCNNLossComputation(matcher, fg_bg_sampler, box_coder,
-                    yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier)
+                    yaw_loss_mode, add_gt_proposals, aug_thickness, seperate_classifier,
+                                             class_specific=class_specific)
 
     return loss_evaluator, seperate_classifier
 
