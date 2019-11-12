@@ -19,7 +19,7 @@ SHOW_ROI_CLASSFICATION = DEBUG and False
 CHECK_IOU = False
 CHECK_REGRESSION_TARGET_YAW = False
 
-def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids):
+def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None):
   '''
   matched_idxs: [n] n=number of proposal, the matched target id for each proposal
       -1: not matched, >=0: target id
@@ -27,7 +27,11 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids):
 
   connect_proC_ids_each_proC: [2p,6] p=number of positive proposal, 2p=number of corners of positive proposals
                     the corner ids of 6 connected corners among all corners of positive proposals
+  pos_prop_ids: [p] the ids of positive proposals, sorted by the same order with connect_proC_ids_each_proC
   '''
+  #matched_idxs = matched_idxs[5:7]
+  #proposals.bbox3d = proposals.bbox3d[5:7]
+
   t = tg_corner_connect_ids.shape[0] // 2
   device = matched_idxs.device
   tccn = tg_corner_connect_ids.shape[1] # the maximum connected corners of target: 3
@@ -36,9 +40,9 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids):
   # the positive proposal ids
   pos_prop_ids = torch.nonzero(matched_idxs >= 0).squeeze() # [p]
   p = pos_prop_ids.shape[0]
-  # the matched target ids of each postive proposal
+  # the matched target ids of postive proposals
   matched_tar_idxs_pos = matched_idxs[pos_prop_ids].squeeze() # [p]
-  # get the connected
+  # get the connected target ids of each positive proposal
   pos_connected_tar_ids = tg_corner_connect_ids[matched_tar_idxs_pos] # [p,3]
 
   # get the pos_proposal ids for each target
@@ -74,7 +78,27 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids):
   connect_proC_ids_each_proC,_ = (-connect_proC_ids_each_proC).sort(dim=1)
   connect_proC_ids_each_proC = -connect_proC_ids_each_proC
   connect_proC_ids_each_proC = connect_proC_ids_each_proC[:,0:6]
-  return connect_proC_ids_each_proC
+
+  check_grouping_labels(proposals[pos_prop_ids], connect_proC_ids_each_proC)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  return connect_proC_ids_each_proC,  pos_prop_ids
+
+def check_grouping_labels( proposals, connect_proC_ids_each_proC):
+      corners, _ = proposals.get_2top_corners_offseted()
+      corners = corners.view([-1,3])
+      n = corners.shape[0]
+      for i in range(n):
+        ids_i = connect_proC_ids_each_proC[i]
+        mask  = ids_i>=0
+        ids_i = ids_i[mask].view([-1])
+        if ids_i.shape[0]>0:
+          tmp = ids_i[0:1]*0 + i
+          ids_i = torch.cat([tmp,  ids_i], 0)
+          corners0 = corners[ids_i]
+          proposals.show(points = corners0)
+          pass
+      pass
+
 
 class FastRCNNLossComputation(object):
     """
@@ -136,6 +160,7 @@ class FastRCNNLossComputation(object):
         '''
         labels = []
         regression_targets = []
+        connect_proC_ids_each_proCs = []
         for proposals_per_image, targets_per_image in zip(proposals, targets):
             if len(targets_per_image) == 0:
               prop_num = len(proposals_per_image)
@@ -168,20 +193,13 @@ class FastRCNNLossComputation(object):
 
             # grouping
             tg_corner_connect_ids = targets_per_image.get_connect_corner_ids()
-            prop_ids_per_targ = get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids)
+            connect_proC_ids_each_proC_, pos_prop_ids_ = get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals_per_image)
 
+            connect_proC_ids_each_proCs.append(connect_proC_ids_each_proC_)
             labels.append(labels_per_image)
             regression_targets.append(regression_targets_per_image)
 
-        #if not labels[0].device == torch.device('cuda:0'):
-        #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        #  pass
-        #grouping_labels = self.prepare_grouping_labels(targets)
-        return labels, regression_targets
-
-    def prepare_grouping_labels(self, targets):
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      pass
+        return labels, regression_targets, connect_proC_ids_each_proCs
 
 
     def subsample(self, proposals, targets):
