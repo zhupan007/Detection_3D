@@ -30,6 +30,7 @@ def points_sample(pcl):
     pcl = pcl[ids_t]
   return pcl
 
+
 class SUNCGDataset(torch.utils.data.Dataset):
   def __init__(self, split, cfg):
     logger = logging.getLogger("maskrcnn_benchmark.input")

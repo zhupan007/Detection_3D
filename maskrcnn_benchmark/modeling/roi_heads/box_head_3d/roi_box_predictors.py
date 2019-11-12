@@ -66,7 +66,7 @@ class FPNPredictor(nn.Module):
               self.bbox_pred_body = nn.Linear(representation_size,  3) # z0, z1, thickness
               self.bbox_pred_cor = nn.Linear(representation_size, 2) # x,y
 
-            self.bbox_connect_cor = nn.Linear(representation_size, 16) # connection along four directions
+            self.bbox_connect_cor = nn.Linear(representation_size, 8) # connection along four directions
             self.score_pred_cor = nn.Linear(representation_size, 1)
 
 

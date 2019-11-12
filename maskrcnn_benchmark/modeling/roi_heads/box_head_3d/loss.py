@@ -18,6 +18,11 @@ SHOW_ROI_CLASSFICATION = DEBUG and False
 CHECK_IOU = False
 CHECK_REGRESSION_TARGET_YAW = False
 
+def get_prop_dis_per_targ(target_n, matched_idxs, target_connect_ids):
+  pos_prop_ids = torch.nonzero(matched_idxs >= 0)
+  matched_tar_idxs_pos = matched_idxs[pos_prop_ids]
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  return prop_ids_per_targ
 
 class FastRCNNLossComputation(object):
     """
@@ -93,7 +98,6 @@ class FastRCNNLossComputation(object):
             )
             matched_idxs = matched_targets.get_field("matched_idxs")
 
-
             labels_per_image0 = matched_targets.get_field("labels")
             labels_per_image = labels_per_image0.to(dtype=torch.int64)
 
@@ -110,13 +114,24 @@ class FastRCNNLossComputation(object):
                 matched_targets.bbox3d, proposals_per_image.bbox3d
             )
 
+            # grouping
+            target_connect_ids = targets_per_image.get_connect_corner_ids()
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            prop_ids_per_targ = get_prop_dis_per_targ(len(targets_per_image), matched_idxs, target_connect_ids)
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+
             labels.append(labels_per_image)
             regression_targets.append(regression_targets_per_image)
 
         #if not labels[0].device == torch.device('cuda:0'):
         #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
         #  pass
+        grouping_labels = self.prepare_grouping_labels(targets)
         return labels, regression_targets
+
+    def prepare_grouping_labels(self, targets):
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
+      pass
 
 
     def subsample(self, proposals, targets):
@@ -166,7 +181,7 @@ class FastRCNNLossComputation(object):
         self._proposals = proposals
         return proposals
 
-    def __call__(self, class_logits, box_regression, targets=None):
+    def __call__(self, class_logits, box_regression, corners_semantic, targets=None):
         """
         Computes the loss for Faster R-CNN.
         This requires that the subsample method has been called beforehand.
@@ -197,10 +212,15 @@ class FastRCNNLossComputation(object):
         if not self.need_seperate:
           classification_loss = F.cross_entropy(class_logits, labels)
           box_loss = self.box_loss(labels, box_regression, regression_targets, pro_bbox3ds)
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          corner_groupng_loss = self.corners_grouping_loss(corners_semantic)
         else:
           classification_loss = self.seperate_classifier.roi_cross_entropy_seperated(class_logits, labels, proposals)
           box_loss = self.seperate_classifier.roi_box_loss_seperated(self.box_loss,
-                              labels, box_regression, regression_targets, pro_bbox3ds)
+                                  labels, box_regression, regression_targets, pro_bbox3ds)
+          print('seperate grouping loss not implemented')
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
 
         if SHOW_ROI_CLASSFICATION:
           self.show_roi_cls_regs(proposals, classification_loss, box_loss, class_logits,  targets, box_regression, regression_targets)
@@ -244,6 +264,9 @@ class FastRCNNLossComputation(object):
         )
         box_loss = box_loss / labels.numel()
         return box_loss
+
+    def corners_grouping_loss(self, corners_semantic):
+      pass
 
     def show_roi_cls_regs(self, proposals, classification_loss, box_loss,
               class_logits, targets,  box_regression, regression_targets):

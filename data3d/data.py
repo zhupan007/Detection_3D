@@ -9,7 +9,7 @@ import torch, numpy as np, glob, math, torch.utils.data, scipy.ndimage, multipro
 from .suncg_utils.suncg_dataset import SUNCGDataset
 import logging
 
-DEBUG = True
+DEBUG = False
 
 def make_data_loader(cfg, is_train, is_distributed=False, start_iter=0):
   batch_size = cfg.SOLVER.IMS_PER_BATCH if is_train else cfg.TEST.IMS_PER_BATCH

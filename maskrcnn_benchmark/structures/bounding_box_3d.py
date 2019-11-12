@@ -87,7 +87,6 @@ def cat_boxlist_3d(bboxes_ls, per_example, use_constants0=False):
 
     return cat_boxes
 
-
 def cat_scales_anchor(anchors):
     '''
      combine anchors of scales
@@ -110,6 +109,32 @@ def cat_scales_anchor(anchors):
     anchors_all_scales = cat_boxlist_3d(examples, per_example=True)
     return anchors_all_scales
 
+def extract_order_ids(sorted0, aim_order):
+  '''
+  sorted0: [n](>=0) the items are sorted alrady, but some items maybe repeated
+  aim_order: 0,1,2,...
+  The purpose is to find the items that appeared in aim_order time
+  '''
+  assert sorted0.dim() == 1
+  assert sorted0.min() >= 0
+  previous = torch.cat([sorted0[0:1]*(-1), sorted0[:-1] ],0)
+  if aim_order == 0:
+    mask = sorted0 != previous
+  else:
+    pre_pre = torch.cat([sorted0[0:2]*(-1), sorted0[:-2] ],0)
+    if aim_order == 1:
+      mask0 = sorted0 == previous
+      mask1 = sorted0 != pre_pre
+      mask = mask0 * mask1
+    else:
+      pre_pre_pre = torch.cat([sorted0[0:3]*(-1), sorted0[:-3] ],0)
+      if aim_order == 2:
+        mask0 = sorted0 == previous
+        mask1 = sorted0 == pre_pre
+        mask2 = sorted0 != pre_pre_pre
+        mask = mask0 * mask1 * mask2
+  ids = torch.nonzero(mask).squeeze()
+  return ids
 
 class BoxList3D(object):
     """
@@ -223,7 +248,7 @@ class BoxList3D(object):
       boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(self.bbox3d)
       return boxes_2corners
 
-    def get_2top_corners(self):
+    def get_2top_corners_offseted(self):
       # offset the corners from end to corners by half thickness
       assert self.mode == 'yx_zb'
       boxes_2corners = self.get_2corners_boxes()
@@ -399,6 +424,36 @@ class BoxList3D(object):
     def clamp_size(self):
       self.bbox3d[:,3:6] = torch.clamp(self.bbox3d[:,3:6], min=0.001)
 
+
+    def get_connect_corner_ids(self, threshold=0.02):
+      '''
+      n objects
+      connect_ids: [2n,3]
+        2n corners, for each corner, 3 connected corners are recorded. If the connected number is less than 3, asign -1.
+        [0,1] are the corners of object 0
+      '''
+      corners0, _ = self.get_2top_corners_offseted() # [n,2,3]
+      corners = corners0.view(-1,3) # [2n,3]
+      m = corners.shape[0]
+      dif = corners.view(-1,1,3) - corners.view(1,-1,3)
+      device = corners.device
+      tmp = torch.eye(m, dtype=torch.float32, device=device)
+      dis = dif.norm(dim=2) + tmp
+      mask = dis < threshold
+      ids = torch.nonzero(mask)  # [m,2] the connected corner relationship, each corner may be connected to muliple corners
+
+      # each corner can maximum connected to 3 others
+      connect_ids = torch.zeros(m, 3, device=device, dtype=torch.int64)-1
+
+      first = extract_order_ids(ids[:,0], 0)
+      second = extract_order_ids(ids[:,0], 1)
+      third = extract_order_ids(ids[:,0], 2)
+      for j,id_ids in enumerate([first, second, third]):
+        if id_ids.shape[0] > 0:
+          tmp = ids[id_ids]
+          connect_ids[tmp[:,0], j] =  tmp[:,1]
+      return connect_ids
+
     def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None, points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, colors=None):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
@@ -449,7 +504,7 @@ class BoxList3D(object):
     def show_with_corners(self):
       import numpy as np
       from utils3d.bbox3d_ops import Bbox3D
-      corners,_ = self.get_2top_corners()
+      corners,_ = self.get_2top_corners_offseted()
       corners = corners.view([-1,3])
       points = corners.cpu().data.numpy()
       boxes = self.bbox3d.cpu().data.numpy()
