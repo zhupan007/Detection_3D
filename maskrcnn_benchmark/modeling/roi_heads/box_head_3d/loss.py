@@ -19,7 +19,7 @@ SHOW_ROI_CLASSFICATION = DEBUG and False
 CHECK_IOU = False
 CHECK_REGRESSION_TARGET_YAW = False
 
-def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None):
+def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, targets=None):
   '''
   matched_idxs: [n] n=number of proposal, the matched target id for each proposal
       -1: not matched, >=0: target id
@@ -29,8 +29,10 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None):
                     the corner ids of 6 connected corners among all corners of positive proposals
   pos_prop_ids: [p] the ids of positive proposals, sorted by the same order with connect_proC_ids_each_proC
   '''
-  #matched_idxs = matched_idxs[5:7]
-  #proposals.bbox3d = proposals.bbox3d[5:7]
+  debug = proposals is not None
+  if debug:
+    matched_idxs = matched_idxs[5:7]
+    proposals.bbox3d = proposals.bbox3d[5:7]
 
   t = tg_corner_connect_ids.shape[0] // 2
   device = matched_idxs.device
@@ -42,17 +44,21 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None):
   p = pos_prop_ids.shape[0]
   # the matched target ids of postive proposals
   matched_tar_idxs_pos = matched_idxs[pos_prop_ids].squeeze() # [p]
-  # get the connected target ids of each positive proposal
-  pos_connected_tar_ids = tg_corner_connect_ids[matched_tar_idxs_pos] # [p,3]
 
   # get the pos_proposal ids for each target
   tar_ids_each_pro, sorting = matched_tar_idxs_pos.sort()
   pos_prop_ids = pos_prop_ids[sorting] # [p]
+  if debug:
+    proposals = proposals[pos_prop_ids]
+
   # tarC_ids_each_proC: the responding target corner index of each positive
   # proposal corner
   tmp = tar_ids_each_pro.view(-1,1).repeat(1,2)*2
   tmp[:,1] += 1
   tarC_ids_each_proC = tmp.view(-1) # [2p]
+
+  if debug:
+    check_corner_responding_tp(tar_ids_each_pro, tarC_ids_each_proC, proposals, targets)
 
   # connect_tarC_ids_each_proC: the responing connected target corner ids for
   # each proposal corner
@@ -79,9 +85,24 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None):
   connect_proC_ids_each_proC = -connect_proC_ids_each_proC
   connect_proC_ids_each_proC = connect_proC_ids_each_proC[:,0:6]
 
-  check_grouping_labels(proposals[pos_prop_ids], connect_proC_ids_each_proC)
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  #check_grouping_labels(targets, tg_corner_connect_ids)
+  #check_grouping_labels(proposals[pos_prop_ids], connect_proC_ids_each_proC)
   return connect_proC_ids_each_proC,  pos_prop_ids
+
+
+def check_corner_responding_tp(tar_ids_each_pro, tarC_ids_each_proC, proposals, targets):
+  pro_box = proposals.bbox3d
+  the_pro_box = targets.bbox3d[tar_ids_each_pro]
+
+
+  proCorners, _ = proposals.get_2top_corners_offseted()
+  tarCorners, _ = targets.get_2top_corners_offseted()
+  proCorners = proCorners.view(-1,3)
+  tarCorners = tarCorners.view(-1,3)
+  the_tarCorners = tarCorners[tarC_ids_each_proC]
+  dif = torch.abs(proCorners - the_tarCorners)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
+  pass
 
 def check_grouping_labels( proposals, connect_proC_ids_each_proC):
       corners, _ = proposals.get_2top_corners_offseted()
@@ -193,7 +214,7 @@ class FastRCNNLossComputation(object):
 
             # grouping
             tg_corner_connect_ids = targets_per_image.get_connect_corner_ids()
-            connect_proC_ids_each_proC_, pos_prop_ids_ = get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals_per_image)
+            connect_proC_ids_each_proC_, pos_prop_ids_ = get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals_per_image, targets_per_image)
 
             connect_proC_ids_each_proCs.append(connect_proC_ids_each_proC_)
             labels.append(labels_per_image)
