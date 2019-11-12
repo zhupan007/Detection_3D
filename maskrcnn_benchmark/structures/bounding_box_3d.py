@@ -117,23 +117,32 @@ def extract_order_ids(sorted0, aim_order):
   '''
   assert sorted0.dim() == 1
   assert sorted0.min() >= 0
-  previous = torch.cat([sorted0[0:1]*(-1), sorted0[:-1] ],0)
+  assert aim_order < 4
+  previous = torch.cat([sorted0[0:1]*0-100, sorted0[:-1] ],0)
   if aim_order == 0:
     mask = sorted0 != previous
   else:
-    pre_pre = torch.cat([sorted0[0:2]*(-1), sorted0[:-2] ],0)
+    pre_pre = torch.cat([sorted0[0:2]*0-100, sorted0[:-2] ],0)
     if aim_order == 1:
       mask0 = sorted0 == previous
       mask1 = sorted0 != pre_pre
       mask = mask0 * mask1
     else:
-      pre_pre_pre = torch.cat([sorted0[0:3]*(-1), sorted0[:-3] ],0)
+      pre_pre_pre = torch.cat([sorted0[0:3]*0-100, sorted0[:-3] ],0)
       if aim_order == 2:
         mask0 = sorted0 == previous
         mask1 = sorted0 == pre_pre
         mask2 = sorted0 != pre_pre_pre
         mask = mask0 * mask1 * mask2
-  ids = torch.nonzero(mask).squeeze()
+      else:
+        pre_4 = torch.cat([sorted0[0:4]*0-100, sorted0[:-4] ],0)
+        if aim_order == 3:
+          mask0 = sorted0 == previous
+          mask1 = sorted0 == pre_pre
+          mask2 = sorted0 == pre_pre_pre
+          mask3 = sorted0 != pre_4
+          mask = mask0 * mask1 * mask2 * mask3
+  ids = torch.nonzero(mask).view([-1])
   return ids
 
 class BoxList3D(object):

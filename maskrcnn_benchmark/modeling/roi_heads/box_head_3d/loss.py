@@ -12,17 +12,69 @@ from maskrcnn_benchmark.modeling.balanced_positive_negative_sampler import (
 from maskrcnn_benchmark.modeling.utils import cat
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 from maskrcnn_benchmark.modeling.seperate_classifier import SeperateClassifier
+from maskrcnn_benchmark.structures.bounding_box_3d import extract_order_ids
 
 DEBUG = True
 SHOW_ROI_CLASSFICATION = DEBUG and False
 CHECK_IOU = False
 CHECK_REGRESSION_TARGET_YAW = False
 
-def get_prop_dis_per_targ(target_n, matched_idxs, target_connect_ids):
-  pos_prop_ids = torch.nonzero(matched_idxs >= 0)
-  matched_tar_idxs_pos = matched_idxs[pos_prop_ids]
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
-  return prop_ids_per_targ
+def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids):
+  '''
+  matched_idxs: [n] n=number of proposal, the matched target id for each proposal
+      -1: not matched, >=0: target id
+  tg_corner_connect_ids: [2t,3]: t=target number, 2t=corner number. the 3 connected corners of each corner. If a corner is not connected, asign -1.
+
+  connect_proC_ids_each_proC: [2p,6] p=number of positive proposal, 2p=number of corners of positive proposals
+                    the corner ids of 6 connected corners among all corners of positive proposals
+  '''
+  t = tg_corner_connect_ids.shape[0] // 2
+  device = matched_idxs.device
+  tccn = tg_corner_connect_ids.shape[1] # the maximum connected corners of target: 3
+  assert tccn == 3
+  etpn = 4 # the maximum detected proposal number for each target
+  # the positive proposal ids
+  pos_prop_ids = torch.nonzero(matched_idxs >= 0).squeeze() # [p]
+  p = pos_prop_ids.shape[0]
+  # the matched target ids of each postive proposal
+  matched_tar_idxs_pos = matched_idxs[pos_prop_ids].squeeze() # [p]
+  # get the connected
+  pos_connected_tar_ids = tg_corner_connect_ids[matched_tar_idxs_pos] # [p,3]
+
+  # get the pos_proposal ids for each target
+  tar_ids_each_pro, sorting = matched_tar_idxs_pos.sort()
+  pos_prop_ids = pos_prop_ids[sorting] # [p]
+  # tarC_ids_each_proC: the responding target corner index of each positive
+  # proposal corner
+  tmp = tar_ids_each_pro.view(-1,1).repeat(1,2)*2
+  tmp[:,1] += 1
+  tarC_ids_each_proC = tmp.view(-1) # [2p]
+
+  # connect_tarC_ids_each_proC: the responing connected target corner ids for
+  # each proposal corner
+  connect_tarC_ids_each_proC = tg_corner_connect_ids[tarC_ids_each_proC] # [2p,3]
+
+  # proC_ids_each_tarC: proposal corner index of each target corner
+  pro_ids_each_tar = torch.zeros([t, etpn], dtype=torch.int64, device=device) -1# [2t,4]
+  for j in range(etpn):
+    ids_jth = extract_order_ids(tar_ids_each_pro, j)
+    if ids_jth.shape[0]  > 0:
+      tar_ids_j = tar_ids_each_pro[ids_jth]
+      pro_ids_each_tar[tar_ids_j, j] = ids_jth
+
+  proC_ids_each_tarC = pro_ids_each_tar.unsqueeze(1).repeat(1,2,1) * 2
+  proC_ids_each_tarC[:,1,:] += 1
+  proC_ids_each_tarC = proC_ids_each_tarC.view([2*t, etpn])
+
+  # for each proC, the connected proC ids
+  connect_proC_ids_each_proC = torch.zeros([2*p,etpn*tccn], dtype=torch.int64, device=device) -1 # [2p,4]
+  tmp0 = proC_ids_each_tarC[0:1]*0 -100
+  tmp = torch.cat([tmp0, proC_ids_each_tarC ], 0)
+  connect_proC_ids_each_proC = tmp[ connect_tarC_ids_each_proC + 1 ].view([2*p,-1])
+  connect_proC_ids_each_proC,_ = (-connect_proC_ids_each_proC).sort(dim=1)
+  connect_proC_ids_each_proC = -connect_proC_ids_each_proC
+  connect_proC_ids_each_proC = connect_proC_ids_each_proC[:,0:6]
+  return connect_proC_ids_each_proC
 
 class FastRCNNLossComputation(object):
     """
@@ -115,10 +167,8 @@ class FastRCNNLossComputation(object):
             )
 
             # grouping
-            target_connect_ids = targets_per_image.get_connect_corner_ids()
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            prop_ids_per_targ = get_prop_dis_per_targ(len(targets_per_image), matched_idxs, target_connect_ids)
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            tg_corner_connect_ids = targets_per_image.get_connect_corner_ids()
+            prop_ids_per_targ = get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids)
 
             labels.append(labels_per_image)
             regression_targets.append(regression_targets_per_image)
@@ -126,7 +176,7 @@ class FastRCNNLossComputation(object):
         #if not labels[0].device == torch.device('cuda:0'):
         #  import pdb; pdb.set_trace()  # XXX BREAKPOINT
         #  pass
-        grouping_labels = self.prepare_grouping_labels(targets)
+        #grouping_labels = self.prepare_grouping_labels(targets)
         return labels, regression_targets
 
     def prepare_grouping_labels(self, targets):
@@ -212,7 +262,6 @@ class FastRCNNLossComputation(object):
         if not self.need_seperate:
           classification_loss = F.cross_entropy(class_logits, labels)
           box_loss = self.box_loss(labels, box_regression, regression_targets, pro_bbox3ds)
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
           corner_groupng_loss = self.corners_grouping_loss(corners_semantic)
         else:
           classification_loss = self.seperate_classifier.roi_cross_entropy_seperated(class_logits, labels, proposals)
