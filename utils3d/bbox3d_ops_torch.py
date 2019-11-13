@@ -5,6 +5,20 @@ from utils3d.geometric_torch import angle_with_x
 from utils3d.geometric_torch import OBJ_DEF
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
+
+def adjust_corner_order(boxes_2corners):
+  corners0 = boxes_2corners[:,0:2]
+  corners1 = boxes_2corners[:,2:4]
+  centroids = (corners0 + corners1)/2
+  aim0_dir = torch.ones(1,2, dtype=torch.float32, device=boxes_2corners.device)
+  mask = ((corners0-centroids) * aim0_dir).sum(dim=1) > 0
+  mask = mask.view(-1,1).to(torch.float32)
+  corners0_ = corners0 * mask + corners1 * (1-mask)
+  corners1_ = corners1 * mask + corners0 * (1-mask)
+  boxes_2corners[:,0:2] = corners0_
+  boxes_2corners[:,2:4] = corners1_
+  return boxes_2corners
+
 class Box3D_Torch():
   '''
       bbox yx_zb  : [xc, yc, z_bot, y_size, x_size, z_size, yaw-0.5pi]
@@ -117,6 +131,7 @@ class Box3D_Torch():
     z1  = zpos_corners[:,0,2].view([-1,1])
     th = boxes[:,3].view([-1,1])
     boxes_2corners = torch.cat([c0x, c0y, c1x, c1y, z0, z1, th], 1).to(device)
+    boxes_2corners = adjust_corner_order(boxes_2corners)
     return boxes_2corners
 
 def show_boxes_corners_boxes(boxes, is_yx_zb, boxes_corners):
@@ -130,6 +145,7 @@ def box_dif(boxes0, boxes1):
   boxes_dif = torch.abs( boxes1 - boxes0 ).view([-1,7])
   boxes_dif[:,-1] = torch.abs( OBJ_DEF.limit_yaw(boxes_dif[:,-1], yx_zb=True) )
   difv_s1 = torch.max(boxes_dif)
+  assert difv_s1 < 1e-5
   return difv_s1
 
 
@@ -196,4 +212,4 @@ def test():
   pass
 
 if __name__ == '__main__':
-  test1()
+  test()
