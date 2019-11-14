@@ -39,6 +39,11 @@ def reduce_loss_dict(loss_dict):
     return reduced_losses
 
 
+def weighting_losses( loss_dict ):
+  weights = {'loss_classifier_roi':1, 'loss_box_reg_roi':1, 'loss_corner_grouping':0.0, 'loss_objectness':1, 'loss_rpn_box_reg':1}
+  for key in loss_dict:
+    loss_dict[key] *= weights[key]
+
 def do_train(
     model,
     data_loader,
@@ -90,6 +95,7 @@ def do_train(
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             continue
 
+        weighting_losses(loss_dict)
         losses = sum(loss for loss in loss_dict.values())
 
         if eval_in_train>0 and epoch_id % eval_in_train == 0:

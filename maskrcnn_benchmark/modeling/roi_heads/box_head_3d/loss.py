@@ -29,12 +29,10 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
                     the corner ids of 6 connected corners among all corners of positive proposals
   pos_prop_ids: [p] the ids of positive proposals, sorted by the same order with connect_proC_ids_each_proC
   '''
-  debug = proposals is not None
-  if debug:
-    matched_idxs = matched_idxs[5:7]
-    proposals.bbox3d = proposals.bbox3d[5:7]
+  debug = proposals is not None and 0
 
   t = tg_corner_connect_ids.shape[0] // 2
+  pro_num = matched_idxs.shape[0]
   device = matched_idxs.device
   tccn = tg_corner_connect_ids.shape[1] # the maximum connected corners of target: 3
   assert tccn == 3
@@ -48,8 +46,6 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
   # get the pos_proposal ids for each target
   tar_ids_each_pro, sorting = matched_tar_idxs_pos.sort()
   pos_prop_ids = pos_prop_ids[sorting] # [p]
-  if debug:
-    proposals = proposals[pos_prop_ids]
 
   # tarC_ids_each_proC: the responding target corner index of each positive
   # proposal corner
@@ -58,7 +54,7 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
   tarC_ids_each_proC = tmp.view(-1) # [2p]
 
   if debug:
-    check_corner_responding_tp(tar_ids_each_pro, tarC_ids_each_proC, proposals, targets)
+    check_corner_responding_tp(tar_ids_each_pro, tarC_ids_each_proC, proposals[pos_prop_ids], targets)
 
   # connect_tarC_ids_each_proC: the responing connected target corner ids for
   # each proposal corner
@@ -85,8 +81,16 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
   connect_proC_ids_each_proC = -connect_proC_ids_each_proC
   connect_proC_ids_each_proC = connect_proC_ids_each_proC[:,0:6]
 
-  #check_grouping_labels(targets, tg_corner_connect_ids)
-  #check_grouping_labels(proposals[pos_prop_ids], connect_proC_ids_each_proC)
+
+  # <0 to -1
+  mask = connect_proC_ids_each_proC < 0
+  connect_proC_ids_each_proC[mask] = -1
+  if debug:
+    #check_grouping_labels(targets, tg_corner_connect_ids)
+    check_grouping_labels(proposals[pos_prop_ids], connect_proC_ids_each_proC)
+
+  # mapping to all proposals
+  #connect_proC_ids_each_proC_final = torch.zeros(pro_num, 6, device=device, dtype=torch.float32)
   return connect_proC_ids_each_proC,  pos_prop_ids
 
 
@@ -182,6 +186,7 @@ class FastRCNNLossComputation(object):
         labels = []
         regression_targets = []
         connect_proC_ids_each_proCs = []
+        pos_prop_ids = []
         for proposals_per_image, targets_per_image in zip(proposals, targets):
             if len(targets_per_image) == 0:
               prop_num = len(proposals_per_image)
@@ -217,10 +222,11 @@ class FastRCNNLossComputation(object):
             connect_proC_ids_each_proC_, pos_prop_ids_ = get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals_per_image, targets_per_image)
 
             connect_proC_ids_each_proCs.append(connect_proC_ids_each_proC_)
+            pos_prop_ids.append(pos_prop_ids_)
             labels.append(labels_per_image)
             regression_targets.append(regression_targets_per_image)
 
-        return labels, regression_targets, connect_proC_ids_each_proCs
+        return labels, regression_targets, connect_proC_ids_each_proCs, pos_prop_ids
 
 
     def subsample(self, proposals, targets):
@@ -242,7 +248,7 @@ class FastRCNNLossComputation(object):
             proposals (list[BoxList])
             targets (list[BoxList])
         """
-        labels, regression_targets = self.prepare_targets(proposals, targets)
+        labels, regression_targets, connect_proC_ids_each_proCs, pos_prop_ids = self.prepare_targets(proposals, targets)
 
         proposals = list(proposals)
         # add corresponding label and regression_targets information to the bounding boxes
@@ -253,21 +259,28 @@ class FastRCNNLossComputation(object):
               import pdb; pdb.set_trace()  # XXX BREAKPOINT
               pass
             proposals_per_image.add_field("labels", labels_per_image)
-            proposals_per_image.add_field(
-                "regression_targets", regression_targets_per_image
-            )
+            proposals_per_image.add_field("regression_targets", regression_targets_per_image )
 
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
 
         # rm ignored proposals
-        for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
-            zip(sampled_pos_inds, sampled_neg_inds)
+        for img_idx, (pos_inds_img, neg_inds_img, pos_prop_ids_per_image) in enumerate(
+            zip(sampled_pos_inds, sampled_neg_inds, pos_prop_ids)
         ):
             img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
             proposals_per_image = proposals[img_idx][img_sampled_inds]
             proposals[img_idx] = proposals_per_image
 
+            # mapping raw index among all proposals to new which removed ignored
+            n = pos_inds_img.shape[0]
+            tmp = torch.zeros(n, dtype=torch.int64, device=img_sampled_inds.device) - 1
+            m = img_sampled_inds.shape[0]
+            tmp[img_sampled_inds] = torch.arange(m, dtype=torch.int64, device=img_sampled_inds.device)
+            pos_prop_ids[img_idx] =  tmp[pos_prop_ids_per_image]
+
         self._proposals = proposals
+        self._connect_proC_ids_each_proC = connect_proC_ids_each_proCs
+        self._pos_prop_ids  = pos_prop_ids
         return proposals
 
     def __call__(self, class_logits, box_regression, corners_semantic, targets=None):
@@ -300,11 +313,10 @@ class FastRCNNLossComputation(object):
 
         if not self.need_seperate:
           classification_loss = F.cross_entropy(class_logits, labels)
-          box_loss = self.box_loss(labels, box_regression, regression_targets, pro_bbox3ds)
-          corner_groupng_loss = self.corners_grouping_loss(corners_semantic)
+          box_loss, corner_loss = self.box_loss(labels, box_regression, regression_targets, pro_bbox3ds)
         else:
           classification_loss = self.seperate_classifier.roi_cross_entropy_seperated(class_logits, labels, proposals)
-          box_loss = self.seperate_classifier.roi_box_loss_seperated(self.box_loss,
+          box_loss, corner_loss = self.seperate_classifier.roi_box_loss_seperated(self.box_loss,
                                   labels, box_regression, regression_targets, pro_bbox3ds)
           print('seperate grouping loss not implemented')
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -313,7 +325,7 @@ class FastRCNNLossComputation(object):
         if SHOW_ROI_CLASSFICATION:
           self.show_roi_cls_regs(proposals, classification_loss, box_loss, class_logits,  targets, box_regression, regression_targets)
 
-        return classification_loss, box_loss
+        return classification_loss, box_loss, corner_loss
 
 
     def box_loss(self, labels, box_regression, regression_targets, bbox3ds):
@@ -351,10 +363,37 @@ class FastRCNNLossComputation(object):
             yaw_loss_mode = self.yaw_loss_mode
         )
         box_loss = box_loss / labels.numel()
-        return box_loss
+        corner_loss = self.corner_connection_loss()
+        return box_loss, corner_loss
 
-    def corners_grouping_loss(self, corners_semantic):
-      pass
+    def corner_connection_loss(self, active_threshold=0.2):
+        '''
+        active_threshold: only corner distaces within this threshold are calculated
+        '''
+        batch_size = len(self._proposals)
+        corner_pull_loss = []
+        for i in range(batch_size):
+            corners, _ = self._proposals[i].get_2top_corners_offseted()
+            corners = corners[self._pos_prop_ids[i]].view(-1,3)
+            tmp = corners[0:1] * 0 + float('NaN')
+            corners = torch.cat([tmp, corners], 0)
+
+            cor_ids = self._connect_proC_ids_each_proC[i]
+            connect_corners = corners[cor_ids+1]
+            corners = corners[1:].view(-1,1,3)
+            dif = connect_corners - corners
+            dif = dif.view(-1,3)
+            mask = 1-torch.isnan(dif[:,0])
+            dif_valid = dif[mask]
+            loss_i = dif_valid.norm(dim=1)
+            mask = loss_i < active_threshold
+            loss_i = loss_i[mask]
+            loss_i = loss_i.sum()
+            corner_pull_loss.append(loss_i)
+
+        corner_pull_loss = sum(corner_pull_loss)
+        return corner_pull_loss
+
 
     def show_roi_cls_regs(self, proposals, classification_loss, box_loss,
               class_logits, targets,  box_regression, regression_targets):

@@ -60,5 +60,6 @@ def smooth_l1_loss(input, target, anchor, beta=1. / 9, size_average=True, yaw_lo
       loss_cor2 = loss_sym_cor.sum(1) * 5
       loss_cor = torch.min(loss_cor1, loss_cor2)
       loss_zt = loss[:,4:].sum()
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       return loss_cor.sum() + loss_zt
 

@@ -121,7 +121,7 @@ class ROIBoxHead3D(torch.nn.Module):
             if SHOW_PRO_NUMS:
                   print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
-        loss_classifier, loss_box_reg = self.loss_evaluator(
+        loss_classifier, loss_box_reg, loss_corner_grouping = self.loss_evaluator(
             [class_logits], [box_regression],[corners_semantic], targets=targets,
         )
         if DEBUG and False:
@@ -131,13 +131,15 @@ class ROIBoxHead3D(torch.nn.Module):
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
         if not self.need_seperate:
-          roi_loss = {"loss_classifier_roi":loss_classifier, "loss_box_reg_roi":loss_box_reg}
+          roi_loss = {"loss_classifier_roi":loss_classifier, "loss_box_reg_roi":loss_box_reg,
+                      "loss_corner_grouping": loss_corner_grouping}
         else:
           roi_loss = {}
           gn = len(loss_classifier)
           for gi in range(gn):
             roi_loss[f"loss_classifier_roi_{gi}"] = loss_classifier[gi]
             roi_loss[f"loss_box_reg_roi_{gi}"] = loss_box_reg[gi]
+            roi_loss[f"loss_corner_grouping_{gi}"] = loss_corner_grouping[gi]
         return (
             x,
             proposals,
@@ -203,7 +205,7 @@ class ROIBoxHead3D(torch.nn.Module):
             if SHOW_PRO_NUMS:
                   print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
-        loss_classifier, loss_box_reg, loss_corner_grouping = self.loss_evaluator(
+        loss_classifier, loss_box_reg = self.loss_evaluator(
             [class_logits], [box_regression], targets=targets
         )
         if DEBUG and False:
@@ -213,15 +215,13 @@ class ROIBoxHead3D(torch.nn.Module):
           import pdb; pdb.set_trace()  # XXX BREAKPOINT
           pass
         if not self.need_seperate:
-          roi_loss = {"loss_classifier_roi":loss_classifier, "loss_box_reg_roi":loss_box_reg,
-                      "loss_corner_grouping": loss_corner_grouping}
+          roi_loss = {"loss_classifier_roi":loss_classifier, "loss_box_reg_roi":loss_box_reg,}
         else:
           roi_loss = {}
           gn = len(loss_classifier)
           for gi in range(gn):
             roi_loss[f"loss_classifier_roi_{gi}"] = loss_classifier[gi]
             roi_loss[f"loss_box_reg_roi_{gi}"] = loss_box_reg[gi]
-            roi_loss[f"loss_corner_grouping_{gi}"] = loss_corner_grouping[gi]
         return (
             x,
             proposals,
