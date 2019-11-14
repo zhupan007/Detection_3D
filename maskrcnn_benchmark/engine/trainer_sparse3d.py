@@ -89,6 +89,7 @@ def do_train(
 
 
         if CHECK_NAN:
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
           any_nan = sum(torch.isnan(v.data) for v in loss_dict.values())
           if any_nan:
             print(f'\nGot nan loss:\n{fn}\n')

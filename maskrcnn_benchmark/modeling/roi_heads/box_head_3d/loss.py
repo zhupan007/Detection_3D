@@ -313,7 +313,7 @@ class FastRCNNLossComputation(object):
 
         if not self.need_seperate:
           classification_loss = F.cross_entropy(class_logits, labels)
-          box_loss, corner_loss = self.box_loss(labels, box_regression, regression_targets, pro_bbox3ds)
+          box_loss, corner_loss = self.box_loss(labels, box_regression, regression_targets, pro_bbox3ds, corners_semantic)
         else:
           classification_loss = self.seperate_classifier.roi_cross_entropy_seperated(class_logits, labels, proposals)
           box_loss, corner_loss = self.seperate_classifier.roi_box_loss_seperated(self.box_loss,
@@ -328,7 +328,7 @@ class FastRCNNLossComputation(object):
         return classification_loss, box_loss, corner_loss
 
 
-    def box_loss(self, labels, box_regression, regression_targets, bbox3ds):
+    def box_loss(self, labels, box_regression, regression_targets, bbox3ds, corners_semantic):
         '''
         class_specific:
           labels:[n], box_regression:[n,c*7], regression_targets:[n,7], bbox3ds:[n,7]
@@ -363,36 +363,90 @@ class FastRCNNLossComputation(object):
             yaw_loss_mode = self.yaw_loss_mode
         )
         box_loss = box_loss / labels.numel()
-        corner_loss = self.corner_connection_loss()
+        corner_loss = self.corner_connection_loss(corners_semantic)
         return box_loss, corner_loss
 
-    def corner_connection_loss(self, active_threshold=0.2):
+    def corner_connection_loss(self, corners_semantic, active_threshold=0.2):
         '''
         active_threshold: only corner distaces within this threshold are calculated
         '''
-        batch_size = len(self._proposals)
-        corner_pull_loss = []
-        for i in range(batch_size):
-            corners, _ = self._proposals[i].get_2top_corners_offseted()
-            corners = corners[self._pos_prop_ids[i]].view(-1,3)
+        def cor_pull_loss_f(cor_ids, corners, flag):
+            assert flag == 'geo' or flag == 'sem'
+            assert cor_ids.shape[0] == corners.shape[0]
+
             tmp = corners[0:1] * 0 + float('NaN')
-            corners = torch.cat([tmp, corners], 0)
+            corners = torch.cat([ tmp, corners ], 0)
+
+            connect_corners = corners[cor_ids+1]
+            c = corners.shape[1]
+            corners = corners[1:].view(-1,1,c)
+            dif = connect_corners - corners
+            dif = dif.view(-1,c)
+            mask0 = 1-torch.isnan(dif[:,0])
+            dif_valid = dif[mask0]
+            pull_loss_i = dif_valid.norm(dim=1)
+            if flag == 'geo':
+              mask1 = pull_loss_i < active_threshold
+              pull_loss_i = pull_loss_i[mask1]
+            pull_loss_i = pull_loss_i.sum()
+            return pull_loss_i
+
+        def cor_push_loss_f(cor_ids, semantic, cor_xyzs, delta=1.0, geo_close_threshold=0.5):
+          n = cor_ids.shape[0]
+          m = cor_ids.shape[1]
+          c = semantic.shape[1]
+          device = cor_ids.device
+          # not connect: 1,  connect: 0
+          mask_not_connect = torch.ones(n, n, dtype=torch.int32, device=cor_ids.device)
+          cor_ids_0 = torch.arange(n).view(n,1).to(device)
+          cor_ids1 = torch.cat([cor_ids_0, cor_ids], 1)
+          cor_ids1 = cor_ids1.contiguous().view([-1,1])
+          mask_valid = cor_ids1 >=0
+          cor_ids1 = cor_ids1[mask_valid]
+          cor_ids2 = cor_ids_0.repeat(1,m+1).view([-1,1])[mask_valid]
+          mask_not_connect[cor_ids1, cor_ids2] = 0
+
+          geo_dif = cor_xyzs.view(n,1,3) - cor_xyzs.view(1,n,3)
+          geo_dis = geo_dif.norm(dim=2)
+          close_mask = (geo_dis < geo_close_threshold).to(torch.int32)
+
+          mask = mask_not_connect * close_mask
+
+          sem_dif = semantic.view(1,n,c) - semantic.view(n,1,c)
+          sem_dif = sem_dif.norm(dim=2)
+
+          sem_loss = torch.clamp( delta - sem_dif, min=0) * mask.to(torch.float32)
+          return sem_loss
+
+        batch_size = len(self._proposals)
+        geometric_pull_loss = []
+        semantic_pull_loss = []
+        semantic_push_loss = []
+        for i in range(batch_size):
+            cor_xyzs, _ = self._proposals[i].get_2top_corners_offseted()
+            cor_xyzs = cor_xyzs[self._pos_prop_ids[i]].view(-1,3)
+
+            semantic = corners_semantic[i][self._pos_prop_ids[i]]
+            c = semantic.shape[1]
+            semantic = semantic.view(-1,c//2)
 
             cor_ids = self._connect_proC_ids_each_proC[i]
-            connect_corners = corners[cor_ids+1]
-            corners = corners[1:].view(-1,1,3)
-            dif = connect_corners - corners
-            dif = dif.view(-1,3)
-            mask = 1-torch.isnan(dif[:,0])
-            dif_valid = dif[mask]
-            loss_i = dif_valid.norm(dim=1)
-            mask = loss_i < active_threshold
-            loss_i = loss_i[mask]
-            loss_i = loss_i.sum()
-            corner_pull_loss.append(loss_i)
 
-        corner_pull_loss = sum(corner_pull_loss)
-        return corner_pull_loss
+            geo_pull_loss_i = cor_pull_loss_f(cor_ids, cor_xyzs, 'geo')
+            sem_pull_loss_i = cor_pull_loss_f(cor_ids, semantic, 'sem')
+            sem_push_loss_i = cor_push_loss_f(cor_ids, semantic, cor_xyzs)
+
+            geometric_pull_loss.append(geo_pull_loss_i)
+            semantic_pull_loss.append(sem_pull_loss_i)
+            semantic_push_loss.append(sem_push_loss_i)
+
+        geometric_pull_loss = sum(geometric_pull_loss)
+        semantic_pull_loss = sum(semantic_pull_loss)
+        semantic_push_loss = sum(semantic_push_loss)
+        corner_loss = { 'geometric_pull_loss': geometric_pull_loss,
+                       'semantic_pull_loss':  semantic_pull_loss,
+                       'semantic_push_loss':  semantic_push_loss  }
+        return corner_loss
 
 
     def show_roi_cls_regs(self, proposals, classification_loss, box_loss,

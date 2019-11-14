@@ -66,7 +66,7 @@ class FPNPredictor(nn.Module):
               self.bbox_pred_body = nn.Linear(representation_size,  3) # z0, z1, thickness
               self.bbox_pred_cor = nn.Linear(representation_size, 2) # x,y
 
-            self.bbox_connect_cor = nn.Linear(representation_size, 16) # connection along four directions
+            self.bbox_corner_semantic = nn.Linear(representation_size, 16) # connection along four directions
             self.score_pred_cor = nn.Linear(representation_size, 1)
 
 
@@ -96,11 +96,11 @@ class FPNPredictor(nn.Module):
         cor1_score = self.score_pred_cor(x_cor1)
         corner_scores = torch.cat([cor0_score, cor1_score], 1)
 
-        bbox_con_cor0 = self.bbox_connect_cor(x_cor0)
-        bbox_con_cor1 = self.bbox_connect_cor(x_cor1)
-        bbox_connects = torch.cat([bbox_con_cor0, bbox_con_cor1],1)
+        bbox_corner_semantic0 = self.bbox_corner_semantic(x_cor0)
+        bbox_corner_semantic1 = self.bbox_corner_semantic(x_cor1)
+        corner_semantics = torch.cat([bbox_corner_semantic0, bbox_corner_semantic1],1)
 
-        return scores, bbox_regression_corners, bbox_connects
+        return scores, bbox_regression_corners, corner_semantics
 
     def forward_centroid_box(self, x):
         scores = self.cls_score(x)
