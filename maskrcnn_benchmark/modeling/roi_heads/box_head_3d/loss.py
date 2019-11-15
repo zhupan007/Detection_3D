@@ -416,6 +416,7 @@ class FastRCNNLossComputation(object):
           sem_dif = sem_dif.norm(dim=2)
 
           sem_loss = torch.clamp( delta - sem_dif, min=0) * mask.to(torch.float32)
+          sem_loss = sem_loss.sum()
           return sem_loss
 
         batch_size = len(self._proposals)

@@ -39,10 +39,20 @@ def reduce_loss_dict(loss_dict):
     return reduced_losses
 
 
-def weighting_losses( loss_dict ):
-  weights = {'loss_classifier_roi':1, 'loss_box_reg_roi':1, 'loss_corner_grouping':0.0, 'loss_objectness':1, 'loss_rpn_box_reg':1}
+def weighting_losses( loss_dict, loss_weights ):
+  lw = loss_weights
+  weights = {
+             'loss_objectness':     lw[0],
+             'loss_rpn_box_reg':    lw[1],
+             'loss_classifier_roi': lw[2],
+             'loss_box_reg_roi':    lw[3],
+             'geometric_pull_loss': lw[4],
+             'semantic_pull_loss':  lw[5],
+             'semantic_push_loss':  lw[6],
+             }
   for key in loss_dict:
     loss_dict[key] *= weights[key]
+  pass
 
 def do_train(
     model,
@@ -59,7 +69,8 @@ def do_train(
     eval_in_train_per_iter,
     iou_thresh_eval,
     min_loss,
-    eval_aug_thickness
+    eval_aug_thickness,
+    loss_weights
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info(f"Start training {epoch_id}")
@@ -87,16 +98,14 @@ def do_train(
 
         loss_dict, predictions_i = model(batch['x'], batch['y'])
 
-
         if CHECK_NAN:
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
           any_nan = sum(torch.isnan(v.data) for v in loss_dict.values())
           if any_nan:
             print(f'\nGot nan loss:\n{fn}\n')
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             continue
 
-        weighting_losses(loss_dict)
+        weighting_losses(loss_dict, loss_weights)
         losses = sum(loss for loss in loss_dict.values())
 
         if eval_in_train>0 and epoch_id % eval_in_train == 0:

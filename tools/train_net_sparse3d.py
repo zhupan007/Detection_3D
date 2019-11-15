@@ -73,6 +73,7 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
     checkpoint_period = int(cfg.SOLVER.CHECKPOINT_PERIOD_EPOCHS * cfg.INPUT.Example_num / cfg.SOLVER.IMS_PER_BATCH)
 
     epochs_between_test = cfg.SOLVER.EPOCHS_BETWEEN_TEST
+    loss_weights = cfg.MODEL.LOSS.WEIGHTS
     for e in range(epochs_between_test):
       min_loss = do_train(
           model,
@@ -89,7 +90,8 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
           cfg.DEBUG.eval_in_train_per_iter,
           cfg.TEST.IOU_THRESHOLD,
           min_loss,
-          eval_aug_thickness = EVAL_AUG_THICKNESS
+          eval_aug_thickness = EVAL_AUG_THICKNESS,
+          loss_weights = loss_weights
       )
 
     return model, min_loss
@@ -185,9 +187,18 @@ def main():
 
     train_example_num = get_train_example_num(cfg)
     croi = '_CROI' if cfg.MODEL.CORNER_ROI else ''
-    cfg['OUTPUT_DIR'] = f'{cfg.OUTPUT_DIR}_T{train_example_num}{croi}'
+    cfg['OUTPUT_DIR'] = f'{cfg.OUTPUT_DIR}_Tr{train_example_num}{croi}'
     if not cfg.MODEL.CLASS_SPECIFIC:
       cfg['OUTPUT_DIR'] += '_CA'
+
+    loss_weights = cfg.MODEL.LOSS.WEIGHTS
+    if  loss_weights[4] > 0:
+      k = int(loss_weights[4]*100)
+      cfg['OUTPUT_DIR'] += f'_CorGeo{k}'
+    if  loss_weights[5] > 0:
+      k = int(loss_weights[5]*100)
+      p = int(loss_weights[6]*100)
+      cfg['OUTPUT_DIR'] += f'_CorSem{k}-{p}'
     output_dir = cfg.OUTPUT_DIR
     if output_dir:
         mkdir(output_dir)
