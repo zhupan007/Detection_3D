@@ -23,6 +23,7 @@ MODEL:
     POOLER_SCALES_FROM_TOP: (4,3)
   LOSS:
     YAW_MODE: 'Diff'
+    WEIGHTS: [2.0,2,1,1,  0, 0.01, 0.01] # rpn_cls, rpn_reg, roi_cls,  roi_reg, cor_geo, cor_sem_pull
 SPARSE3D:
   nPlanesFront:  [32, 64, 64, 128, 128, 128, 256, 256, 256]
   KERNEL: [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
