@@ -38,6 +38,12 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
   assert tccn == 3
   etpn = 4 # the maximum detected proposal number for each target
   # the positive proposal ids
+
+  # Add self to connected ids: solve the porblem that multiple proposals for one
+  # target, these proposals should be connected
+  tmp = torch.arange(t*2, device=device, dtype=torch.int64).view(t*2,1)
+  tg_corner_connect_ids = torch.cat([tmp, tg_corner_connect_ids], 1)
+
   pos_prop_ids = torch.nonzero(matched_idxs >= 0).squeeze() # [p]
   p = pos_prop_ids.shape[0]
   # the matched target ids of postive proposals
@@ -79,7 +85,7 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
   connect_proC_ids_each_proC = tmp[ connect_tarC_ids_each_proC + 1 ].view([2*p,-1])
   connect_proC_ids_each_proC,_ = (-connect_proC_ids_each_proC).sort(dim=1)
   connect_proC_ids_each_proC = -connect_proC_ids_each_proC
-  connect_proC_ids_each_proC = connect_proC_ids_each_proC[:,0:6]
+  connect_proC_ids_each_proC = connect_proC_ids_each_proC[:,0:8]
 
 
   # <0 to -1
@@ -89,8 +95,6 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
     #check_grouping_labels(targets, tg_corner_connect_ids)
     check_grouping_labels(proposals[pos_prop_ids], connect_proC_ids_each_proC)
 
-  # mapping to all proposals
-  #connect_proC_ids_each_proC_final = torch.zeros(pro_num, 6, device=device, dtype=torch.float32)
   return connect_proC_ids_each_proC,  pos_prop_ids
 
 
@@ -109,10 +113,11 @@ def check_corner_responding_tp(tar_ids_each_pro, tarC_ids_each_proC, proposals, 
   pass
 
 def check_grouping_labels( proposals, connect_proC_ids_each_proC):
+      assert len(proposals)*2 == connect_proC_ids_each_proC.shape[0]
       corners, _ = proposals.get_2top_corners_offseted()
       corners = corners.view([-1,3])
       n = corners.shape[0]
-      for i in range(n):
+      for i in range( min(n,10) ):
         ids_i = connect_proC_ids_each_proC[i]
         mask  = ids_i>=0
         ids_i = ids_i[mask].view([-1])
@@ -120,10 +125,13 @@ def check_grouping_labels( proposals, connect_proC_ids_each_proC):
           tmp = ids_i[0:1]*0 + i
           ids_i = torch.cat([tmp,  ids_i], 0)
           corners0 = corners[ids_i]
+          print(f'corners:\n{corners0}')
           proposals.show(points = corners0)
           pass
       pass
 
+def check_corner_semantics(cor_xyzs):
+  pass
 
 class FastRCNNLossComputation(object):
     """
@@ -384,7 +392,8 @@ class FastRCNNLossComputation(object):
             dif = dif.view(-1,c)
             mask0 = 1-torch.isnan(dif[:,0])
             dif_valid = dif[mask0]
-            pull_loss_i = dif_valid.norm(dim=1)
+            dis_valid = dif_valid.norm(dim=1)
+            pull_loss_i  = dis_valid
             if flag == 'geo':
               mask1 = pull_loss_i < active_threshold
               pull_loss_i = pull_loss_i[mask1]
@@ -410,28 +419,36 @@ class FastRCNNLossComputation(object):
           geo_dis = geo_dif.norm(dim=2)
           close_mask = (geo_dis < geo_close_threshold).to(torch.int32)
 
-          mask = mask_not_connect * close_mask
+          push_mask = mask_not_connect * close_mask
 
           sem_dif = semantic.view(1,n,c) - semantic.view(n,1,c)
-          sem_dif = sem_dif.norm(dim=2)
+          sem_dis0 = sem_dif.norm(dim=2)
 
-          sem_loss = torch.clamp( delta - sem_dif, min=0) * mask.to(torch.float32)
-          sem_loss = sem_loss.sum()
-          return sem_loss
+          sem_dis_pull = sem_dis0  * (1-mask_not_connect).to(torch.float32)
+          sem_pull_loss = sem_dis_pull.sum()
+
+          sem_dis_push0 = (delta - sem_dis0)  * push_mask.to(torch.float32)
+          sem_push_loss = torch.clamp( sem_dis_push0, min=0)
+          sem_push_loss = sem_push_loss.sum()
+
+          #Bbox3D.draw_points(cor_xyzs[[0,59, 57, 55, 53]].cpu().data.numpy())
+          return sem_push_loss
 
         batch_size = len(self._proposals)
         geometric_pull_loss = []
         semantic_pull_loss = []
         semantic_push_loss = []
         for i in range(batch_size):
-            cor_xyzs, _ = self._proposals[i].get_2top_corners_offseted()
-            cor_xyzs = cor_xyzs[self._pos_prop_ids[i]].view(-1,3)
+            cor_xyzs0, _ = self._proposals[i][self._pos_prop_ids[i]].get_2top_corners_offseted()
+            cor_xyzs = cor_xyzs0.view(-1,3)
 
             semantic = corners_semantic[i][self._pos_prop_ids[i]]
             c = semantic.shape[1]
             semantic = semantic.view(-1,c//2)
 
             cor_ids = self._connect_proC_ids_each_proC[i]
+
+            #check_grouping_labels( self._proposals[i][self._pos_prop_ids[i]], cor_ids )
 
             geo_pull_loss_i = cor_pull_loss_f(cor_ids, cor_xyzs, 'geo')
             sem_pull_loss_i = cor_pull_loss_f(cor_ids, semantic, 'sem')
