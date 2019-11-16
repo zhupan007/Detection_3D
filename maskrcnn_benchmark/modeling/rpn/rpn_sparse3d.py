@@ -244,7 +244,7 @@ class RPNModule(torch.nn.Module):
           pass
 
     def _forward_train(self, anchors, objectness, rpn_box_regression, targets, debugs={}):
-        if self.cfg.MODEL.RPN_ONLY:
+        if self.cfg.MODEL.RPN__ONLY:
             # When training an RPN-only model, the loss is determined by the
             # predicted objectness and rpn_box_regression values and there is
             # no need to transform the anchors into predicted boxes; this is an

@@ -29,6 +29,15 @@ from maskrcnn_benchmark.utils.miscellaneous import mkdir
 from data3d.data import make_data_loader, check_data
 from data3d.dataset_metas import DSET_METAS
 
+def freeze_rpn_layers(model):
+  for p in model.backbone.parameters():
+    p.requires_grad = False
+  for p in model.rpn.parameters():
+    p.requires_grad = False
+  #for p in model.roi_heads.parameters():
+  #  p.requires_grad = True
+  #model.roi_heads.requires_grad = False
+  pass
 
 def train(cfg, local_rank, distributed, loop, only_test, min_loss):
     ay = cfg.TEST.EVAL_AUG_THICKNESS_Y_TAR_ANC
@@ -39,6 +48,9 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
     model = build_detection_model(cfg)
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
+    roi_only = cfg.MODEL.ROI__ONLY
+    if roi_only:
+      freeze_rpn_layers(model)
 
     optimizer = make_optimizer(cfg, model)
 
@@ -60,15 +72,13 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
 
     save_to_disk = get_rank() == 0
     checkpointer = DetectronCheckpointer(
-        cfg, model, optimizer, scheduler, output_dir, save_to_disk
+        cfg, model, optimizer, scheduler, output_dir, save_to_disk, roi_only=roi_only
     )
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
 
-
     if only_test:
       return model, min_loss
-
 
     checkpoint_period = int(cfg.SOLVER.CHECKPOINT_PERIOD_EPOCHS * cfg.INPUT.Example_num / cfg.SOLVER.IMS_PER_BATCH)
 
@@ -93,6 +103,7 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
           eval_aug_thickness = EVAL_AUG_THICKNESS,
           loss_weights = loss_weights
       )
+      pass
 
     return model, min_loss
 
@@ -190,6 +201,8 @@ def main():
     cfg['OUTPUT_DIR'] = f'{cfg.OUTPUT_DIR}_Tr{train_example_num}{croi}'
     if not cfg.MODEL.CLASS_SPECIFIC:
       cfg['OUTPUT_DIR'] += '_CA'
+    if cfg.MODEL.RPN__ONLY:
+      cfg['OUTPUT_DIR'] += '_RpnOnly'
 
     loss_weights = cfg.MODEL.LOSS.WEIGHTS
     if  loss_weights[4] > 0:

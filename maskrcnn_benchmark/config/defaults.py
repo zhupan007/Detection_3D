@@ -25,7 +25,8 @@ _C.DEBUG.eval_in_train = 10
 _C.DEBUG.eval_in_train_per_iter = -1
 
 _C.MODEL = CN()
-_C.MODEL.RPN_ONLY = False
+_C.MODEL.RPN__ONLY = False
+_C.MODEL.ROI__ONLY = False
 _C.MODEL.MASK_ON = False
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.META_ARCHITECTURE = "SparseRCNN"
