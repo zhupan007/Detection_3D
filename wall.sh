@@ -12,6 +12,7 @@ export CUDA_VISIBLE_DEVICES=1
 CONFIG_FILE='Wall/wall_Fpn4321_bs1_lr20_corsem_SD.yaml'
 #CONFIG_FILE='Wall/wall_Fpn4321_bs1_lr20_SD_CB.yaml'
 #CONFIG_FILE='Wall/wall_Fpn4321_bs1_lr5.yaml'
+CONFIG_FILE='Wall/wall_Fpn4321_bs1_lr5_RPN.yaml'
 
 ipython tools/train_net_sparse3d.py -- --config-file "configs/$CONFIG_FILE"  $TEST
 
