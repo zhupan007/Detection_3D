@@ -39,7 +39,7 @@ def reduce_loss_dict(loss_dict):
     return reduced_losses
 
 
-def weighting_losses( loss_dict, loss_weights ):
+def loss_weighted_sum( loss_dict, loss_weights ):
   lw = loss_weights
   weights = {
              'loss_objectness':     lw[0],
@@ -50,9 +50,11 @@ def weighting_losses( loss_dict, loss_weights ):
              'semantic_pull_loss':  lw[5],
              'semantic_push_loss':  lw[6],
              }
+  loss_sum = 0
   for key in loss_dict:
-    loss_dict[key] *= weights[key]
-  pass
+    loss_dict[key]  = loss_dict[key] * weights[key]
+    loss_sum += loss_dict[key]
+  return loss_sum
 
 def do_train(
     model,
@@ -105,8 +107,7 @@ def do_train(
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             continue
 
-        weighting_losses(loss_dict, loss_weights)
-        losses = sum(loss for loss in loss_dict.values())
+        losses = loss_weighted_sum(loss_dict, loss_weights)
 
         if eval_in_train>0 and epoch_id % eval_in_train == 0:
           data_id = batch['id']
