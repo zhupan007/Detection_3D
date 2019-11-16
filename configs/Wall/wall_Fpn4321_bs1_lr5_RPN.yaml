@@ -1,5 +1,5 @@
 DEBUG:
-  eval_in_train: 1
+  eval_in_train: -1
   eval_in_train_per_iter: -1
 INPUT:
   CLASSES: ['background', 'wall']
