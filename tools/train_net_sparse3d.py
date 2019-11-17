@@ -101,7 +101,8 @@ def train(cfg, local_rank, distributed, loop, only_test, min_loss):
           cfg.TEST.IOU_THRESHOLD,
           min_loss,
           eval_aug_thickness = EVAL_AUG_THICKNESS,
-          loss_weights = loss_weights
+          loss_weights = loss_weights,
+          roi_only =  cfg.MODEL.ROI__ONLY,
       )
       pass
 

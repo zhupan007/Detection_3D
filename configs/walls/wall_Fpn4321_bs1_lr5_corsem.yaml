@@ -4,11 +4,8 @@ DEBUG:
 INPUT:
   CLASSES: ['background', 'wall']
   #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
-MODEL:
-  ROI__ONLY: True
-  #SEPARATE_CLASSES: [['wall'], ['ceiling','floor']]
-  LOSS:
-    WEIGHTS: [2.0,2,1,1,  0, 0.01, 0.01] 
+#MODEL:
+  #  ROI__ONLY: True
 SOLVER:
   EPOCHS: 30
   EPOCHS_BETWEEN_TEST: 30

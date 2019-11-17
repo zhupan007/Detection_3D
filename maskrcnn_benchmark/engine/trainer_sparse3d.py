@@ -39,7 +39,10 @@ def reduce_loss_dict(loss_dict):
     return reduced_losses
 
 
-def loss_weighted_sum( loss_dict, loss_weights ):
+def loss_weighted_sum( loss_dict, loss_weights, roi_only ):
+  if roi_only:
+    del loss_dict['loss_objectness']
+    del loss_dict['loss_rpn_box_reg']
   lw = loss_weights
   weights = {
              'loss_objectness':     lw[0],
@@ -55,6 +58,7 @@ def loss_weighted_sum( loss_dict, loss_weights ):
     loss_dict[key]  = loss_dict[key] * weights[key]
     loss_sum += loss_dict[key]
   return loss_sum
+
 
 def do_train(
     model,
@@ -72,7 +76,8 @@ def do_train(
     iou_thresh_eval,
     min_loss,
     eval_aug_thickness,
-    loss_weights
+    loss_weights,
+    roi_only
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info(f"Start training {epoch_id}")
@@ -107,7 +112,7 @@ def do_train(
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
             continue
 
-        losses = loss_weighted_sum(loss_dict, loss_weights)
+        losses = loss_weighted_sum(loss_dict, loss_weights, roi_only)
 
         if eval_in_train>0 and epoch_id % eval_in_train == 0:
           data_id = batch['id']

@@ -434,7 +434,7 @@ class BoxList3D(object):
       self.bbox3d[:,3:6] = torch.clamp(self.bbox3d[:,3:6], min=0.001)
 
 
-    def get_connect_corner_ids(self, threshold=0.02):
+    def get_connect_corner_ids(self, threshold=0.2):
       '''
       n objects
       connect_ids: [2n,3]
@@ -465,16 +465,16 @@ class BoxList3D(object):
       # check
       check = False
       if check:
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         for i in range(m):
           ids_i = connect_ids[i]
           mask = ids_i>=0
           ids_i = ids_i[mask].view([-1])
-          if ids_i.shape[0]>0:
-            tmp = ids_i[0:1]*0 + i
-            ids_i = torch.cat([tmp, ids_i])
-            corners_i = corners[ids_i]
-            print(corners_i)
-            self.show(points=corners_i)
+          tmp = torch.ones(1,dtype= torch.int64, device=ids_i.device)  * i
+          ids_i = torch.cat([tmp, ids_i])
+          corners_i = corners[ids_i]
+          print(corners_i)
+          self.show(points=corners_i)
       return connect_ids
 
     def show(self, max_num=-1, points=None, with_centroids=False, boxes_show_together=None, points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, colors=None):

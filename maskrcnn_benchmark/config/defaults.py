@@ -246,7 +246,7 @@ _C.MODEL.ROI_MASK_HEAD.POSTPROCESS_MASKS_THRESHOLD = 0.5
 _C.MODEL.LOSS = CN()
 #_C.MODEL.LOSS.FOCAL = False
 _C.MODEL.LOSS.YAW_MODE = 'Diff' #'SinDiff'
-_C.MODEL.LOSS.WEIGHTS = [2.0,2,1,1,  0, 0.01, 0.01] # rpn_cls, rpn_reg, roi_cls,  roi_reg, cor_geo, cor_sem_pull, cor_sem_push
+_C.MODEL.LOSS.WEIGHTS = [2.0,2,1,1,  0, 1, 1] # rpn_cls, rpn_reg, roi_cls,  roi_reg, cor_geo, cor_sem_pull, cor_sem_push
 # ---------------------------------------------------------------------------- #
 # ResNe[X]t options (ResNets = {ResNet, ResNeXt}
 # Note that parts of a resnet may be used for both the backbone and the head
