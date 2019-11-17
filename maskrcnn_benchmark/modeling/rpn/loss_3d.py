@@ -13,6 +13,7 @@ from ..utils import cat
 from maskrcnn_benchmark.layers import smooth_l1_loss
 from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d, cat_boxlist_3d
+from maskrcnn_benchmark.utils.loss import focal_loss_alt
 import numpy as np
 
 from data3d.dataset_metas import DSET_METAS
@@ -26,6 +27,7 @@ SHOW_POS_NEG_ANCHORS = DEBUG and 0
 
 SHOW_PRED_POS_ANCHORS = DEBUG and  False
 CHECK_REGRESSION_TARGET_YAW = False
+FOCAL_LOSS = True
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs, dset_metas):
   ONLY_MISSED_TARGET = False
@@ -243,9 +245,10 @@ class RPNLossComputation(object):
             yaw_loss_mode = self.yaw_loss_mode,
         ) / (sampled_inds.numel())
 
-        objectness_loss = F.binary_cross_entropy_with_logits(
-            objectness[sampled_inds], labels[sampled_inds]
-        )
+        if not FOCAL_LOSS:
+            objectness_loss = F.binary_cross_entropy_with_logits( objectness[sampled_inds], labels[sampled_inds], size_average=True )
+        else:
+            objectness_loss = focal_loss_alt( objectness[sampled_inds].view(-1,1), labels[sampled_inds], size_average = True )
 
         return objectness_loss, box_loss
 
