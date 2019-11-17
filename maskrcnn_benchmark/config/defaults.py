@@ -46,14 +46,14 @@ _C.MODEL.SEPARATE_RPN = True
 # -----------------------------------------------------------------------------
 _C.SPARSE3D = CN()
 _C.SPARSE3D.VOXEL_SCALE = 50
-_C.SPARSE3D.VOXEL_FULL_SCALE = [1536, 1536, 320]
+_C.SPARSE3D.VOXEL_FULL_SCALE = [4096, 4096, 512]
 _C.SPARSE3D.VAL_REPS = 3
 _C.SPARSE3D.RESIDUAL_BLOCK = True
 _C.SPARSE3D.BLOCK_REPS = 1
 _C.SPARSE3D.nPlaneMap = 128
-_C.SPARSE3D.nPlanesFront = [32, 64, 64, 128, 128, 128, 256, 256, 256, 256]
-_C.SPARSE3D.KERNEL = [[2,2,4], [2,2,4], [2,2,4], [1,1,4], [2,2,4], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
-_C.SPARSE3D.STRIDE = [[2,2,2], [2,2,4], [2,2,4], [1,1,4], [2,2,1], [2,2,1], [2,2,1],[2,2,1],[2,2,1]]
+_C.SPARSE3D.nPlanesFront = [32, 64, 64, 128, 128, 128, 256, 256, 256]
+_C.SPARSE3D.KERNEL = [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
+_C.SPARSE3D.STRIDE = [[2,2,2], [2,2,2], [2,2,2], [2,2,2], [2,2,2],[2,2,2],[2,2,2],[2,2,2]]
 # -----------------------------------------------------------------------------
 # INPUT
 # -----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ _C.DATALOADER = CN()
 _C.DATALOADER.NUM_WORKERS = 4
 # If > 0, this enforces that each collated batch should have a size divisible
 # by SIZE_DIVISIBILITY
-_C.DATALOADER.SIZE_DIVISIBILITY = 0
+_C.DATALOADER.SIZE_DIVISIBILITY = 6 #0
 # If True, each batch should contain only images for which the aspect ratio
 # is compatible. This groups portrait images together, and landscape images
 # are not batched with portrait images.
@@ -122,11 +122,11 @@ _C.MODEL.RPN = CN()
 
 
 #_C.MODEL.RPN.ANCHOR3D_SIZES = (1,0.5,4, 3,0.5,4, 7,0.5,4)
-_C.MODEL.RPN.ANCHOR_SIZES_3D = [[0.1,0.3,3], [0.2,0.6,3], [0.4,1.2,3], [0.8,2.4,3]]# along yxz
+_C.MODEL.RPN.ANCHOR_SIZES_3D = [[0.4,1.5,1.5],[1.5,1.5,1.0],[4,4,1.5],    [0.2,0.5,3], [0.4,1.5,3], [0.6,2.5,3]]# along yxz
 _C.MODEL.RPN.YAWS = (0, -1.57, -0.785, 0.785)
 _C.MODEL.RPN.RATIOS = [[1,1,1],[1,2,1],[2,1,1],[1.5,1.5,1]]
 # Enable use yaws or ratios for each scale separately
-_C.MODEL.RPN.USE_YAWS = [1,1,1,1]
+_C.MODEL.RPN.USE_YAWS = [1,0,0,  1,1,1]
 
 _C.MODEL.RPN.USE_FPN = True
 ## Base RPN anchor sizes given in absolute pixels w.r.t. the scaled network input
@@ -146,7 +146,7 @@ _C.MODEL.RPN.FG_IOU_THRESHOLD = 0.55 #  0.7
 # Maximum overlap allowed between an anchor and ground-truth box for the
 # (anchor, gt box) pair to be a negative examples (IoU < BG_IOU_THRESHOLD
 # ==> negative RPN example) (->Matcher)
-_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.25 # 0.3
+_C.MODEL.RPN.BG_IOU_THRESHOLD = 0.2 # 0.3
 # Maximum yaw dif for positive anchor (->Matcher)
 _C.MODEL.RPN.YAW_THRESHOLD = 0.7
 # Total number of RPN examples per image (-> BalancedPositiveNegativeSampler)
@@ -173,9 +173,9 @@ _C.MODEL.RPN.FPN_POST_NMS_TOP_N_TEST = 1000 #  2000
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead_Sparse3D"
 
 # FROM_TOP: TOP 0 is the most sparse layer
-_C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2]
+_C.MODEL.RPN.RPN_SCALES_FROM_TOP =  [4,3,2,1]
 # [indices of 3d, indeice of 2d]
-_C.MODEL.RPN.RPN_3D_2D_SELECTOR =  [1,3,4,5]
+_C.MODEL.RPN.RPN_3D_2D_SELECTOR = [1,2,3,  4,5,6]
 _C.MODEL.RPN.ADD_GT_PROPOSALS = True
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options
@@ -218,7 +218,7 @@ _C.MODEL.ROI_HEADS.LABEL_AUG_THICKNESS_Z_TAR_ANC = [0.6,0.6]
 _C.MODEL.ROI_BOX_HEAD = CN()
 _C.MODEL.ROI_BOX_HEAD.FEATURE_EXTRACTOR = "FPN2MLPFeatureExtractor"
 _C.MODEL.ROI_BOX_HEAD.PREDICTOR = "FPNPredictor"
-_C.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = (7,7,3) #14
+_C.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = (5,11,4) #14
 _C.MODEL.ROI_BOX_HEAD.POOLER_SAMPLING_RATIO = 2
 #_C.MODEL.ROI_BOX_HEAD.POOLER_SCALES = (0.5,0.25, 0.125)  # (1.0 / 16,)
 #_C.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 2
