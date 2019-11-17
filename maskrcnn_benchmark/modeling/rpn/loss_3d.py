@@ -27,7 +27,7 @@ SHOW_POS_NEG_ANCHORS = DEBUG and 0
 
 SHOW_PRED_POS_ANCHORS = DEBUG and  False
 CHECK_REGRESSION_TARGET_YAW = False
-FOCAL_LOSS = True
+FOCAL_LOSS = False
 
 def check_matcher(target, anchor, match_quality_matrix, matched_idxs, dset_metas):
   ONLY_MISSED_TARGET = False

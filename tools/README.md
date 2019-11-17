@@ -3,6 +3,7 @@
 # Questions
 
 # on going process
+- boxes gt corner not connected well
 - The corner net does not work for small objects
 - improve loss for 2 corners regression: order issue
 - write torch version: bbox3d_ops_torch.py: from_2corners_to_yxzb, from_yxzb_to_2corners
