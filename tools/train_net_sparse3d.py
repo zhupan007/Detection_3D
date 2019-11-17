@@ -196,7 +196,7 @@ def main():
 
     if cfg.MODEL.RPN__ONLY:
       args.skip_test = True
-      cfg.DEBUG.eval_in_train = -1
+      cfg['DEBUG']['eval_in_train'] = -1
     #check_data(cfg)
 
     train_example_num = get_train_example_num(cfg)
