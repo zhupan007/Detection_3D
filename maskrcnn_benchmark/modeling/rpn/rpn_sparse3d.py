@@ -291,7 +291,7 @@ class RPNModule(torch.nn.Module):
                             anchors, objectness, rpn_box_regression, targets, self.add_gt_proposals)
             boxes[0].set_as_prediction()
             boxes[1].set_as_prediction()
-        if self.cfg.MODEL.RPN_ONLY:
+        if self.cfg.MODEL.RPN__ONLY:
             # For end-to-end models, the RPN proposals are an intermediate state
             # and don't bother to sort them in decreasing score order. For RPN-only
             # models, the proposals are the final output and we return them in
