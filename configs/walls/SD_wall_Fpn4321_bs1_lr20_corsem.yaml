@@ -6,8 +6,9 @@ INPUT:
   #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28']
   #SCENES: ['0058113bdc8bee5f387bb5ad316d7b28', '00922f91aa09dbdda3a74489ea0e21eb']
   SCENES: [ '00922f91aa09dbdda3a74489ea0e21eb']
+  SCENES: [ '25ac525ef2681559deda9af069338787']
 MODEL:
-  ROI__ONLY: True
+  ROI__ONLY: False
   LOSS:
     WEIGHTS: [6.0,6,4,4,  0, 1, 1]
 SOLVER:

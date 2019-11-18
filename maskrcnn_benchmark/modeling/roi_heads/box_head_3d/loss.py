@@ -44,7 +44,7 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
   tmp = torch.arange(t*2, device=device, dtype=torch.int64).view(t*2,1)
   tg_corner_connect_ids = torch.cat([tmp, tg_corner_connect_ids], 1)
 
-  pos_prop_ids = torch.nonzero(matched_idxs >= 0).squeeze() # [p]
+  pos_prop_ids = torch.nonzero(matched_idxs >= 0).squeeze(dim=1) # [p]
   p = pos_prop_ids.shape[0]
   # the matched target ids of postive proposals
   matched_tar_idxs_pos = matched_idxs[pos_prop_ids].squeeze() # [p]
