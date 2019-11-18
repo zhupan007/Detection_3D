@@ -212,8 +212,8 @@ def main():
       k = int(loss_weights[4]*100)
       cfg['OUTPUT_DIR'] += f'_CorGeo{k}'
     if  loss_weights[5] > 0:
-      k = int(loss_weights[5]*100)
-      p = int(loss_weights[6]*100)
+      k = int(loss_weights[5])
+      p = int(loss_weights[6])
       cfg['OUTPUT_DIR'] += f'_CorSem{k}-{p}'
     output_dir = cfg.OUTPUT_DIR
     if output_dir:
