@@ -378,9 +378,12 @@ class FastRCNNLossComputation(object):
         '''
         active_threshold: only corner distaces within this threshold are calculated
         '''
-        def cor_pull_loss_f(cor_ids, corners, flag):
+        def cor_geo_pull_loss_f(cor_ids, corners, flag):
             assert flag == 'geo' or flag == 'sem'
             assert cor_ids.shape[0] == corners.shape[0]
+
+            device = cor_ids.device
+            n = cor_ids.shape[0]
 
             tmp = corners[0:1] * 0 + float('NaN')
             corners = torch.cat([ tmp, corners ], 0)
@@ -394,17 +397,24 @@ class FastRCNNLossComputation(object):
             dif_valid = dif[mask0]
             dis_valid = dif_valid.norm(dim=1)
             pull_loss_i  = dis_valid
-            if flag == 'geo':
-              mask1 = pull_loss_i < active_threshold
-              pull_loss_i = pull_loss_i[mask1]
-            pull_loss_i = pull_loss_i.sum()
+
+            mask_valid = pull_loss_i < active_threshold
+            pull_loss_i = pull_loss_i[mask_valid]
+
+            one = torch.ones(1, dtype=torch.int64, device=device).squeeze()
+            pull_num = torch.max( mask_valid.sum() - n, one )
+            pull_loss_i = pull_loss_i.sum() / pull_num
             return pull_loss_i
 
-        def cor_push_loss_f(cor_ids, semantic, cor_xyzs, delta=1.0, geo_close_threshold=0.5):
+        def cor_semantic_loss_f(cor_ids, semantic, cor_xyzs, delta=1.0, geo_close_threshold=0.5):
           n = cor_ids.shape[0]
           m = cor_ids.shape[1]
           c = semantic.shape[1]
           device = cor_ids.device
+
+          sem_dif = semantic.view(1,n,c) - semantic.view(n,1,c)
+          sem_dis = sem_dif.norm(dim=2)
+
           # not connect: 1,  connect: 0
           mask_not_connect = torch.ones(n, n, dtype=torch.int32, device=cor_ids.device)
           cor_ids_0 = torch.arange(n).view(n,1).to(device)
@@ -414,25 +424,28 @@ class FastRCNNLossComputation(object):
           cor_ids1 = cor_ids1[mask_valid]
           cor_ids2 = cor_ids_0.repeat(1,m+1).view([-1,1])[mask_valid]
           mask_not_connect[cor_ids1, cor_ids2] = 0
+          mask_connect = 1-mask_not_connect
 
+          # geometric close mask
           geo_dif = cor_xyzs.view(n,1,3) - cor_xyzs.view(1,n,3)
           geo_dis = geo_dif.norm(dim=2)
           close_mask = (geo_dis < geo_close_threshold).to(torch.int32)
 
+          # pull loss: connected corners
+          sem_dis_pull = sem_dis  * mask_connect.to(torch.float32)
+          one = torch.ones(1, dtype=torch.int64, device=device).squeeze()
+          pull_num = torch.max( mask_connect.sum() - n, one )
+          sem_pull_loss = sem_dis_pull.sum() / pull_num
+
+          # push loss: not connected & close corners
           push_mask = mask_not_connect * close_mask
-
-          sem_dif = semantic.view(1,n,c) - semantic.view(n,1,c)
-          sem_dis0 = sem_dif.norm(dim=2)
-
-          sem_dis_pull = sem_dis0  * (1-mask_not_connect).to(torch.float32)
-          sem_pull_loss = sem_dis_pull.sum()
-
-          sem_dis_push0 = (delta - sem_dis0)  * push_mask.to(torch.float32)
+          sem_dis_push0 = (delta - sem_dis)  * push_mask.to(torch.float32)
           sem_push_loss = torch.clamp( sem_dis_push0, min=0)
-          sem_push_loss = sem_push_loss.sum()
+          push_num = torch.max( push_mask.sum(), one )
+          sem_push_loss = sem_push_loss.sum() / push_num
 
           #Bbox3D.draw_points(cor_xyzs[[0,59, 57, 55, 53]].cpu().data.numpy())
-          return sem_push_loss
+          return sem_push_loss, sem_pull_loss
 
         batch_size = len(self._proposals)
         geometric_pull_loss = []
@@ -450,17 +463,16 @@ class FastRCNNLossComputation(object):
 
             #check_grouping_labels( self._proposals[i][self._pos_prop_ids[i]], cor_ids )
 
-            geo_pull_loss_i = cor_pull_loss_f(cor_ids, cor_xyzs, 'geo')
-            sem_pull_loss_i = cor_pull_loss_f(cor_ids, semantic, 'sem')
-            sem_push_loss_i = cor_push_loss_f(cor_ids, semantic, cor_xyzs)
+            geo_pull_loss_i = cor_geo_pull_loss_f(cor_ids, cor_xyzs, 'geo')
+            sem_push_loss_i, sem_pull_loss_i = cor_semantic_loss_f(cor_ids, semantic, cor_xyzs)
 
             geometric_pull_loss.append(geo_pull_loss_i)
             semantic_pull_loss.append(sem_pull_loss_i)
             semantic_push_loss.append(sem_push_loss_i)
 
-        geometric_pull_loss = sum(geometric_pull_loss)
-        semantic_pull_loss = sum(semantic_pull_loss)
-        semantic_push_loss = sum(semantic_push_loss)
+        geometric_pull_loss = sum(geometric_pull_loss) / batch_size
+        semantic_pull_loss = sum(semantic_pull_loss) / batch_size
+        semantic_push_loss = sum(semantic_push_loss) / batch_size
         corner_loss = { 'geometric_pull_loss': geometric_pull_loss,
                        'semantic_pull_loss':  semantic_pull_loss,
                        'semantic_push_loss':  semantic_push_loss  }

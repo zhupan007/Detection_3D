@@ -434,7 +434,7 @@ class BoxList3D(object):
       self.bbox3d[:,3:6] = torch.clamp(self.bbox3d[:,3:6], min=0.001)
 
 
-    def get_connect_corner_ids(self, threshold=0.02):
+    def get_connect_corner_ids(self, threshold=0.1):
       '''
       n objects
       connect_ids: [2n,3]
