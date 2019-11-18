@@ -371,8 +371,8 @@ class FastRCNNLossComputation(object):
             yaw_loss_mode = self.yaw_loss_mode
         )
         box_loss = box_loss / labels.numel()
-        if corners_semantic is None:
-          corner_loss = None
+        if corners_semantic[0] is None:
+          corner_loss = {}
         else:
           corner_loss = self.corner_connection_loss(corners_semantic)
         return box_loss, corner_loss
@@ -449,6 +449,14 @@ class FastRCNNLossComputation(object):
 
           #Bbox3D.draw_points(cor_xyzs[[0,59, 57, 55, 53]].cpu().data.numpy())
           return sem_push_loss, sem_pull_loss
+
+
+        if len(self._proposals) == 0:
+          zero = torch.zeros(1, dtype=torch.float32, device = corners_semantic[0].device).squeeze()
+          corner_loss = { 'geometric_pull_loss':  zero,
+                        'semantic_pull_loss':     zero,
+                        'semantic_push_loss':     zero }
+          return corner_loss
 
         batch_size = len(self._proposals)
         geometric_pull_loss = []

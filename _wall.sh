@@ -11,8 +11,8 @@ export PYTHONPATH=$PWD
 #CONFIG_FILE='walls/wall_Fpn4321_bs1_lr5_Rpn.yaml'
 #CONFIG_FILE='walls/wall_Fpn4321_bs1_lr5_CB.yaml'
 
-#CONFIG_FILE='walls/SD_wall_Fpn4321_bs1_lr20.yaml'
-CONFIG_FILE='walls/SD_wall_Fpn4321_bs1_lr20_corsem.yaml'
+CONFIG_FILE='walls/SD_wall_Fpn4321_bs1_lr20.yaml'
+#CONFIG_FILE='walls/SD_wall_Fpn4321_bs1_lr20_corsem.yaml'
 #CONFIG_FILE='walls/SD_wall_Fpn4321_bs1_lr20_Rpn.yaml'
 #CONFIG_FILE='walls/SD_wall_Fpn4321_bs1_lr20_CB.yaml'
 

@@ -48,6 +48,8 @@ class ROIBoxHead3D(torch.nn.Module):
         self.add_gt_proposals = cfg.MODEL.RPN.ADD_GT_PROPOSALS
         self.detections_per_img = cfg.MODEL.ROI_HEADS.DETECTIONS_PER_IMG
         self.corner_roi = cfg.MODEL.CORNER_ROI
+        loss_weights = cfg.MODEL.LOSS.WEIGHTS
+        self.no_corner_loss = sum(loss_weights[4:7])==0
 
     def post_processor(self, log_reg, proposals):
         class_logits, box_regression = log_reg
@@ -104,6 +106,9 @@ class ROIBoxHead3D(torch.nn.Module):
         x = self.feature_extractor(features, proposals)
         # final classifier that converts the features into predictions
         class_logits, box_regression, corners_semantic = self.predictor(x)
+
+        if self.no_corner_loss:
+          corners_semantic = None
 
         if not self.training:
             result = self.post_processor((class_logits, box_regression), proposals)
@@ -207,7 +212,7 @@ class ROIBoxHead3D(torch.nn.Module):
                   print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
         loss_classifier, loss_box_reg, _ = self.loss_evaluator(
-            [class_logits], [box_regression], corners_semantic=None, targets=targets
+            [class_logits], [box_regression], corners_semantic=[None], targets=targets
         )
         if DEBUG and False:
           print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")
