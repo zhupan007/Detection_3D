@@ -206,8 +206,8 @@ class ROIBoxHead3D(torch.nn.Module):
             if SHOW_PRO_NUMS:
                   print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
-        loss_classifier, loss_box_reg = self.loss_evaluator(
-            [class_logits], [box_regression], targets=targets
+        loss_classifier, loss_box_reg, _ = self.loss_evaluator(
+            [class_logits], [box_regression], corners_semantic=None, targets=targets
         )
         if DEBUG and False:
           print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")

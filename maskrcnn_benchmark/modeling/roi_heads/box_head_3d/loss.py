@@ -371,7 +371,10 @@ class FastRCNNLossComputation(object):
             yaw_loss_mode = self.yaw_loss_mode
         )
         box_loss = box_loss / labels.numel()
-        corner_loss = self.corner_connection_loss(corners_semantic)
+        if corners_semantic is None:
+          corner_loss = None
+        else:
+          corner_loss = self.corner_connection_loss(corners_semantic)
         return box_loss, corner_loss
 
     def corner_connection_loss(self, corners_semantic, active_threshold=0.2):
