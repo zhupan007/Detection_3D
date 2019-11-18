@@ -155,7 +155,8 @@ class RPNModule(torch.nn.Module):
         box_selector_train = make_rpn_postprocessor(cfg, rpn_box_coder, is_train=True)
         box_selector_test = make_rpn_postprocessor(cfg, rpn_box_coder, is_train=False)
         loss_evaluator = make_rpn_loss_evaluator(cfg, rpn_box_coder)
-        self.seperate_classifier = SeperateClassifier(cfg.MODEL.SEPARATE_CLASSES_ID, len(cfg.INPUT.CLASSES))
+        class_specific = cfg.MODEL.CLASS_SPECIFIC
+        self.seperate_classifier = SeperateClassifier(cfg.MODEL.SEPARATE_CLASSES_ID, len(cfg.INPUT.CLASSES), class_specific, 'RPN')
 
         self.box_coder = rpn_box_coder
         self.anchor_generator = anchor_generator

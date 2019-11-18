@@ -5,7 +5,7 @@ from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
 DEBUG = False
 
 class SeperateClassifier():
-    def __init__(self, seperate_classes, num_input_classes):
+    def __init__(self, seperate_classes, num_input_classes, class_specific, flag ):
       '''
       (1) For RPN
       Each feature predict two proposals, one for seperated classes, the other one for remaining classes
@@ -19,6 +19,9 @@ class SeperateClassifier():
       self.need_seperate = len(seperate_classes) > 0
       if not self.need_seperate:
         return
+
+      self.flag = flag
+      self.class_specific = class_specific
 
       [sp.sort() for sp in seperate_classes]
       self.num_input_classes = num_input_classes # include background
@@ -224,13 +227,16 @@ class SeperateClassifier():
       return class_logits_g
 
     def seperate_pred_box(self, box_regression, sep_ids_g):
-      import pdb; pdb.set_trace()  # XXX BREAKPOINT
-      assert box_regression.shape[1] == self.seperated_num_classes_total*7
+      if self.class_specific:
+        assert box_regression.shape[1] == self.seperated_num_classes_total*7
       assert box_regression.shape[0] == sum([s.shape[0] for s in sep_ids_g])
       n = box_regression.shape[0]
       box_regression_g = []
       for i in range(self.group_num):
-        box_regression_i = box_regression.view([n,-1,7])[:, self.grouped_classes[i], :].view([n,-1])[sep_ids_g[i]]
+        if self.class_specific:
+          box_regression_i = box_regression.view([n,-1,7])[:, self.grouped_classes[i], :].view([n,-1])[sep_ids_g[i]]
+        else:
+          box_regression_i = box_regression.clone()
         box_regression_g.append(box_regression_i)
       return box_regression_g
 
