@@ -451,7 +451,7 @@ class FastRCNNLossComputation(object):
           return sem_push_loss, sem_pull_loss
 
 
-        if len(self._proposals) == 0:
+        if len(self._pos_prop_ids) == 0:
           zero = torch.zeros(1, dtype=torch.float32, device = corners_semantic[0].device).squeeze()
           corner_loss = { 'geometric_pull_loss':  zero,
                         'semantic_pull_loss':     zero,

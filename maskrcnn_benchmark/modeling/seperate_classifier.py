@@ -224,6 +224,7 @@ class SeperateClassifier():
       return class_logits_g
 
     def seperate_pred_box(self, box_regression, sep_ids_g):
+      import pdb; pdb.set_trace()  # XXX BREAKPOINT
       assert box_regression.shape[1] == self.seperated_num_classes_total*7
       assert box_regression.shape[0] == sum([s.shape[0] for s in sep_ids_g])
       n = box_regression.shape[0]
