@@ -396,7 +396,7 @@ class FastRCNNLossComputation(object):
             corners = corners[1:].view(-1,1,c)
             dif = connect_corners - corners
             dif = dif.view(-1,c)
-            mask0 = 1-torch.isnan(dif[:,0])
+            mask0 = ~torch.isnan(dif[:,0])
             dif_valid = dif[mask0]
             dis_valid = dif_valid.norm(dim=1)
             pull_loss_i  = dis_valid

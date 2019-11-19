@@ -99,59 +99,6 @@ data3d/data.py trainMerge
 pcl xyz: [0:max]
 ```
 
-# Installation
-
-## Envirionment 1 tested
-- Ubuntu 18.04.2 LTS
-- 1080TI
-- conda 4.6.8
-- Python 3.7.2
-- NVIDIA-SMI 390.116
-- Cuda V9.0.176
-- gcc 5.5.0
-- cmake version 3.13.3
-
-
-## general
-- conda install -c open3d-admin open3d
-- conda install pytorch=1.0.0 cuda100 -c pytorch
-  For 2080TI, pytoch 1.2 is not compatiable, pytoch1.1 seems good, but not sure. Pytorch1.0.0 is ok.
-
-## maskrcnn
-A gcc error occured while builing with this project
-Build with original project https://github.com/facebookresearch/maskrcnn-benchmark
-- https://github.com/facebookresearch/maskrcnn-benchmark/blob/master/INSTALL.md
-Then copy the \_C.cpython-37m-x86_64-linux-gnu.so to current prokect
-
-## second
-ref: https://github.com/traveller59/second.pytorch  
-pip install numba  
-Setup cuda for numba: add following to ~/.bashrc: 
-``` bash
-export NUMBAPRO_CUDA_DRIVER=/usr/lib/x86_64-linux-gnu/libcuda.so 
-export NUMBAPRO_NVVM=/usr/local/cuda/nvvm/lib64/libnvvm.so 
-export NUMBAPRO_LIBDEVICE=/usr/local/cuda/nvvm/libdevice 
-```
-
-## SparseConvCnn
-ref: https://github.com/facebookresearch/SparseConvNet  
-Build with original project and copy  
-``` bash
-conda install google-sparsehash -c bioconda
-conda install -c anaconda pillow
-bash develop.sh from  https://github.com/facebookresearch/SparseConvNet
-copy SCN.cpython-37m-x86_64-linux-gnu.so
-```
-
-## SpConv        
-ref: https://github.com/traveller59/spconv  
-later, SpConv and SparseConvCnn should only need to install one
-
-## Optinal
-- Pymesh: https://pymesh.readthedocs.io/en/latest/installation.html
-- pip install plyfile
-
-
 # Data generation
 
 # Data generation steps for as-built BIM
