@@ -9,8 +9,10 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import cat_boxlist_3d
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 from utils3d.bbox3d_ops_torch import Box3D_Torch
 
-DEBUG = True
+DEBUG = False
 SHOW_FILTER = DEBUG and 0
+
+MERGE_BY_CORNER = False
 
 class PostProcessor(nn.Module):
     """
@@ -77,7 +79,8 @@ class PostProcessor(nn.Module):
             #if SHOW_FILTER:
             #  show_before_filter(boxlist, 'before filter')
             boxlist = self.filter_results(boxlist, num_classes)
-            #boxlist = self.merge_by_corners(boxlist)
+            if MERGE_BY_CORNER:
+              boxlist = self.merge_by_corners(boxlist)
             if SHOW_FILTER:
               show_before_filter(boxlist, 'after filter')
             results.append(boxlist)
@@ -160,7 +163,7 @@ class PostProcessor(nn.Module):
 
     def merge_by_corners(self, boxlist, threshold=0.1):
       #show_before_filter(boxlist, 'before merging corners')
-      top_2corners0, boxes_2corners0 = boxlist.get_2top_corners()
+      top_2corners0, boxes_2corners0 = boxlist.get_2top_corners_offseted()
       boxes_2corners = boxes_2corners0.clone()
       top_2corners = top_2corners0.clone().view([-1,3])
       n = top_2corners.shape[0]

@@ -158,7 +158,7 @@ def render_pth_file(pth_fn, show_by_class=0):
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
-  #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
+  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
 
@@ -279,10 +279,6 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
         render_pth_file(pth_fn)
 
 
-def render_fn():
-    pth_fn = '/DS/SUNCG/suncg_v1_splited_torch_BS_30_30_BN_300K/houses/0005b50577f5871e1c0bb7a687f6cbc3/pcl_0.pth'
-    render_pth_file(pth_fn)
-
 def main():
     render_houses(
             r_cam=False,
@@ -382,9 +378,16 @@ def check_data():
         pass
       #torch.load(fn)
 
+def render_fn():
+    house = '171abbe9005ccc2e92ad613ab438b5c4'
+    house = '03e774f482a6ac811c6bf1937be095c5'
+    pth_fn = f'/DS/SUNCG/suncg_v1_splited_torch_BS_30_30_BN_300K/houses/{house}/pcl_0.pth'
+    render_pth_file(pth_fn)
+
+
 if __name__ == '__main__':
-    #render_fn()
-    main()
+    render_fn()
+    #main()
     #summarize()
     #check_data()
 
