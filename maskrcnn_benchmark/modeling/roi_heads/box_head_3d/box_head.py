@@ -212,16 +212,16 @@ class ROIBoxHead3D(torch.nn.Module):
 
         if self.eval_in_train > 0:
             if self.add_gt_proposals:
-                class_logits_, box_regression_, proposals_ = rm_gt_from_proposals_(
-                    class_logits, box_regression, proposals, targets)
+                class_logits_, box_regression_, proposals_, corners_semantic_ = rm_gt_from_proposals_(
+                    class_logits, box_regression, corners_semantic=None, proposals = proposals, targets = targets)
                 if SHOW_PRO_NUMS:
                   print(f'Eval in train rm gt proposals num: {len(proposals_[0])}')
-            proposals = self.post_processor((class_logits_, box_regression_), proposals_)
+            proposals = self.post_processor((class_logits_, box_regression_, None), proposals_)
             if SHOW_PRO_NUMS:
                   print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
         loss_classifier, loss_box_reg, _ = self.loss_evaluator(
-            [class_logits], [box_regression], corners_semantic=[None], targets=targets
+            class_logits, box_regression, corners_semantic=None, targets=targets
         )
         if DEBUG and False:
           print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")
