@@ -115,6 +115,9 @@ def extract_order_ids(sorted0, aim_order):
   aim_order: 0,1,2,...
   The purpose is to find the items that appeared in aim_order time
   '''
+  if sorted0.numel() == 0:
+      ids = torch.empty(0, dtype=torch.int64)
+      return ids
   assert sorted0.dim() == 1
   assert sorted0.min() >= 0
   assert aim_order < 4
