@@ -53,7 +53,7 @@ class PostProcessor(nn.Module):
             results (list[BoxList3D]): one BoxList3D for each image, containing
                 the extra fields labels and scores
         """
-        class_logits, box_regression = x # [100*batch_size,num_class] [100*batch_size, num_classes*7]
+        class_logits, box_regression, corners_semantic = x # [100*batch_size,num_class] [100*batch_size, num_classes*7]
         class_prob = F.softmax(class_logits, -1)
 
         # TODO think about a representation of batch of boxes

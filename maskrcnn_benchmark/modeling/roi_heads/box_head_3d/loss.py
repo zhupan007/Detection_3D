@@ -297,17 +297,21 @@ class FastRCNNLossComputation(object):
         This requires that the subsample method has been called beforehand.
 
         Arguments:
-            class_logits (list[Tensor])
-            box_regression (list[Tensor])
-            targets for debuging only
+            class_logits: [n,class_num]
+            box_regression: class agnostic [n,7]; class specific: [n,7*num_classes]
+            corners_semantic: [n,8*2]
+            targets for debuging only: [BoxList3D] len = batch_size
 
         Returns:
             classification_loss (Tensor)
             box_loss (Tensor)
         """
 
-        class_logits = cat(class_logits, dim=0)
-        box_regression = cat(box_regression, dim=0)
+        #class_logits = cat(class_logits, dim=0)
+        n = class_logits.shape[0]
+        assert n == box_regression.shape[0]
+        assert  corners_semantic is None or n == corners_semantic.shape[0]
+        class_num = class_logits.shape[1]
 
         if not hasattr(self, "_proposals"):
             raise RuntimeError("subsample needs to be called before")
@@ -325,9 +329,8 @@ class FastRCNNLossComputation(object):
         else:
           classification_loss = self.seperate_classifier.roi_cross_entropy_seperated(class_logits, labels, proposals)
           box_loss, corner_loss = self.seperate_classifier.roi_box_loss_seperated(self.box_loss,
-                                  labels, box_regression, regression_targets, pro_bbox3ds)
-          print('seperate grouping loss not implemented')
-          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+                                  labels, box_regression, regression_targets,
+                                  pro_bbox3ds = pro_bbox3ds, corners_semantic = corners_semantic )
           pass
 
         if SHOW_ROI_CLASSFICATION:
@@ -371,7 +374,7 @@ class FastRCNNLossComputation(object):
             yaw_loss_mode = self.yaw_loss_mode
         )
         box_loss = box_loss / labels.numel()
-        if corners_semantic[0] is None:
+        if corners_semantic is None:
           corner_loss = {}
         else:
           corner_loss = self.corner_connection_loss(corners_semantic)
@@ -379,6 +382,7 @@ class FastRCNNLossComputation(object):
 
     def corner_connection_loss(self, corners_semantic, active_threshold=0.2):
         '''
+        corners_semantic: [batch_size * n, sem_c]
         active_threshold: only corner distaces within this threshold are calculated
         '''
         def cor_geo_pull_loss_f(cor_ids, corners, flag):
@@ -451,14 +455,18 @@ class FastRCNNLossComputation(object):
           return sem_push_loss, sem_pull_loss
 
 
+        batch_size = len(self._proposals)
+        assert batch_size == len(self._pos_prop_ids)
         if len(self._pos_prop_ids) == 0:
-          zero = torch.zeros(1, dtype=torch.float32, device = corners_semantic[0].device).squeeze()
+          zero = torch.zeros(1, dtype=torch.float32, device = corners_semantic.device).squeeze()
           corner_loss = { 'geometric_pull_loss':  zero,
                         'semantic_pull_loss':     zero,
                         'semantic_push_loss':     zero }
           return corner_loss
 
-        batch_size = len(self._proposals)
+        sem_c = corners_semantic.shape[1]
+        corners_semantic = corners_semantic.view(batch_size, -1, sem_c)
+
         geometric_pull_loss = []
         semantic_pull_loss = []
         semantic_push_loss = []

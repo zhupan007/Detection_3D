@@ -52,7 +52,11 @@ def loss_weighted_sum( loss_dict, loss_weights ):
              }
   loss_sum = 0
   for key in loss_dict:
-    loss_dict[key]  = loss_dict[key] * weights[key]
+    for wk in weights:
+      if wk in key:
+        weight = weights[wk]
+        break
+    loss_dict[key]  = loss_dict[key] * weight
     loss_sum += loss_dict[key]
   return loss_sum
 

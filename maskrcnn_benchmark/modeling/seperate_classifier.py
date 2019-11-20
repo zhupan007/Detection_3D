@@ -161,22 +161,26 @@ class SeperateClassifier():
 
       return losses_g
 
-    def roi_box_loss_seperated(self, box_loss_fn, labels, box_regression, regression_targets, pro_bbox3ds):
+    def roi_box_loss_seperated(self, box_loss_fn, labels, box_regression, regression_targets, pro_bbox3ds, corners_semantic):
         '''
         labels: [n,2]
         box_regression: [b,7*seperated_num_classes_total]
         regression_targets:[n,7,2]
         pro_bbox3ds:[n,7]
         '''
-        box_regression_g = self.seperate_pred_box(box_regression, self.sep_ids_g_roi)
+        box_regression_g, corners_semantic_g  = self.seperate_pred_box(box_regression, corners_semantic, self.sep_ids_g_roi)
         regression_targets_g = []
         pro_bbox3ds_g = []
         box_losses_g = []
+        corner_losses_g = []
         for gi in  range(self.group_num):
             regression_targets_g.append(regression_targets[self.sep_ids_g_roi[gi]])
             pro_bbox3ds_g.append( pro_bbox3ds[self.sep_ids_g_roi[gi]] )
-            box_losses_g.append( box_loss_fn(self.labels_g_roi[gi], box_regression_g[gi], regression_targets_g[gi], pro_bbox3ds_g[gi]) )
-        return box_losses_g
+            box_loss, corner_loss =  box_loss_fn(self.labels_g_roi[gi], box_regression_g[gi], regression_targets_g[gi], pro_bbox3ds_g[gi], corners_semantic_g[gi])
+            box_losses_g.append( box_loss )
+            corner_losses_g.append(corner_loss)
+
+        return box_losses_g, corner_losses_g
 
     #---------------------------------------------------------------------------
     # Functions Utils
@@ -226,19 +230,30 @@ class SeperateClassifier():
         class_logits_g.append(class_logits_i)
       return class_logits_g
 
-    def seperate_pred_box(self, box_regression, sep_ids_g):
+    def seperate_pred_box(self, box_regression, corners_semantic, sep_ids_g):
       if self.class_specific:
         assert box_regression.shape[1] == self.seperated_num_classes_total*7
+      else:
+        assert box_regression.shape[1] == 7
       assert box_regression.shape[0] == sum([s.shape[0] for s in sep_ids_g])
       n = box_regression.shape[0]
       box_regression_g = []
+      corners_semantic_g = []
       for i in range(self.group_num):
         if self.class_specific:
           box_regression_i = box_regression.view([n,-1,7])[:, self.grouped_classes[i], :].view([n,-1])[sep_ids_g[i]]
+          print('corners_semantic is not implemented')
+          import pdb; pdb.set_trace()  # XXX BREAKPOINT
+          pass
         else:
-          box_regression_i = box_regression.clone()
+          box_regression_i = box_regression[sep_ids_g[i]]
+          if corners_semantic is None:
+              corners_semantic_i = None
+          else:
+              corners_semantic_i = corners_semantic[sep_ids_g[i]]
         box_regression_g.append(box_regression_i)
-      return box_regression_g
+        corners_semantic_g.append(corners_semantic_i)
+      return box_regression_g, corners_semantic_g
 
     def _seperating_ids(self, labels):
       assert isinstance(labels, torch.Tensor)
@@ -303,15 +318,15 @@ class SeperateClassifier():
         result[b].extra_fields['labels'] =  l2ol[result[b].extra_fields['labels']]
       return result
 
-    def post_processor(self, class_logits, box_regression, proposals, post_processor_fn):
+    def post_processor(self, class_logits, box_regression, corners_semantic, proposals, post_processor_fn):
       proposals_g, sep_ids_g  = self.seperate_proposals(proposals)
       #for gi in range(self.group_num):
       class_logits_g = self.seperate_pred_logits(class_logits, sep_ids_g)
-      box_regression_g = self.seperate_pred_box(box_regression, sep_ids_g)
+      box_regression_g, corners_semantic_g = self.seperate_pred_box(box_regression, corners_semantic, sep_ids_g)
 
       results_g = []
       for gi in range(self.group_num):
-        result_gi = post_processor_fn( (class_logits_g[gi], box_regression_g[gi]), proposals_g[gi] )
+        result_gi = post_processor_fn( (class_logits_g[gi], box_regression_g[gi] , corners_semantic_g[gi] ), proposals_g[gi] )
         results_g.append(result_gi)
 
       batch_size = len(proposals)

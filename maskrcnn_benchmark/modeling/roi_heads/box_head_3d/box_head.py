@@ -11,7 +11,7 @@ DEBUG = True
 SHOW_ROI_INPUT = DEBUG and False
 SHOW_PRO_NUMS = DEBUG and False
 
-def rm_gt_from_proposals_(class_logits, box_regression, proposals, targets):
+def rm_gt_from_proposals_(class_logits, box_regression, corners_semantic, proposals, targets):
     class_logits = class_logits.clone().detach()
     box_regression = box_regression.clone().detach()
 
@@ -30,7 +30,13 @@ def rm_gt_from_proposals_(class_logits, box_regression, proposals, targets):
     class_logits_ = class_logits[notgt_mask_all]
     box_regression_ = box_regression[notgt_mask_all]
 
-    return class_logits_, box_regression_, proposals_
+    if corners_semantic is None:
+      corners_semantic_ = None
+    else:
+      corners_semantic = corners_semantic.clone().detach()
+      corners_semantic_ = corners_semantic[notgt_mask_all]
+
+    return class_logits_, box_regression_, proposals_, corners_semantic_
 
 class ROIBoxHead3D(torch.nn.Module):
     """
@@ -52,11 +58,14 @@ class ROIBoxHead3D(torch.nn.Module):
         self.no_corner_loss = sum(loss_weights[4:7])==0
 
     def post_processor(self, log_reg, proposals):
-        class_logits, box_regression = log_reg
+        class_logits, box_regression, corners_semantic = log_reg
         if not self.need_seperate:
-          proposals = self.post_processor_((class_logits, box_regression), proposals)
+          proposals = self.post_processor_((class_logits, box_regression, corners_semantic), proposals)
         else:
-          proposals = self.seperate_classifier.post_processor(class_logits, box_regression, proposals, self.post_processor_)
+          proposals = self.seperate_classifier.post_processor(class_logits, box_regression,
+                                                              corners_semantic = corners_semantic,
+                                                              proposals = proposals,
+                                                              post_processor_fn = self.post_processor_)
         return proposals
 
     def forward(self, features, proposals, targets=None):
@@ -111,23 +120,23 @@ class ROIBoxHead3D(torch.nn.Module):
           corners_semantic = None
 
         if not self.training:
-            result = self.post_processor((class_logits, box_regression), proposals)
+            result = self.post_processor((class_logits, box_regression, corners_semantic), proposals)
             if SHOW_PRO_NUMS:
                 print(f'Test post proposals num: {len(result[0])}')
             return x, result, {}
 
         if self.eval_in_train > 0:
             if self.add_gt_proposals:
-                class_logits_, box_regression_, proposals_ = rm_gt_from_proposals_(
-                    class_logits, box_regression, proposals, targets)
+                class_logits_, box_regression_, proposals_, corners_semantic_ = rm_gt_from_proposals_(
+                    class_logits, box_regression, corners_semantic, proposals, targets)
                 if SHOW_PRO_NUMS:
                   print(f'Eval in train rm gt proposals num: {len(proposals_[0])}')
-            proposals = self.post_processor((class_logits_, box_regression_), proposals_)
+            proposals = self.post_processor((class_logits_, box_regression_, corners_semantic_), proposals_)
             if SHOW_PRO_NUMS:
                   print(f'Eval in train post proposals num: {len(proposals[0])}\n\n')
 
         loss_classifier, loss_box_reg, loss_corner_grouping = self.loss_evaluator(
-            [class_logits], [box_regression],[corners_semantic], targets=targets,
+            class_logits, box_regression, corners_semantic, targets=targets,
         )
         if DEBUG and False:
           print(f"\nloss_classifier_roi:{loss_classifier} \nloss_box_reg_roi: {loss_box_reg}")
