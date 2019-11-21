@@ -1,8 +1,10 @@
 import torch
 from torch.nn import functional as F
 from maskrcnn_benchmark.structures.bounding_box_3d import cat_boxlist_3d
+from data3d.dataset_metas  import DSET_METAS
 
 DEBUG = False
+WALL_ID = DSET_METAS.class_2_label0['wall']
 
 class SeperateClassifier():
     def __init__(self, seperate_classes, num_input_classes, class_specific, flag ):
@@ -46,6 +48,10 @@ class SeperateClassifier():
           self.org_labels_to_sep_labels[c] = torch.tensor([g,i]) # 0 not in seperate_classes
           self.sep_labels_to_org_labels[g][i] = c
 
+      for i,gcls in enumerate(self.grouped_classes):
+        if WALL_ID in gcls:
+          self.group_id_include_wall = i
+
       if DEBUG:
         print(f'\n\nseperate_classes: {seperate_classes}')
         print(f'labels0_to_org_labels: {self.labels0_to_org_labels}')
@@ -67,6 +73,7 @@ class SeperateClassifier():
         self.targets1: labels 0~nc_1
       '''
       assert objectness.shape[1] == self.group_num
+      assert rpn_box_regression.shape[1] == self.group_num * 7
       self.targets_groups_rpn = self.seperate_targets_and_update_labels(targets)
       boxes_g = []
       for gi in range(self.group_num):
@@ -180,6 +187,7 @@ class SeperateClassifier():
             box_losses_g.append( box_loss )
             corner_losses_g.append(corner_loss)
 
+        corner_losses_g = [corner_losses_g[self.group_id_include_wall]]
         return box_losses_g, corner_losses_g
 
     #---------------------------------------------------------------------------

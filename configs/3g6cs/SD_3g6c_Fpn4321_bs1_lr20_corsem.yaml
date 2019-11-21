@@ -8,7 +8,7 @@ INPUT:
   #SCENES: [ '00922f91aa09dbdda3a74489ea0e21eb']
 MODEL:
   SEPARATE_CLASSES: [['wall'], ['ceiling','floor']]
-  ROI__ONLY: True
+  ROI__ONLY: False
   LOSS:
     WEIGHTS: [6.0,6,4,4,  0, 1, 1]
 SOLVER:

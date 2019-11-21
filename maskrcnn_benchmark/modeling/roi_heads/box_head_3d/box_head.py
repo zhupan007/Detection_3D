@@ -153,8 +153,9 @@ class ROIBoxHead3D(torch.nn.Module):
           for gi in range(gn):
             roi_loss[f"loss_classifier_roi_{gi}"] = loss_classifier[gi]
             roi_loss[f"loss_box_reg_roi_{gi}"] = loss_box_reg[gi]
-            for key in loss_corner_grouping[gi]:
-              roi_loss[f"{key}_{gi}"] =  loss_corner_grouping[gi][key]
+            if gi < len(loss_corner_grouping):
+              for key in loss_corner_grouping[gi]:
+                roi_loss[f"{key}_{gi}"] =  loss_corner_grouping[gi][key]
         return (
             x,
             proposals,
@@ -205,7 +206,7 @@ class ROIBoxHead3D(torch.nn.Module):
         class_logits, box_regression = self.predictor(x)
 
         if not self.training:
-            result = self.post_processor((class_logits, box_regression), proposals)
+            result = self.post_processor((class_logits, box_regression, None), proposals)
             if SHOW_PRO_NUMS:
                 print(f'Test post proposals num: {len(result[0])}')
             return x, result, {}
