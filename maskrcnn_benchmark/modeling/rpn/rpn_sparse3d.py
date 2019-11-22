@@ -251,6 +251,7 @@ class RPNModule(torch.nn.Module):
             # no need to transform the anchors into predicted boxes; this is an
             # optimization that avoids the unnecessary transformation.
             boxes = anchors
+            self.seperate_classifier.seperate_rpn_assin(targets)
         else:
             # For end-to-end models, anchors must be transformed into boxes and
             # sampled into a training batch.
@@ -274,10 +275,11 @@ class RPNModule(torch.nn.Module):
         else:
           loss_objectness, loss_rpn_box_reg = self.seperate_classifier.seperate_rpn_loss_evaluator(
                   self.loss_evaluator, anchors, objectness, rpn_box_regression, targets, debugs=debugs)
-          gn = len(boxes)
+          gn = len(loss_objectness)
           losses = {}
           for gi in range(gn):
-            boxes[gi].set_as_prediction()
+            if self.seperate_classifier.need_seperate:
+              boxes[gi].set_as_prediction()
             losses[f"loss_objectness_{gi}"] = loss_objectness[gi]
             losses[f"loss_rpn_box_reg_{gi}"] = loss_rpn_box_reg[gi]
 

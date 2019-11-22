@@ -64,6 +64,9 @@ class SeperateClassifier():
     #---------------------------------------------------------------------------
     # For RPN
     #---------------------------------------------------------------------------
+    def seperate_rpn_assin(self, targets):
+      self.targets_groups_rpn = self.seperate_targets_and_update_labels(targets)
+
     def seperate_rpn_selector(self, box_selector_fn, anchors, objectness, rpn_box_regression, targets, add_gt_proposals):
       '''
         objectness: [n,2]
