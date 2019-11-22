@@ -118,6 +118,8 @@ def extract_order_ids(sorted0, aim_order):
   if sorted0.numel() == 0:
       ids = torch.empty(0, dtype=torch.int64)
       return ids
+  if sorted0.numel() == 1:
+    sorted0 = sorted0.view([-1])
   assert sorted0.dim() == 1
   assert sorted0.min() >= 0
   assert aim_order < 4

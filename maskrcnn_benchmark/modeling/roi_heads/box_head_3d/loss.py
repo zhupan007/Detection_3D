@@ -51,6 +51,7 @@ def get_prop_ids_per_targ(matched_idxs, tg_corner_connect_ids, proposals=None, t
 
   # get the pos_proposal ids for each target
   tar_ids_each_pro, sorting = matched_tar_idxs_pos.sort()
+  tar_ids_each_pro = tar_ids_each_pro.view([-1])
   pos_prop_ids = pos_prop_ids[sorting] # [p]
 
   # tarC_ids_each_proC: the responding target corner index of each positive
