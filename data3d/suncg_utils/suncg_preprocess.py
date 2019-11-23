@@ -397,19 +397,23 @@ class Suncg():
     scene_ids = os.listdir(root_path+'/house')
     house_fns = [os.path.join(root_path, 'house/%s/house.json'%(scene_id)) for scene_id in scene_ids]
     house_fns.sort()
-    self.house_fns = house_fns[0:3]
+    self.house_fns = house_fns[100:200]
+    # Currently totally 9000 houses used, which include over 6000 singel level houses
+
     #if SAGE:
     #  #self.house_fns = house_fns[5000: 7000]
     #  self.house_fns = house_fns[7000: 9000]
     #else:
     #  self.house_fns = house_fns[4460:5000]
 
-    if Debug and 1:
+    if Debug and 0:
       scene_id = '1d84d7ca97f9e05534bf408779406e30'
       scene_id = '00e030e0e9198a0f9dd5389f2d2e9271'
+      scene_id = '0058113bdc8bee5f387bb5ad316d7b28'
+      scene_id = '003ecdd4fe76e4421091094665f39c5a'
       self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json']
 
-      self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.pcl_err]
+      #self.house_fns = [f'{SUNCG_V1_DIR}/house/{scene_id}/house.json' for scene_id in SceneSamples.pcl_err]
 
     self.house_fns = rm_bad_scenes(self.house_fns)
 
@@ -548,7 +552,7 @@ def check_images_intact(base_dir):
 
 
 def gen_bbox(house_fn):
-    always_gen_bbox = Debug and 0
+    always_gen_bbox = Debug and 1
 
     parsed_dir = get_pcl_path(house_fn)
     summary = read_summary(parsed_dir)
@@ -1185,10 +1189,10 @@ def parse_house():
   '''
   suncg = Suncg(SUNCG_V1_DIR)
   #suncg.parse_houses_pool()
-  #suncg.parse_houses(False)
+  suncg.parse_houses(False)
 
 if __name__ == '__main__':
-  #parse_house()
+  parse_house()
   #gen_house_names_1level()
 
   #check_house_status()

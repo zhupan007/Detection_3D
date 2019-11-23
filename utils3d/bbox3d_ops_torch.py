@@ -113,11 +113,11 @@ class Box3D_Torch():
     return boxes
 
   @staticmethod
-  def from_yxzb_to_2corners(boxes_yxzb):
-    if boxes_yxzb.shape[0] == 0:
-      return boxes_yxzb
-    device = boxes_yxzb.device
-    boxes = boxes_yxzb.clone().detach()
+  def from_yxzb_to_2corners(boxes_in):
+    if boxes_in.shape[0] == 0:
+      return boxes_in
+    device = boxes_in.device
+    boxes = boxes_in.clone().detach()
     boxes0 = boxes.cpu().data.numpy()
     zneg_corners, zpos_corners = Bbox3D.bboxes_corners_xz_central_surface(boxes0, is_yx_zb = True)
     zneg_corners = torch.from_numpy(zneg_corners).to(device)
@@ -151,7 +151,7 @@ def box_dif(boxes0, boxes1):
 
 def test1():
   boxes_yxzb0 = torch.tensor( [[0.0780, 6.1881, 0.0496, 0.0947, 4.8724, 2.7350, 0.0000]] )
-  boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(boxes_yxzb0)
+  boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(boxes_yxzb0, True)
   boxes_yxzb_1 = Box3D_Torch.from_2corners_to_yxzb(boxes_2corners)
   print('Y1', box_dif( boxes_yxzb0, boxes_yxzb_1 ) )
   import pdb; pdb.set_trace()  # XXX BREAKPOINT
@@ -184,7 +184,7 @@ def test():
 
   print('S1', box_dif( boxes_standard1, boxes_standard0 ) )
 
-  boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(boxes_yxzb0)
+  boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(boxes_yxzb0, is_yx_zb=True)
   #show_boxes_corners_boxes(boxes_yxzb0, True, boxes_2corners)
   boxes_standard2 = Box3D_Torch.corner_box_to_standard(boxes_2corners,debug=1).view([n,-1])
   #show_boxes_corners_boxes(boxes_standard2, False, boxes_2corners)

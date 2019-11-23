@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
+from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D, merge_by_corners
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_nms_3d
 from maskrcnn_benchmark.structures.boxlist_ops_3d import cat_boxlist_3d
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
@@ -80,7 +80,7 @@ class PostProcessor(nn.Module):
             #  show_before_filter(boxlist, 'before filter')
             boxlist = self.filter_results(boxlist, num_classes)
             if MERGE_BY_CORNER:
-              boxlist = self.merge_by_corners(boxlist)
+              boxlist = merge_by_corners(boxlist)
             if SHOW_FILTER:
               show_before_filter(boxlist, 'after filter')
             results.append(boxlist)
@@ -161,75 +161,6 @@ class PostProcessor(nn.Module):
             result = result[keep]
         return result
 
-    def merge_by_corners(self, boxlist, threshold=0.1):
-      #show_before_filter(boxlist, 'before merging corners')
-      top_2corners0, boxes_2corners0 = boxlist.get_2top_corners_offseted()
-      boxes_2corners = boxes_2corners0.clone()
-      top_2corners = top_2corners0.clone().view([-1,3])
-      n = top_2corners.shape[0]
-      dis = top_2corners.view([-1,1,3]) - top_2corners.view([1,-1,3])
-      dis = dis.norm(dim=2)
-      mask = dis < threshold
-      device = top_2corners.device
-      mask = mask - torch.eye(n, dtype=torch.uint8, device=device)
-      mask_merged = torch.zeros([n], dtype=torch.int32, device=device)
-      for i in range(n):
-        dif_i = top_2corners[i:i+1] - top_2corners
-        dis_i = dif_i.norm(dim=1)
-        mask_i = dis_i < threshold
-        j = i + 2 * (i%2==0) - 1
-        mask_i[j] = 0
-        ids_i = torch.nonzero(mask_i).squeeze(1)
-
-        # check if the close ids include one whole object
-        ids_j = ids_i + 2*(ids_i%2==0).to(torch.int64) - 1
-        any_same_obj = ids_i.view(-1,1) == ids_j.view(1,-1)
-        if any_same_obj.sum() > 0:
-          continue
-
-        #print(ids_i)
-        if ids_i.shape[0] > 1:
-          ave_i = top_2corners[ids_i].mean(dim=0).view(1,3)
-          top_2corners[ids_i] = ave_i
-          mask_merged[ids_i] = 1
-          #if DEBUG:
-          #  print(f'ids: {ids_i}')
-          #  print(f'org: {top_2corners[ids_i]}')
-          #  print(f'ave: {ave_i}')
-          pass
-
-        if DEBUG and False:
-          corners_close = top_2corners0.view([-1,3])[ids_i]
-          boxlist.show(points = corners_close)
-
-          cor_tmp = top_2corners.view(-1,2,3)
-          tmp = (cor_tmp[:,0] - cor_tmp[:,1]).norm(dim=1)
-          if tmp.min()==0:
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
-            pass
-
-      ids_merged = torch.nonzero(mask_merged).squeeze(1)
-      corners_merged = top_2corners[ids_merged]
-      top_2corners = top_2corners.view([-1,2,3])
-
-
-      # offset the corners to the end by half thickness
-      centroids = top_2corners.mean(dim=1, keepdim=True)
-      offset = top_2corners - centroids
-      offset = offset / offset.norm(dim=2, keepdim=True) * boxes_2corners[:,-1].view(-1,1,1) * 0.5
-      top_2corners = top_2corners + offset
-
-      boxes_2corners[:,0:2] = top_2corners[:,0,0:2]
-      boxes_2corners[:,2:4] = top_2corners[:,1,0:2]
-      boxes_2corners[:,5] = top_2corners[:,:,2].mean(dim=1)
-      boxes_2corners[:,4] = boxes_2corners[:,4].mean()
-
-
-      boxlist.bbox3d = Box3D_Torch.from_2corners_to_yxzb(boxes_2corners)
-
-      #boxlist.show(points=corners_merged)
-      #show_before_filter(boxlist, 'after merging corners')
-      return boxlist
 
 def show_before_filter(boxlist, msg):
   print(msg)

@@ -60,7 +60,7 @@ def preprocess_walls(wall_bboxes):
     #mask =( wall_bboxes[:,0] < 45) *  (wall_bboxes[:,0] > 43)
     #wall_bboxes_ = wall_bboxes[mask]
 
-  if DEBUG and False:
+  if DEBUG and 0:
     show_walls_offsetz(wall_bboxes)
   return wall_bboxes
 

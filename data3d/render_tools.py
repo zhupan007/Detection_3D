@@ -10,7 +10,7 @@ from suncg_utils.scene_samples import SceneSamples
 from data3d.dataset_metas import DSET_METAS0
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
-PARSED_DIR = f'{SUNCG_V1_DIR}/parsed'
+PARSED_DIR = f'/DS/SUNCG/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_torch_splited'
 
 #CLASSES = ['wall', 'ceiling']
@@ -79,9 +79,9 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
 
     #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
     #if not show_pcl:
-    Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
+    #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
     #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
-    #show_walls_offsetz(bboxes)
+    show_walls_offsetz(bboxes)
 
     if show_by_class:
           for c in range(1,max(labels)+1):
@@ -152,25 +152,28 @@ def render_pth_file(pth_fn, show_by_class=0):
     labels += [i]*n
   labels = np.array(labels)
 
-  Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
+  #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
   #show_walls_offsetz(all_bboxes)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes_mesh(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
-  Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
+  #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
 
+  show_walls_offsetz(all_bboxes)
+
   if show_by_class:
     for clas in bboxes.keys():
-      if clas not in ['ceiling', 'floor']:
-      #if clas not in ['wall', 'window', 'door','ceiling', 'floor']:
+      #if clas not in ['wall']:
+      if clas not in ['wall', 'window', 'door','ceiling', 'floor']:
         continue
-      print(clas)
       #if clas not in CLASSES:
       #  continue
       boxes = bboxes[clas]
+      bn = boxes.shape[0]
+      print(clas, f'num={bn}')
       #Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
       Bbox3D.draw_points_bboxes_mesh(pcl, boxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
       show_walls_offsetz(boxes)
@@ -254,6 +257,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = ['0138ea33414267375b879ff7ccc1436c']
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
   #house_names = ['0055398beb892233e0664d843eb451ca']
+  house_names = ['0058113bdc8bee5f387bb5ad316d7b28']
 
   print(f'totally {len(house_names)} houses')
 
@@ -282,7 +286,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 0,
+            r_whole = 1,
             r_splited = 1
     )
 
@@ -381,13 +385,15 @@ def check_data():
 def render_fn():
     house = '171abbe9005ccc2e92ad613ab438b5c4'
     house = '03e774f482a6ac811c6bf1937be095c5'
-    pth_fn = f'/DS/SUNCG/suncg_v1_splited_torch_BS_30_30_BN_300K/houses/{house}/pcl_0.pth'
+    house = '0058113bdc8bee5f387bb5ad316d7b28'
+    #house = '003ecdd4fe76e4421091094665f39c5a'
+    pth_fn = f'/DS/SUNCG/suncg_v1_splited_torch_BS_50_50_BN_500K/houses/{house}/pcl_0.pth'
     render_pth_file(pth_fn)
 
 
 if __name__ == '__main__':
-    render_fn()
-    #main()
+    #render_fn()
+    main()
     #summarize()
     #check_data()
 

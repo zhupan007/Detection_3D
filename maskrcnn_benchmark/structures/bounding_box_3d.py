@@ -11,6 +11,7 @@ FLIP_TOP_BOTTOM = 1
 
 POINTS_KEEP_RATE = 1.0
 POINTS_SAMPLE_RATE = 1.0
+DEBUG = False
 
 # TODO redundant, remove
 def _cat(tensors, dim=0):
@@ -259,12 +260,15 @@ class BoxList3D(object):
             self.extra_fields[k] = v
 
     def get_2corners_boxes(self):
-      boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(self.bbox3d)
+      if self.mode != 'yx_zb':
+        boxes = self.convert('yx_zb').bbox3d
+      else:
+        boxes = self.bbox3d
+      boxes_2corners = Box3D_Torch.from_yxzb_to_2corners(boxes)
       return boxes_2corners
 
     def get_2top_corners_offseted(self):
       # offset the corners from end to corners by half thickness
-      assert self.mode == 'yx_zb'
       boxes_2corners = self.get_2corners_boxes()
       corners_top0 = boxes_2corners[:,[0,1,5]]
       corners_top1 = boxes_2corners[:,[2,3,5]]
@@ -275,7 +279,10 @@ class BoxList3D(object):
       #centroids = (corners_top0 + corners_top1) / 2.0
       offset = (centroids - corners_top)
       offset_norm = offset.norm(dim=2).view([n,2,1])
-      thickness = self.bbox3d[:,3].view(n,1,1)
+      if self.mode == 'yx_zb':
+        thickness = self.bbox3d[:,3].view(n,1,1)
+      elif self.mode == 'standard':
+        thickness = self.bbox3d[:,4].view(n,1,1)
       offset = offset / offset_norm * thickness * 0.5
       corners_top = corners_top + offset
       zbottoms = boxes_2corners[:,4:5]
@@ -468,7 +475,7 @@ class BoxList3D(object):
           connect_ids[tmp[:,0], j] =  tmp[:,1]
 
       # check
-      check = False
+      check = 1
       if check:
         for i in range(m):
           ids_i = connect_ids[i]
@@ -514,8 +521,9 @@ class BoxList3D(object):
         labels = labels, random_color=False)
       else:
         points = points.cpu().data.numpy()
+        random_color = colors is None
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb',\
-          labels = labels,  random_color=False, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate, box_colors=colors)
+          labels = labels,  random_color=random_color, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate, box_colors=colors)
 
     def show_centroids(self, max_num=-1, points=None):
       import numpy as np
@@ -537,7 +545,7 @@ class BoxList3D(object):
       points = corners.cpu().data.numpy()
       boxes = self.bbox3d.cpu().data.numpy()
       Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb',\
-          random_color=False)
+          random_color=True)
       pass
 
     def show__together(self, boxlist_1, max_num=-1, max_num_1=-1, points=None, offset_x=None, twolabels=False,
@@ -804,6 +812,82 @@ class BoxList3D(object):
       res = self[ids]
       res.show()
 
+
+def merge_by_corners(boxlist, threshold=0.1):
+      is_standard = boxlist.mode == 'standard'
+      if is_standard:
+        boxlist = boxlist.convert('yx_zb')
+      #boxlist.show_with_corners()
+      top_2corners0, boxes_2corners0 = boxlist.get_2top_corners_offseted()
+      boxes_2corners = boxes_2corners0.clone()
+      top_2corners = top_2corners0.clone().view([-1,3])
+      n = top_2corners.shape[0]
+      dis = top_2corners.view([-1,1,3]) - top_2corners.view([1,-1,3])
+      dis = dis.norm(dim=2)
+      mask = dis < threshold
+      device = top_2corners.device
+      mask = mask - torch.eye(n, dtype=torch.uint8, device=device)
+      mask_merged = torch.zeros([n], dtype=torch.int32, device=device)
+      for i in range(n):
+        dif_i = top_2corners[i:i+1] - top_2corners
+        dis_i = dif_i.norm(dim=1)
+        mask_i = dis_i < threshold
+        j = i + 2 * (i%2==0) - 1
+        mask_i[j] = 0
+        ids_i = torch.nonzero(mask_i).squeeze(1)
+
+        # check if the close ids include one whole object
+        ids_j = ids_i + 2*(ids_i%2==0).to(torch.int64) - 1
+        any_same_obj = ids_i.view(-1,1) == ids_j.view(1,-1)
+        if any_same_obj.sum() > 0:
+          continue
+
+        #print(ids_i)
+        if ids_i.shape[0] > 1:
+          ave_i = top_2corners[ids_i].mean(dim=0).view(1,3)
+          top_2corners[ids_i] = ave_i
+          mask_merged[ids_i] = 1
+          #if DEBUG:
+          #  print(f'ids: {ids_i}')
+          #  print(f'org: {top_2corners[ids_i]}')
+          #  print(f'ave: {ave_i}')
+          pass
+
+        if DEBUG and False:
+          corners_close = top_2corners0.view([-1,3])[ids_i]
+          boxlist.show(points = corners_close)
+
+          cor_tmp = top_2corners.view(-1,2,3)
+          tmp = (cor_tmp[:,0] - cor_tmp[:,1]).norm(dim=1)
+          if tmp.min()==0:
+            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            pass
+
+      ids_merged = torch.nonzero(mask_merged).squeeze(1)
+      corners_merged = top_2corners[ids_merged]
+      top_2corners = top_2corners.view([-1,2,3])
+
+
+      # offset the corners to the end by half thickness
+      centroids = top_2corners.mean(dim=1, keepdim=True)
+      offset = top_2corners - centroids
+      offset = offset / offset.norm(dim=2, keepdim=True) * boxes_2corners[:,-1].view(-1,1,1) * 0.5
+      top_2corners = top_2corners + offset
+
+      boxes_2corners[:,0:2] = top_2corners[:,0,0:2]
+      boxes_2corners[:,2:4] = top_2corners[:,1,0:2]
+      boxes_2corners[:,5] = top_2corners[:,:,2].mean(dim=1)
+      boxes_2corners[:,4] = boxes_2corners[:,4].mean()
+
+
+      boxlist.bbox3d = Box3D_Torch.from_2corners_to_yxzb(boxes_2corners)
+
+      if is_standard:
+        boxlist = boxlist.convert('standard')
+      #boxlist.show(points=corners_merged)
+      #boxlist.show_with_corners()
+      return boxlist
+
 if __name__ == "__main__":
     bbox = BoxList([[0, 0, 10, 10], [0, 0, 5, 5]], (10, 10))
     s_bbox = bbox.resize((5, 5))
@@ -813,3 +897,5 @@ if __name__ == "__main__":
     t_bbox = bbox.transpose(0)
     print(t_bbox)
     print(t_bbox.bbox)
+
+

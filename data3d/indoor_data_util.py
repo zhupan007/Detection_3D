@@ -9,6 +9,7 @@ import pickle
 import torch
 from utils3d.geometric_util import cam2world_box, cam2world_pcl
 from data3d.suncg_utils.scene_samples import SceneSamples
+from maskrcnn_benchmark.structures.bounding_box_3d import  BoxList3D, merge_by_corners
 #from suncg_utils.celing_floor_room_preprocessing import preprocess_cfr_standard
 
 #BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -27,7 +28,7 @@ NUM_POINTS = 500 * 1000
 
 DSET_DIR = '/DS/SUNCG/suncg_v1'
 PARSED_DIR = f'{DSET_DIR}/parsed'
-SPLITED_DIR = '/DS/SUNCG/suncg_v1_splited_torch' + f'_BS_{BLOCK_SIZE0[0]}_{BLOCK_SIZE0[1]}_BN_{NUM_POINTS//1000}K'
+SPLITED_DIR = '/DS/SUNCG/suncg_v1__torch' + f'_BS_{BLOCK_SIZE0[0]}_{BLOCK_SIZE0[1]}_BN_{NUM_POINTS//1000}K'
 MAX_FLOAT_DRIFT = 1e-6
 DATASET = 'SUNCG'
 CLASSES_USED = ['wall', 'window', 'door', 'ceiling', 'floor', 'room']
@@ -37,7 +38,7 @@ MAX_SCENE_SIZE = [81.92, 81.92, 10.24]
 
 NO_SPLIT = 1
 
-ALWAYS_UPDATE = 1
+ALWAYS_UPDATE = 0
 ALWAYS_BIG_SIZE = 0
 ONLY_MODIFY_BOX = 0
 ALWAYS_UPDATE_MULTI_SPLITS = 0
@@ -93,6 +94,16 @@ def add_norm(pcd):
 #    f.write(f"{name}: {value}\n")
 #  print(f'write summary: {summary_fn}')
 
+
+def adjust_wall_corner_to_connect( walls_standard ):
+    bboxes_3d = torch.from_numpy(walls_standard)
+    boxlist = BoxList3D(bboxes_3d, size3d=None, mode='standard', examples_idxscope=None, constants={})
+    new_boxlist = merge_by_corners(boxlist)
+    #boxlist.show_with_corners()
+    #new_boxlist.show_with_corners()
+    assert new_boxlist.mode == 'standard'
+    return  new_boxlist.bbox3d
+
 class IndoorData():
   _block_size0 = BLOCK_SIZE0
   #_block_size0 = np.array([16,16,3])
@@ -115,8 +126,12 @@ class IndoorData():
     #if not house_intact:
     #  return
     summary_raw = read_summary(scene_dir)
-    is_big_size = (summary_raw['scene_size'] > MAX_SCENE_SIZE).any()
-    always_update = always_update or ( ALWAYS_BIG_SIZE and is_big_size )
+
+    if 'level_num' in summary_raw and  summary_raw['level_num'] != 1:
+      return
+
+    #is_big_size = (summary_raw['scene_size'] > MAX_SCENE_SIZE).any()
+    #always_update = always_update or ( ALWAYS_BIG_SIZE and is_big_size )
 
     if (not always_update) and 'split_num' in summary_0:
       sn = summary_0['split_num'].squeeze()
@@ -127,8 +142,6 @@ class IndoorData():
     print(f'spliting {scene_dir}')
     gen_ply = False
 
-    if 'level_num' in summary_raw and  summary_raw['level_num'] != 1:
-      return
 
     pcl_fn = os.path.join(scene_dir, 'pcl_camref.ply')
     if not os.path.exists(pcl_fn):
@@ -182,6 +195,7 @@ class IndoorData():
           boxes_i[obj] = Bbox3D.set_yaw_zero(boxes_i[obj])
           #boxes_i[obj] = preprocess_cfr_standard(boxes_i[obj])
 
+      boxes_i['wall'] = adjust_wall_corner_to_connect(boxes_i['wall'] )
       torch.save((pcl_i, boxes_i), fni)
 
       if gen_ply:
@@ -738,13 +752,13 @@ def creat_splited_pcl_box():
   '''
   parsed_dir = PARSED_DIR
   splited_path = f'{SPLITED_DIR}/houses'
-  #house_names = os.listdir(parsed_dir)
+  house_names = os.listdir(parsed_dir)
 
-  house_names = SceneSamples.pcl_err
+  #house_names = SceneSamples.pcl_err
 
   #house_names = get_house_names_1level()
   print(f'total {len(house_names)} houses')
-  house_names = ['16a5bfe1972802178762f5a052bbf450']
+  #house_names = ['16a5bfe1972802178762f5a052bbf450']
 
   scene_dirs = [os.path.join(parsed_dir, s) for s in house_names]
   scene_dirs.sort()
