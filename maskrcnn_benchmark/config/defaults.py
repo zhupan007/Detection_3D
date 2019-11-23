@@ -93,7 +93,7 @@ _C.DATALOADER = CN()
 _C.DATALOADER.NUM_WORKERS = 4
 # If > 0, this enforces that each collated batch should have a size divisible
 # by SIZE_DIVISIBILITY
-_C.DATALOADER.SIZE_DIVISIBILITY = 6
+_C.DATALOADER.SIZE_DIVISIBILITY = 4
 # If True, each batch should contain only images for which the aspect ratio
 # is compatible. This groups portrait images together, and landscape images
 # are not batched with portrait images.

@@ -38,7 +38,7 @@ MAX_SCENE_SIZE = [81.92, 81.92, 10.24]
 
 NO_SPLIT = 1
 
-ALWAYS_UPDATE = 0
+ALWAYS_UPDATE = 1
 ALWAYS_BIG_SIZE = 0
 ONLY_MODIFY_BOX = 0
 ALWAYS_UPDATE_MULTI_SPLITS = 0
@@ -102,7 +102,7 @@ def adjust_wall_corner_to_connect( walls_standard ):
     #boxlist.show_with_corners()
     #new_boxlist.show_with_corners()
     assert new_boxlist.mode == 'standard'
-    return  new_boxlist.bbox3d
+    return  new_boxlist.bbox3d.data.numpy()
 
 class IndoorData():
   _block_size0 = BLOCK_SIZE0
@@ -187,6 +187,7 @@ class IndoorData():
       #offset = pcl_i[:,0:3].mean(0)
       #pcl_i[:,0:3] = pcl_i[:,0:3] - offset
       pcl_i = np.ascontiguousarray(pcl_i)
+      #pcl_i = torch.from_numpy(pcl_i)
 
       boxes_i = {}
       for obj in bboxes_splited:
@@ -758,7 +759,8 @@ def creat_splited_pcl_box():
   #house_names = house_names[0:1000]
   #house_names = house_names[1000:2000]
   #house_names = house_names[4000:5000]
-  house_names = house_names[5000:6000]
+  #house_names = house_names[5000:6000]
+  #house_names = house_names[6000:]
 
 
   #house_names = SceneSamples.pcl_err

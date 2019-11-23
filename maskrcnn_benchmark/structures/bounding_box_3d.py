@@ -475,7 +475,7 @@ class BoxList3D(object):
           connect_ids[tmp[:,0], j] =  tmp[:,1]
 
       # check
-      check = 1
+      check = 0
       if check:
         for i in range(m):
           ids_i = connect_ids[i]
