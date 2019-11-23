@@ -754,6 +754,9 @@ def creat_splited_pcl_box():
   splited_path = f'{SPLITED_DIR}/houses'
   house_names = os.listdir(parsed_dir)
 
+  #house_names = house_names[0:1000]
+  house_names = house_names[1000:2000]
+
   #house_names = SceneSamples.pcl_err
 
   #house_names = get_house_names_1level()
