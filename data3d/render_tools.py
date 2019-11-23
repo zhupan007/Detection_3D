@@ -8,9 +8,10 @@ import torch
 from collections import defaultdict
 from suncg_utils.scene_samples import SceneSamples
 from data3d.dataset_metas import DSET_METAS0
+from  maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
 
 SUNCG_V1_DIR = '/DS/SUNCG/suncg_v1'
-PARSED_DIR = f'/DS/SUNCG/parsed'
+PARSED_DIR = f'/DS/SUNCG/suncg_v1/parsed'
 SPLITED_DIR = '/DS/SUNCG/suncg_v1_torch_splited'
 
 #CLASSES = ['wall', 'ceiling']
@@ -23,7 +24,7 @@ CLASSES = ['wall', 'window', 'door']
 #CLASSES = ['floor']
 #CLASSES = ['ceiling']
 
-SHOW_PCL = 1
+SHOW_PCL = 0
 POINTS_KEEP_RATE = 0.95
 
 AniSizes = {'01b05d5581c18177f6e8444097d89db4': [120, 920, 640,1300] }
@@ -73,15 +74,16 @@ def render_parsed_house_walls(parsed_dir, show_pcl=SHOW_PCL, show_by_class=0):
     labels += [label] * bboxes_.shape[0]
   bboxes = np.concatenate(bboxes, 0)
   labels = np.array(labels).astype(np.int8)
+  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   if bboxes.shape[0] > 0:
     scene_size = Bbox3D.boxes_size(bboxes)
     print(f'scene wall size:{scene_size}')
 
-    #Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
+    Bbox3D.draw_bboxes(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
     #if not show_pcl:
     #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False)
     #Bbox3D.draw_bboxes_mesh(bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
-    show_walls_offsetz(bboxes)
+    #show_walls_offsetz(bboxes)
 
     if show_by_class:
           for c in range(1,max(labels)+1):
@@ -161,8 +163,12 @@ def render_pth_file(pth_fn, show_by_class=0):
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False,points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE)
   #Bbox3D.draw_points_bboxes(pcl, all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels, points_keep_rate=POINTS_KEEP_RATE, animation_fn='anima.mp4', ani_size=[280,700,550,1350])
+  #Bbox3D.draw_bboxes(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
 
-  show_walls_offsetz(all_bboxes)
+  boxlist = BoxList3D(all_bboxes, size3d=None, mode='standard', examples_idxscope=None, constants={})
+  boxlist.show_with_corners()
+
+  #show_walls_offsetz(all_bboxes)
 
   if show_by_class:
     for clas in bboxes.keys():
@@ -177,7 +183,6 @@ def render_pth_file(pth_fn, show_by_class=0):
       #Bbox3D.draw_points_bboxes(points, boxes, up_axis='Z', is_yx_zb=False)
       Bbox3D.draw_points_bboxes_mesh(pcl, boxes, up_axis='Z', is_yx_zb=False, points_keep_rate=POINTS_KEEP_RATE)
       show_walls_offsetz(boxes)
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   pass
 
 def render_suncg_raw_house_walls(house_fn):
@@ -258,6 +263,8 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   #house_names = ['2f3ae02201ad551e99870189e184af4f']
   #house_names = ['0055398beb892233e0664d843eb451ca']
   house_names = ['0058113bdc8bee5f387bb5ad316d7b28']
+  house_names = ['0219bb573b54812dff157d30450dcbfd']
+  house_names = ['04e51704b00e8cea6375f0047a836c55']
 
   print(f'totally {len(house_names)} houses')
 
@@ -383,17 +390,27 @@ def check_data():
       #torch.load(fn)
 
 def render_fn():
+
     house = '171abbe9005ccc2e92ad613ab438b5c4'
     house = '03e774f482a6ac811c6bf1937be095c5'
     house = '0058113bdc8bee5f387bb5ad316d7b28'
     #house = '003ecdd4fe76e4421091094665f39c5a'
+    house = '0219bb573b54812dff157d30450dcbfd'
     pth_fn = f'/DS/SUNCG/suncg_v1_splited_torch_BS_50_50_BN_500K/houses/{house}/pcl_0.pth'
-    render_pth_file(pth_fn)
+    #render_pth_file(pth_fn)
+
+    path = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/houses'
+    house_names = os.listdir(path)
+    for hn in house_names:
+      fn = f'{path}/{hn}/pcl_0.pth'
+      render_pth_file(fn)
+      pass
+
 
 
 if __name__ == '__main__':
-    #render_fn()
-    main()
+    render_fn()
+    #main()
     #summarize()
     #check_data()
 
