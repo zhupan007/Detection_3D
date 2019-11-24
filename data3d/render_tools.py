@@ -391,16 +391,9 @@ def check_data():
 
 def render_fn():
 
-    house = '171abbe9005ccc2e92ad613ab438b5c4'
-    house = '03e774f482a6ac811c6bf1937be095c5'
-    house = '0058113bdc8bee5f387bb5ad316d7b28'
-    #house = '003ecdd4fe76e4421091094665f39c5a'
-    house = '0219bb573b54812dff157d30450dcbfd'
-    pth_fn = f'/DS/SUNCG/suncg_v1_splited_torch_BS_50_50_BN_500K/houses/{house}/pcl_0.pth'
-    #render_pth_file(pth_fn)
-
     path = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/houses'
     house_names = os.listdir(path)
+    house_names = ['1d84d7ca97f9e05534bf408779406e30', '1d938aa8a23c8507e035f5a7d4614180', '1dba3a1039c6ec1a3c141a1cb0ad0757', '1e694c1e4862169a5f153c8719887bfc', '1e717bef798945693244d7702bb65605']
     for hn in house_names:
       fn = f'{path}/{hn}/pcl_0.pth'
       render_pth_file(fn)
