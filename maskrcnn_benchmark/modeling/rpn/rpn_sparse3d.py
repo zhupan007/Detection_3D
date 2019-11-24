@@ -251,7 +251,8 @@ class RPNModule(torch.nn.Module):
             # no need to transform the anchors into predicted boxes; this is an
             # optimization that avoids the unnecessary transformation.
             boxes = anchors
-            self.seperate_classifier.seperate_rpn_assin(targets)
+            if self.seperate_classifier.need_seperate:
+              self.seperate_classifier.seperate_rpn_assin(targets)
         else:
             # For end-to-end models, anchors must be transformed into boxes and
             # sampled into a training batch.
