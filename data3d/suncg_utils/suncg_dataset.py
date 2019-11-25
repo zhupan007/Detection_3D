@@ -90,6 +90,9 @@ class SUNCGDataset(torch.utils.data.Dataset):
         #else:
         #  print(f'\n(suncg_dataset.py) test  {index}-th  {hn}\n')
         pcl_i, bboxes_dic_i_0 = torch.load(fn)
+        for obj in bboxes_dic_i_0:
+          if type(  bboxes_dic_i_0[obj]  ) == torch.Tensor:
+            bboxes_dic_i_0[obj] = bboxes_dic_i_0[obj].data.numpy()
 
         a = pcl_i[:,0:3].copy()
         b = pcl_i
