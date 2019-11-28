@@ -65,12 +65,15 @@ class Checkpointer(object):
         if self.roi_only:
           self.logger.info("\n\nLoading feature from rpn only success\n\n")
           return {}
-        if "optimizer" in checkpoint and self.optimizer:
-            self.logger.info("Loading optimizer from {}".format(f))
-            self.optimizer.load_state_dict(checkpoint.pop("optimizer"))
-        if "scheduler" in checkpoint and self.scheduler:
-            self.logger.info("Loading scheduler from {}".format(f))
-            self.scheduler.load_state_dict(checkpoint.pop("scheduler"))
+        try:
+          if "optimizer" in checkpoint and self.optimizer:
+              self.logger.info("Loading optimizer from {}".format(f))
+              self.optimizer.load_state_dict(checkpoint.pop("optimizer"))
+          if "scheduler" in checkpoint and self.scheduler:
+              self.logger.info("Loading scheduler from {}".format(f))
+              self.scheduler.load_state_dict(checkpoint.pop("scheduler"))
+        except:
+          pass
 
         # return any further checkpoint data
         return checkpoint
