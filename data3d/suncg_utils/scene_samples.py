@@ -2,6 +2,11 @@ class SceneSamples():
     '''
     '''
     #---------------------------------------------------------------------------
+    sj_paper_m = ['008969b6e13d18db3abc9d954cebe6a5', '00afed09a913d9ceefa3efae9cfb7dee','00c6c138c32f4cb08817eb8b4f0f3769', '00edb7bacc2c707b7f00e0f0d2ba2aef','00f35da26ade0c2e8647546b9e22cade',
+                  '00f55236d7ce1a3dfae9cc5da2054703','0137913f31d77c584ced8a558da40a07', '01455961f57afa73558354694d5a4028', '02da8471c15484eabdd9efe29ee194b8']
+    sj_paper_m_big = ['00f2cb88d3bdadb006120ff8f17890a6', '03cc65dc91fd9e2237fd6fc4635471ad']
+    sj_paper_nm = ['009da17ff8871e4e1e518c785c75dd28', '00f598feae701e5054d9b327176291c9', '017c1a9300d35ffdef129a3d7ee63c15', '01f0807e9cee19a44668362fe089599f', '025027e8339eb4a1853f995ba3aa565c','02c4c9c3d9910c57e17beeb4ed1ff6cb']
+    #---------------------------------------------------------------------------
     geo_def = ['2a07667f31f99fc450eaecc8fbd8aa46']
     #---------------------------------------------------------------------------
     paper_samples = ['0058113bdc8bee5f387bb5ad316d7b28']
@@ -99,7 +104,7 @@ class SceneSamples():
       ['161f617b86bc8388ca9f1bd2c805e0e9', '16322b525ce73f3d628eadec8800d58c', '17652ca3197dde089a16bb9fc1759114', '180c78c5f67d602cf9aa9936aace1ce9', '18468c7dc6cdd86a179bf13883e07dd8', '1948ad0c9782febf4ca10dd4c9fe4f63'] + \
       ['2593aef145a1f6c9b01e8511c961cad2', '28ae0e90b88bb2e909398654dc159ad9', '28bd5530205f031f5db74d5e7f5637df', '29b8d84fb0caad2ebcee0ec60eb09797', '2a80c6fa44d902d77054210b5330a58c', '2a8f2816180fd6a2a6f1811b6ed02c88', '2cd9ecd5c7a31c9583a398f7d581c0b2', '2e21cd462afdb055be9d4cd8408c33bb', '2e3827af5bebf864583c96224ef970c1', '2e5cf189c5348060c28f93305c02519e'] +\
       ['17fb6d544ef525adfa07af2e0b2455ef', '194a5a7b92a1c79cbe0492f2f73893ff', '00bd0753b017769050de40d757b8d603', '00d92cc9072fe4173a1e7778bbca118c','00e030e0e9198a0f9dd5389f2d2e9271', '0138ea33414267375b879ff7ccc1436c'] +\
-      ['07dcc783a318e50156a252af4e922c43', '0efaa70a597665636b23fa1403b57905', '08a528bffa49ef69da42aa920a1b911b']
+      ['07dcc783a318e50156a252af4e922c43', '0efaa70a597665636b23fa1403b57905', '08a528bffa49ef69da42aa920a1b911b', '004e36a61e574321adc8da7b48c331f2', '0138ea33414267375b879ff7ccc1436c', '02cb6b5c3cc8d5ac2052fcd9fcf35d29']
 
     bad_scenes = bad_scenes_curved_walls + bad_scenes_BIM_ambiguous + bad_scenes_raw_bad + err_scenes + bad_scenes_cannot_parse + too_big
 

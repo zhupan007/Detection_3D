@@ -390,12 +390,19 @@ def check_data():
       #torch.load(fn)
 
 def render_fn():
-
     path = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/houses'
-    house_names = os.listdir(path)
-    house_names = ['1d84d7ca97f9e05534bf408779406e30', '1d938aa8a23c8507e035f5a7d4614180', '1dba3a1039c6ec1a3c141a1cb0ad0757', '1e694c1e4862169a5f153c8719887bfc', '1e717bef798945693244d7702bb65605']
-    house_names=  ['02cb6b5c3cc8d5ac2052fcd9fcf35d29']
+    f = 0
+    if f==0:
+      val_fn = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/train_test_splited/val.txt'
+      val_hns = np.loadtxt(val_fn, dtype=str).tolist()
+      house_names = val_hns
+    else:
+      house_names = os.listdir(path)
+      house_names.sort()
+      #house_names = ['1d84d7ca97f9e05534bf408779406e30', '1d938aa8a23c8507e035f5a7d4614180', '1dba3a1039c6ec1a3c141a1cb0ad0757', '1e694c1e4862169a5f153c8719887bfc', '1e717bef798945693244d7702bb65605']
+      #house_names=  ['02cb6b5c3cc8d5ac2052fcd9fcf35d29']
     for hn in house_names:
+      print(hn)
       fn = f'{path}/{hn}/pcl_0.pth'
       render_pth_file(fn)
       pass
