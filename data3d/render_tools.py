@@ -154,7 +154,7 @@ def render_pth_file(pth_fn, show_by_class=0):
     labels += [i]*n
   labels = np.array(labels)
 
-  #Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
+  Bbox3D.draw_points(pcl,  points_keep_rate=POINTS_KEEP_RATE)
   #show_walls_offsetz(all_bboxes)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False, labels=labels)
   #Bbox3D.draw_bboxes_mesh(all_bboxes, up_axis='Z', is_yx_zb=False)
@@ -265,6 +265,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
   house_names = ['0058113bdc8bee5f387bb5ad316d7b28']
   house_names = ['0219bb573b54812dff157d30450dcbfd']
   house_names = ['04e51704b00e8cea6375f0047a836c55']
+  house_names = ['0a9d312ad5cda5cd44568a6260ad946d']
 
   print(f'totally {len(house_names)} houses')
 
@@ -293,7 +294,7 @@ def render_houses(r_cam=True, r_whole=True, r_splited=True):
 def main():
     render_houses(
             r_cam=False,
-            r_whole = 1,
+            r_whole = 0,
             r_splited = 1
     )
 
@@ -391,17 +392,19 @@ def check_data():
 
 def render_fn():
     path = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/houses'
-    f = 0
+    f = 1
     if f==0:
       val_fn = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/train_test_splited/val.txt'
-      val_fn = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/train_test_splited/train.txt'
+      #val_fn = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/train_test_splited/train.txt'
       val_hns = np.loadtxt(val_fn, dtype=str).tolist()
-      house_names = val_hns[300:]
-    else:
+      house_names = val_hns[400:]
+    elif f==1:
       house_names = os.listdir(path)
       house_names.sort()
       #house_names = ['1d84d7ca97f9e05534bf408779406e30', '1d938aa8a23c8507e035f5a7d4614180', '1dba3a1039c6ec1a3c141a1cb0ad0757', '1e694c1e4862169a5f153c8719887bfc', '1e717bef798945693244d7702bb65605']
-      #house_names=  ['02cb6b5c3cc8d5ac2052fcd9fcf35d29']
+      house_names=  ['008969b6e13d18db3abc9d954cebe6a5']
+    elif f==2:
+      house_names = SceneSamples.sj_paper_samples
     for hn in house_names:
       print(hn)
       fn = f'{path}/{hn}/pcl_0.pth'
