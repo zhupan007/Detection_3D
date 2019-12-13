@@ -394,8 +394,9 @@ def render_fn():
     f = 0
     if f==0:
       val_fn = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/train_test_splited/val.txt'
+      val_fn = '/DS/SUNCG/suncg_v1__torch_BS_50_50_BN_500K/train_test_splited/train.txt'
       val_hns = np.loadtxt(val_fn, dtype=str).tolist()
-      house_names = val_hns
+      house_names = val_hns[300:]
     else:
       house_names = os.listdir(path)
       house_names.sort()

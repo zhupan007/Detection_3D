@@ -272,6 +272,8 @@ class BoxList3D(object):
       boxes_2corners = self.get_2corners_boxes()
       corners_top0 = boxes_2corners[:,[0,1,5]]
       corners_top1 = boxes_2corners[:,[2,3,5]]
+      if self.bbox3d.shape[0] == 0:
+        return corners_top0, boxes_2corners
       n = corners_top0.shape[0]
       corners_top = torch.cat([corners_top0.view(n,1,3),  corners_top1.view(n,1,3) ], 1 )
       # offset the corners_top
@@ -282,7 +284,7 @@ class BoxList3D(object):
       if self.mode == 'yx_zb':
         thickness = self.bbox3d[:,3].view(n,1,1)
       elif self.mode == 'standard':
-        thickness = self.bbox3d[:,4].view(n,1,1)
+          thickness = self.bbox3d[:,4].view(n,1,1)
       offset = offset / offset_norm * thickness * 0.5
       corners_top = corners_top + offset
       zbottoms = boxes_2corners[:,4:5]

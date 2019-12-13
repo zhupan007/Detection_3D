@@ -81,6 +81,8 @@ def down_sample_points(points0, sample_rate):
   return points
 
 def cut_points_roof(points, keep_rate=POINTS_KEEP_RATE, sample_rate=POINTS_SAMPLE_RATE):
+  if points.shape[0] == 0:
+    return points
   z_min = np.min(points[:,2])
   z_max = np.max(points[:,2])
   threshold = z_min + (z_max - z_min) * keep_rate
