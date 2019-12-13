@@ -6,13 +6,13 @@ RES_PATH0 = '/home/z/Research/Detection_3D/RES/res_sw4c_fpn432_bs1_lr5_T6655/inf
 RES_PATH1 = '/home/z/Research/Detection_3D/RES/res_CiFl_Fpn21_bs1_lr2_T5223/inference_3d/suncg_test_1309_iou_3_augth_2'
 
 RES_PATH = '/home/z/Research/Detection_3D/RES/res_3G6c_Fpn4321_bs1_lr5_T5223/inference_3d/suncg_test_1309_iou_3_augth_2'
+RES_PATH = '/home/z/Research/Detection_3D/RES/res_3g6c_Fpn4321_bs1_lr5_Tr5227_CA/inference_3d/suncg_test_48_iou_3_augth_2'
 
 Two_Res_Path = [RES_PATH0, RES_PATH1]
 
 def show_prediction():
-  pred_fn = os.path.join(RES_PATH, 'preds.pth')
+  pred_fn = os.path.join(RES_PATH, 'predictions.pth')
   gt_boxlists_, pred_boxlists_, files = torch.load(pred_fn)
-  import pdb; pdb.set_trace()  # XXX BREAKPOINT
   show_pred(gt_boxlists_, pred_boxlists_, files)
 
 def show_performance():
@@ -71,7 +71,7 @@ def smooth_curve(rec_prec_score_iou_org, iou_threshold=0.3):
 
 
 if __name__ == '__main__':
-  #show_prediction()
-  show_performance()
+  show_prediction()
+  #show_performance()
   #show_performance_of_two()
 
