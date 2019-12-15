@@ -518,12 +518,12 @@ class BoxList3D(object):
             labels = self.get_field('labels').cpu().data.numpy().astype(np.int32)
         else:
             labels = None
+      random_color = colors is None
       if points is None:
         Bbox3D.draw_bboxes(boxes, 'Z', is_yx_zb=self.mode=='yx_zb', \
-        labels = labels, random_color=False)
+        labels = labels, random_color=random_color)
       else:
         points = points.cpu().data.numpy()
-        random_color = colors is None
         Bbox3D.draw_points_bboxes(points, boxes, 'Z', is_yx_zb=self.mode=='yx_zb',\
           labels = labels,  random_color=random_color, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate, box_colors=colors)
 

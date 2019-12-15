@@ -12,6 +12,7 @@ from ..utils.comm import is_main_process
 from ..utils.comm import scatter_gather
 from ..utils.comm import synchronize
 
+LOAD_PRED = 0
 
 def compute_on_dataset(model, data_loader, device):
     model.eval()
@@ -85,7 +86,7 @@ def inference_3d(
         output_folder=None,
         epoch = None,
         eval_aug_thickness = None,
-        load_pred = 0,
+        load_pred = LOAD_PRED,
 ):
     # convert to a torch.device for efficiency
     device = torch.device(device)

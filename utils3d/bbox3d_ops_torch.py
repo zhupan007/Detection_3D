@@ -1,5 +1,4 @@
 # xyz Oct 2019
-from utils3d.bbox3d_ops import Bbox3D
 import torch, math
 from utils3d.geometric_torch import angle_with_x
 from utils3d.geometric_torch import OBJ_DEF
@@ -114,6 +113,7 @@ class Box3D_Torch():
 
   @staticmethod
   def from_yxzb_to_2corners(boxes_in):
+    from utils3d.bbox3d_ops import Bbox3D
     if boxes_in.shape[0] == 0:
       return boxes_in
     device = boxes_in.device
@@ -135,6 +135,7 @@ class Box3D_Torch():
     return boxes_2corners
 
 def show_boxes_corners_boxes(boxes, is_yx_zb, boxes_corners):
+  from utils3d.bbox3d_ops import Bbox3D
   corners0 = boxes_corners[:,[0,1,4]]
   corners1 = boxes_corners[:,[2,3,4]]
   corners = torch.cat([corners0, corners1], 0).data.numpy()

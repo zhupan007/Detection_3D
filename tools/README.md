@@ -139,6 +139,8 @@ pcl xyz: [0:max]
  - rpn/inference_3d.py
         SHOW_RPN_OUT_BEFORE_NMS  
         SHOW_NMS_OUT  
+ - engine/inference_3d
+        LOAD_PRED
 
 # configurations:
 - maskrcnn_benchmark/config/defaults.py 

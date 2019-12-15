@@ -1,3 +1,4 @@
+import open3d
 import os, torch
 import numpy as np
 from data3d.evaluation.suncg.suncg_eval import show_pred, draw_recall_precision_score
@@ -7,10 +8,23 @@ RES_PATH1 = '/home/z/Research/Detection_3D/RES/res_CiFl_Fpn21_bs1_lr2_T5223/infe
 
 RES_PATH = '/home/z/Research/Detection_3D/RES/res_3G6c_Fpn4321_bs1_lr5_T5223/inference_3d/suncg_test_1309_iou_3_augth_2'
 RES_PATH = '/home/z/Research/Detection_3D/RES/res_3g6c_Fpn4321_bs1_lr5_Tr5227_CA/inference_3d/suncg_test_48_iou_3_augth_2'
+RES_PATH = '/home/z/Research/Detection_3D/RES/res_3g6c_Fpn4321_bs1_lr5_Tr5227_CA/inference_3d/suncg_test_2_iou_3_augth_2'
 
 Two_Res_Path = [RES_PATH0, RES_PATH1]
 
 def show_prediction():
+  pred_fn = os.path.join(RES_PATH, 'predictions.pth')
+  pred_boxlists = torch.load(pred_fn)
+  for preds in pred_boxlists:
+    preds = preds.remove_low('scores', 0.5)
+    select_ids = 1
+    if select_ids:
+      ids = [1,2,3]
+      #ids = [5]
+      preds = preds.select_by_labels(ids, 'labels')
+      preds.show()
+
+def show_prediction_gt():
   pred_fn = os.path.join(RES_PATH, 'predictions.pth')
   gt_boxlists_, pred_boxlists_, files = torch.load(pred_fn)
   show_pred(gt_boxlists_, pred_boxlists_, files)
