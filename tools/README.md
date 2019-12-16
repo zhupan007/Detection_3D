@@ -119,7 +119,9 @@ pcl xyz: [0:max]
   maskrcnn_benchmark/engine/inference_3d.py: inference_3d/load_pred
 
 # Debug
- - data3d/evaluation/suncg/suncg_eval.py: SHOW_GOOD_PRED
+ - data3d/evaluation/suncg/suncg_eval.py:  
+        SHOW_PRED  
+        DEBUG_DATA_SAMPLE 
  - sparseconvnet/fpn_net.py: SHOW_MODEL
 
  - modeling/rpn/rpn_sparse3d.py 
@@ -139,8 +141,10 @@ pcl xyz: [0:max]
  - rpn/inference_3d.py
         SHOW_RPN_OUT_BEFORE_NMS  
         SHOW_NMS_OUT  
- - engine/inference_3d
+ - engine/inference_3d.py  
         LOAD_PRED
+ - roi_heads/box_head_3d/inference.py  
+        MERGE_BY_CORNER
 
 # configurations:
 - maskrcnn_benchmark/config/defaults.py 

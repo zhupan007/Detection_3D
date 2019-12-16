@@ -9,10 +9,10 @@ from maskrcnn_benchmark.structures.boxlist_ops_3d import cat_boxlist_3d
 from maskrcnn_benchmark.modeling.box_coder_3d import BoxCoder3D
 from utils3d.bbox3d_ops_torch import Box3D_Torch
 
-DEBUG = False
+DEBUG = 0
 SHOW_FILTER = DEBUG and 0
 
-MERGE_BY_CORNER = False
+MERGE_BY_CORNER = 0
 
 class PostProcessor(nn.Module):
     """
@@ -76,8 +76,8 @@ class PostProcessor(nn.Module):
         ):
             boxlist = self.prepare_boxlist(boxes_per_img, prob, size3d)
             #boxlist = boxlist.clip_to_pcl(remove_empty=False)
-            #if SHOW_FILTER:
-            #  show_before_filter(boxlist, 'before filter')
+            if SHOW_FILTER:
+              show_before_filter(boxlist, 'before filter')
             boxlist = self.filter_results(boxlist, num_classes)
             if MERGE_BY_CORNER:
               boxlist = merge_by_corners(boxlist)

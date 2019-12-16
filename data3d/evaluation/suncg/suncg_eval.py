@@ -4,7 +4,7 @@ from __future__ import division
 import os
 from collections import defaultdict
 import numpy as np
-from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D
+from maskrcnn_benchmark.structures.bounding_box_3d import BoxList3D, merge_by_corners
 from maskrcnn_benchmark.structures.boxlist_ops_3d import boxlist_iou_3d
 import matplotlib.pyplot as plt
 from cycler import cycler
@@ -23,6 +23,7 @@ DRAW_REGRESSION_IOU = 0
 ONLY_SAVE_NO_SHOW = 0
 
 DEBUG_DATA_SAMPLE = True
+MERGE_BY_CORNERS = 1
 
 def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
@@ -62,7 +63,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     image_ids = []
     fns = []
     for i, prediction in enumerate(predictions):
-        if DEBUG_DATA_SAMPLE and i not in [0,1,2,3]:
+        if DEBUG_DATA_SAMPLE and i not in list(range(20,30)):
           continue
         pred_boxlists.append(prediction)
         image_id = prediction.constants['data_id']
@@ -156,6 +157,9 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
               #ids = [5]
               preds = preds.select_by_labels(ids, 'labels_org')
               gt_boxlists_[i] = gt_boxlists_[i].select_by_labels(ids, 'labels_org')
+
+              if MERGE_BY_CORNERS:
+                preds = merge_by_corners(preds)
 
             # ~/Research/Detection_3D/maskrcnn_benchmark/modeling/roi_heads/box_head_3d/inference.py
             # cfg.MODEL.ROI_HEADS.SCORE_THRESH
