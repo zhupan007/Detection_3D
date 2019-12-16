@@ -14,13 +14,15 @@ from utils3d.color_list import COLOR_LIST
 plt.rcParams.update({'font.size': 18, 'figure.figsize': (5,5)})
 
 DEBUG = 1
-SHOW_PRED = DEBUG and  0
+SHOW_PRED = DEBUG and  1
 DRAW_RECALL_PRECISION = DEBUG and 0
 SHOW_FILE_NAMES = DEBUG and False
 
 DRAW_REGRESSION_IOU = 0
 
 ONLY_SAVE_NO_SHOW = 0
+
+DEBUG_DATA_SAMPLE = True
 
 def get_obj_nums(gt_boxlists, dset_metas):
     batch_size = len(gt_boxlists)
@@ -55,11 +57,14 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
       return
 
     dset_metas = dataset.dset_metas
-    pred_boxlists = predictions
+    pred_boxlists = []
     gt_boxlists = []
     image_ids = []
     fns = []
     for i, prediction in enumerate(predictions):
+        if DEBUG_DATA_SAMPLE and i not in [0,1,2,3]:
+          continue
+        pred_boxlists.append(prediction)
         image_id = prediction.constants['data_id']
         fns.append( dataset.files[image_id] )
         image_ids.append(image_id)
@@ -168,7 +173,7 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             if compare_instances_with_offset:
               gt_ids = preds.get_field('gt_ids').cpu().data.numpy().astype(np.int)+1
 
-              if select_ids:
+              if gt_ids.size>0 and select_ids:
                 base = np.min(gt_ids[ gt_ids > 0]) - 1
                 gt_ids[gt_ids > 0] -= base
 
@@ -201,7 +206,6 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
             #  preds[cf_mask_p].show__together(gt_boxlists_[i][cf_mask_g], points=pcl_i, offset_x=xyz_size[0]+2.2, twolabels=False, mesh=False, points_keep_rate=0.9, points_sample_rate=1.0)
 
             #gt_boxlists_[i].show_by_labels([1])
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             if SHOW_SMALL_IOU:
                 small_iou_pred_ids = [p['pred_idx'] for p in  small_iou_preds[i]]
                 small_ious = [p['iou'] for p in  small_iou_preds[i]]

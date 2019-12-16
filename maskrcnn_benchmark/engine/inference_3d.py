@@ -12,7 +12,7 @@ from ..utils.comm import is_main_process
 from ..utils.comm import scatter_gather
 from ..utils.comm import synchronize
 
-LOAD_PRED = 0
+LOAD_PRED = 1
 
 def compute_on_dataset(model, data_loader, device):
     model.eval()
