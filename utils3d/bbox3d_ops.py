@@ -584,6 +584,35 @@ class Bbox3D():
     centroid_lines = np.concatenate([negc, posc], 1)
     return centroid_lines
 
+  @staticmethod
+  def gen_object_for_revit(bboxes, is_yx_zb, labels):
+    '''
+    Object type for revit:
+      x_corner0, y_corner0, x_corner1, y_corner1, z_centroid, thickness, height,   +   label, wall_id
+    '''
+    if is_yx_zb:
+      bboxes = Bbox3D.convert_from_yx_zb_boxes(bboxes)
+    centroid_lines = Bbox3D.bboxes_centroid_lines(bboxes, 'X', 'Z')
+    n = bboxes.shape[0]
+    bboxes_new = np.zeros([n,9])
+    centroid_lines_1 = centroid_lines[:,:,0:2].reshape([n,-1])
+    bboxes_new[:,0:4] = centroid_lines_1
+    bboxes_new[:,[4,5,6]] = bboxes[:,[2,4,5]]
+    bboxes_new[:,7] = labels.squeeze()
+    bboxes_new[:,8] = 0
+
+    wall_ids = np.where(labels == 1)[0]
+    other_ids = np.where(labels != 1)[0]
+    walls = bboxes_new[wall_ids]
+    other_bims = bboxes_new[other_ids]
+
+    dif = bboxes[wall_ids, 0:3].reshape([1,-1,3]) - bboxes[other_ids, 0:3].reshape(-1,1,3)
+    dis = np.linalg.norm(dif, axis=2)
+    wall_ids = dis.argmin(axis=1)
+    other_bims[:,8] = wall_ids
+
+    bims = np.concatenate([walls, other_bims], 0)
+    return bims
 
   @staticmethod
   def bboxes_corners_xz_central_surface(bboxes, up_axis='Z', is_yx_zb=False):
