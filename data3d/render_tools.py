@@ -402,7 +402,7 @@ def render_fn():
       house_names = os.listdir(path)
       house_names.sort()
       #house_names = ['1d84d7ca97f9e05534bf408779406e30', '1d938aa8a23c8507e035f5a7d4614180', '1dba3a1039c6ec1a3c141a1cb0ad0757', '1e694c1e4862169a5f153c8719887bfc', '1e717bef798945693244d7702bb65605']
-      house_names=  ['00f2cb88d3bdadb006120ff8f17890a6']
+      house_names=  ['10afd977812749919ec417579d6dd070']
     elif f==2:
       house_names = SceneSamples.sj_paper_samples
     for hn in house_names:

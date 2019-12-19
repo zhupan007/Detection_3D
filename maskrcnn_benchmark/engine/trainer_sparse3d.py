@@ -91,7 +91,7 @@ def do_train(
     for iteration, batch in enumerate(data_loader, start_iter):
         fn = [os.path.basename(os.path.dirname(nm)) for nm in batch['fn']]
         if SHOW_FN:
-          print(f'\t\t{fn}')
+          print(f'\tStart do_train: \t{fn}')
 
         data_time = time.time() - end
         iteration = iteration + 1

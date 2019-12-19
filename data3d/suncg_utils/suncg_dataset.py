@@ -93,7 +93,7 @@ class SUNCGDataset(torch.utils.data.Dataset):
         norm_noise = 0.01 * int(is_train) * 0
 
         fn = self.files[index]
-        print(f'Loading {fn}')
+        print(f'Loading {fn} in SUNCGDataset')
         hn = os.path.basename(os.path.dirname(fn))
         #if self.is_train:
         #  print(f'\n(suncg_dataset.py) train {index}-th   {hn}\n')
