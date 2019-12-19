@@ -3,17 +3,17 @@ class SceneSamples():
     '''
     '''
     #---------------------------------------------------------------------------
-    sj_paper_complex = ['008969b6e13d18db3abc9d954cebe6a5', '00afed09a913d9ceefa3efae9cfb7dee','025027e8339eb4a1853f995ba3aa565c', '098692b8c09a0d64fead02c5be24e159','12aacbae75886e0c016f1d7481d7d76b','194c6fc7df9942b0bdb6f9a765867d5f']+\
+    sj_paper_complex = ['008969b6e13d18db3abc9d954cebe6a5', '00afed09a913d9ceefa3efae9cfb7dee','025027e8339eb4a1853f995ba3aa565c', '12aacbae75886e0c016f1d7481d7d76b','194c6fc7df9942b0bdb6f9a765867d5f']+\
       ['1966cc90c59158c0f77eded75354e4e2','201975f3699177e9b2548f35e055b028','20d4c44b6a2ce1b26d5d74e08eee7e80','2c1eebc527429811904e640af586fa09']
     sj_paper_big = ['00f2cb88d3bdadb006120ff8f17890a6', '0a3e1b1899ef6d24d88d44affa0ed864','1051e039f35f93b2b553f396a29cf06b','27aba8c191200de5d0bbbf2b3b741cce']
     sj_paper_angle = ['02cb6b5c3cc8d5ac2052fcd9fcf35d29', '085ce593cf619da4a83f768c2bb0b3e6', '089afa803acd9df28314a6a5319b3ff1','092e8aa6cae9033d3e6abdbf5050c1fc','0a9d312ad5cda5cd44568a6260ad946d','0abc46f0ca36811f852b660ec4f74ad7']+\
       ['0fccc94cfd4838c9b881d720fded12dd','12b6eebcd8584f462c3ef011afeb7061','1314639115291b9ed8109d71008f9822','13caa409845bd60fef40f42692ba36ad','14811f612cbf9536c3d509a7a3c532df','14d46ac3ff20d4c688628834f59d7877','1637c59234d3ac7fb670b3c4628db212']+\
-      ['17cec1159dcd710e7820fb4f2ee96560','182e1b727d1357beababc415aa9e65c2','1d51690abecf3d4d5fcb818a0721d23c','1f0db7879df1e1ea98a28a7eee53cb81','226a89525cd2d0716923722d7a1de433','23dd7d978fdc04c1c2480986370e5fcf']
+      ['182e1b727d1357beababc415aa9e65c2','1d51690abecf3d4d5fcb818a0721d23c','1f0db7879df1e1ea98a28a7eee53cb81','226a89525cd2d0716923722d7a1de433','23dd7d978fdc04c1c2480986370e5fcf']
     sj_paper_dif_heights = ['087c495d468896840a7a5ded16313e71', '0894699ab5c6084fb67c4bc9783ed6ab','108cffc5e372d57fdb4eafa6cf92795a','10afd977812749919ec417579d6dd070','113515746390c8f2f8330c14b90ed469','14476bdd14ec5791291084c2e479f513']+\
       ['15229758c873088b509c4778783fa98d','1957adff2bfcbf6d984b2746dee98095','1e14e7812ded5b38df4a2557fb2335f8','202344d0eac6a6c9ff01b9aec14d103f','2abf2e4883f0be0647647dec0708c65f']
     sj_paper_close_walls = ['0f142bb542dcc750111fd56b1e0ca77b','1955d23159d13878e49e66c9e5ef2432']
     sj_paper_muli_wind_vertical = []
-    sj_paper_not_looped = ['087172b0dcba00e7f337656f1a97163a','17cec1159dcd710e7820fb4f2ee96560','1e6ec796235196d28fcf2ef0708c2f51']
+    sj_paper_not_looped = ['087172b0dcba00e7f337656f1a97163a','1e6ec796235196d28fcf2ef0708c2f51']
     sj_paper_small_rooms = ['096f326a58d25c51089ff62f17b0474b']
     sj_paper_samples = sj_paper_complex + sj_paper_big + sj_paper_angle + sj_paper_dif_heights + sj_paper_close_walls + sj_paper_muli_wind_vertical + sj_paper_not_looped + sj_paper_small_rooms
     #---------------------------------------------------------------------------
@@ -118,7 +118,7 @@ class SceneSamples():
       ['17fb6d544ef525adfa07af2e0b2455ef', '194a5a7b92a1c79cbe0492f2f73893ff', '00bd0753b017769050de40d757b8d603', '00d92cc9072fe4173a1e7778bbca118c','00e030e0e9198a0f9dd5389f2d2e9271', '0138ea33414267375b879ff7ccc1436c'] +\
       ['07dcc783a318e50156a252af4e922c43', '0efaa70a597665636b23fa1403b57905', '08a528bffa49ef69da42aa920a1b911b', '004e36a61e574321adc8da7b48c331f2', '0138ea33414267375b879ff7ccc1436c', '02cb6b5c3cc8d5ac2052fcd9fcf35d29'] +\
       ['04caaff8de4798d647187addb6476c5d', '0504d693cf2e1876a3c53d431a69e664','0f796e5619169b1ddfd647718f7b7ceb','105005c2786db747c4ab95e625c72cd4','22839fb5112b9fed438b57ba8ad0e686','247d0dc34e1d0cd54add57212cc938a0'] +\
-      ['2c60484f87e8246a4b71668c08c2f19f']
+      ['2c60484f87e8246a4b71668c08c2f19f', '098692b8c09a0d64fead02c5be24e159','17cec1159dcd710e7820fb4f2ee96560', '113515746390c8f2f8330c14b90ed469']
 
     bad_scenes = bad_scenes_curved_walls + bad_scenes_BIM_ambiguous + bad_scenes_raw_bad + err_scenes + bad_scenes_cannot_parse + too_big
 
@@ -128,6 +128,7 @@ def gen_file_list():
   houses = SceneSamples.sj_paper_samples
   file_name = 'sj_paper_samples.txt'
   np.savetxt(file_name, houses, fmt='%s', delimiter='\n')
+  print(file_name)
   pass
 
 if __name__ == '__main__':

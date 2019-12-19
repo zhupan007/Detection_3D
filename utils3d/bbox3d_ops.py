@@ -18,7 +18,7 @@ FRAME_SHOW = 0
 POINTS_KEEP_RATE = 1.0
 POINTS_SAMPLE_RATE = 1.0
 BOX_XSURFACE_COLOR_DIF = False
-CYLINDER_RADIUS = 0.01   # paper: 0.04
+CYLINDER_RADIUS = 0.03   # paper: 0.04
 
 _cx,_cy,_cz, _sx,_sy,_sz, _yaw = range(7)
 SameAngleThs = 0.01 * 6 # 0.01 rad = 0.6 degree
@@ -231,8 +231,8 @@ class Bbox3D():
     return pcl
 
   @staticmethod
-  def draw_points(points, color=[0,1,1], points_keep_rate=POINTS_KEEP_RATE, animation_fn=None, ani_size=None):
-    pcds = Bbox3D.draw_points_open3d(points, color, show=True, points_keep_rate=points_keep_rate)
+  def draw_points(points, color=[0,1,1], points_keep_rate=POINTS_KEEP_RATE, points_sample_rate=POINTS_SAMPLE_RATE, animation_fn=None, ani_size=None):
+    pcds = Bbox3D.draw_points_open3d(points, color, show=True, points_keep_rate=points_keep_rate, points_sample_rate=points_sample_rate)
     if animation_fn is not None:
       gen_animation([pcds], animation_fn, ani_size)
 

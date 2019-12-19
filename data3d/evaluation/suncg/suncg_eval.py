@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from cycler import cycler
 import torch
 from utils3d.color_list import COLOR_LIST
+from utils3d.bbox3d_ops import Bbox3D
 
 plt.rcParams.update({'font.size': 18, 'figure.figsize': (5,5)})
 
@@ -63,7 +64,7 @@ def do_suncg_evaluation(dataset, predictions, iou_thresh_eval, output_folder, lo
     image_ids = []
     fns = []
     for i, prediction in enumerate(predictions):
-        if DEBUG_DATA_SAMPLE and i not in list(range(20,30)):
+        if DEBUG_DATA_SAMPLE and i not in list(range(40,50)):
           continue
         pred_boxlists.append(prediction)
         image_id = prediction.constants['data_id']
@@ -146,6 +147,7 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
         SHOW_SMALL_IOU = False
         print('SHOW_PRED')
         for i in range(len(pred_boxlists_)):
+            print(f'\n{files[i]}\n')
             #pcl_i = dataset[image_ids[i]]['x'][1][:,0:6]
             pcl_i = torch.load(files[i])[0][:,0:6]
             preds = pred_boxlists_[i].remove_low('scores', 0.5)
@@ -186,12 +188,18 @@ def show_pred(gt_boxlists_, pred_boxlists_, files):
               err_gt_ids = torch.nonzero(gt_boxlists_[i].get_field('labels')==0)[:,0].data.numpy().reshape([-1])
               gt_colors[err_gt_ids] = COLOR_LIST[0].copy()
 
+
+
               #preds.show(points=pcl_i, points_keep_rate=0.9, points_sample_rate=1.0, colors=pred_colors)
               #gt_boxlists_[i].show(points=pcl_i, points_keep_rate=0.9, points_sample_rate=1.0, colors=gt_colors)
 
-              #preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+10, twolabels=False, mesh=1, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
-              preds.show__together(gt_boxlists_[i],offset_x=xyz_size[0]+7, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
-              #preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+7, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
+              preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+7, twolabels=False, mesh=1, points_keep_rate=0.9, points_sample_rate=0.2, colors=[pred_colors, gt_colors])
+              #preds.show__together(gt_boxlists_[i],offset_x=xyz_size[0]+7, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=1.0, colors=[pred_colors, gt_colors])
+              preds.show__together(gt_boxlists_[i], points=pcl_i, offset_x=xyz_size[0]+7, twolabels=False, mesh=0, points_keep_rate=0.9, points_sample_rate=0.2, colors=[pred_colors, gt_colors])
+
+              Bbox3D.draw_points(pcl_i, points_keep_rate=0.9, points_sample_rate=0.4)
+              import pdb; pdb.set_trace()  # XXX BREAKPOINT
+              pass
 
 
 
