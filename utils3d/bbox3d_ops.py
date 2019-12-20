@@ -606,6 +606,8 @@ class Bbox3D():
     walls = bboxes_new[wall_ids]
     other_bims = bboxes_new[other_ids]
 
+    other_bims[:,0:7] = bboxes[other_ids]
+
     dif = bboxes[wall_ids, 0:3].reshape([1,-1,3]) - bboxes[other_ids, 0:3].reshape(-1,1,3)
     dis = np.linalg.norm(dif, axis=2)
     wall_ids = dis.argmin(axis=1)
