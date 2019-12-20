@@ -118,7 +118,7 @@ class OBJ_DEF():
       #  pass
       max_abs = torch.max(torch.abs(bboxes[:,-1]))
       if not max_abs<=math.pi*0.5+ofs:
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
+        print(f'\n\nERROR in check_bboxes: max_abs={max_abs} \n\n')
         pass
     else:
       if check_thickness:
